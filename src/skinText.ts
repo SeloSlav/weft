@@ -18,6 +18,9 @@ export type SurfacePaletteEntry<TokenId extends string = string, Meta = unknown>
   meta: Meta
 }
 
+export type SurfaceGlyphUnits = readonly string[]
+export type SurfaceShorthandMeta = Record<string, never>
+
 export type ResolvedSurfaceGlyph<TokenId extends string = string, Meta = unknown> = {
   id: TokenId
   glyph: string
@@ -76,12 +79,44 @@ export function buildWeightedPaletteStream<TokenId extends string, Meta>(
   return chunks.join('')
 }
 
-export function prepareSemanticSurfaceText<TokenId extends string, Meta>(
+function glyphTokenId(glyph: string): string {
+  const codePoints = Array.from(glyph, (char) => char.codePointAt(0)?.toString(16) ?? '0')
+  return `glyph-${codePoints.join('-')}`
+}
+
+export function normalizeSurfacePalette(
+  units: SurfaceGlyphUnits,
+): readonly SurfacePaletteEntry<string, SurfaceShorthandMeta>[] {
+  const counts = new Map<string, number>()
+  const order: string[] = []
+
+  for (let i = 0; i < units.length; i++) {
+    const glyph = units[i]!
+    if (!counts.has(glyph)) {
+      counts.set(glyph, 0)
+      order.push(glyph)
+    }
+    counts.set(glyph, (counts.get(glyph) ?? 0) + 1)
+  }
+
+  return order.map((glyph) => ({
+    id: glyphTokenId(glyph),
+    glyph,
+    weight: counts.get(glyph),
+    meta: {},
+  }))
+}
+
+function prepareSurfaceFromPalette<TokenId extends string, Meta>(
   cacheKey: string,
   palette: readonly SurfacePaletteEntry<TokenId, Meta>[],
   repeat: number,
   font = SURFACE_TEXT_FONT,
 ): PreparedSurfaceSource<TokenId, Meta> {
+  if (palette.length === 0) {
+    throw new Error(`Surface palette "${cacheKey}" cannot be empty`)
+  }
+
   const cached = preparedSurfaceCache.get(cacheKey) as PreparedSurfaceSource<TokenId, Meta> | undefined
   if (cached) {
     return cached
@@ -123,6 +158,50 @@ export function prepareSemanticSurfaceText<TokenId extends string, Meta>(
 
   preparedSurfaceCache.set(cacheKey, preparedSurface as PreparedSurfaceSource<string, unknown>)
   return preparedSurface
+}
+
+export function prepareSurfaceText(
+  cacheKey: string,
+  units: SurfaceGlyphUnits,
+  repeat: number,
+  font?: string,
+): PreparedSurfaceSource<string, SurfaceShorthandMeta>
+export function prepareSurfaceText<TokenId extends string, Meta>(
+  cacheKey: string,
+  palette: readonly SurfacePaletteEntry<TokenId, Meta>[],
+  repeat: number,
+  font?: string,
+): PreparedSurfaceSource<TokenId, Meta>
+export function prepareSurfaceText<TokenId extends string, Meta>(
+  cacheKey: string,
+  paletteOrUnits: SurfaceGlyphUnits | readonly SurfacePaletteEntry<TokenId, Meta>[],
+  repeat: number,
+  font = SURFACE_TEXT_FONT,
+): PreparedSurfaceSource<string, SurfaceShorthandMeta> | PreparedSurfaceSource<TokenId, Meta> {
+  if (paletteOrUnits.length === 0 || typeof paletteOrUnits[0] === 'string') {
+    return prepareSurfaceFromPalette(
+      cacheKey,
+      normalizeSurfacePalette(paletteOrUnits as SurfaceGlyphUnits),
+      repeat,
+      font,
+    )
+  }
+
+  return prepareSurfaceFromPalette(
+    cacheKey,
+    paletteOrUnits as readonly SurfacePaletteEntry<TokenId, Meta>[],
+    repeat,
+    font,
+  )
+}
+
+export function prepareSemanticSurfaceText<TokenId extends string, Meta>(
+  cacheKey: string,
+  palette: readonly SurfacePaletteEntry<TokenId, Meta>[],
+  repeat: number,
+  font = SURFACE_TEXT_FONT,
+): PreparedSurfaceSource<TokenId, Meta> {
+  return prepareSurfaceFromPalette(cacheKey, palette, repeat, font)
 }
 
 export function seedCursor(prepared: PreparedTextWithSegments, advance: number): LayoutCursor {

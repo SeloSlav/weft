@@ -464,13 +464,7 @@ export class GrassFieldSample {
   }
 
   private getSlotMaxWidth(slot: SurfaceLayoutSlot): number {
-    const disturbance = this.disturbanceAt(slot.spanCenter, slot.lineCoord)
-    return (
-      slot.spanSize *
-      LAYOUT_PX_PER_WORLD *
-      this.params.layoutDensity *
-      THREE.MathUtils.lerp(1, 1 - this.params.disturbanceStrength * 0.98, disturbance)
-    )
+    return slot.spanSize * LAYOUT_PX_PER_WORLD * this.params.layoutDensity
   }
 
   private projectLine(
@@ -502,6 +496,7 @@ export class GrassFieldSample {
         const hashLat = glyphHash(identity, slot.row, k, blade)
         const hashDep = glyphHash(identity + 1, slot.sector, k, blade ^ 0xff)
         const hashOrganic = glyphHash(identity + 2, slot.row ^ slot.sector, k + blade * 31)
+        const hashPresence = glyphHash(identity + 3, slot.row * 131 + slot.sector, k, blade * 17 + 7)
 
         // Replace even t01 spacing with hash-driven placement within the slot.
         // Blades no longer form a regular comb — they bunch and gap naturally.
@@ -522,6 +517,14 @@ export class GrassFieldSample {
           pretextScatter * rowStep * 0.12
         const localZ = slot.lineCoord + lineDepthShift + zJitter
         const localDisturbance = this.disturbanceAt(x, localZ)
+        // Keep slot layout stable and thin blades locally instead of shrinking the
+        // slot width, which would reflow every later sector in the row.
+        const localCoverage = THREE.MathUtils.lerp(
+          1,
+          1 - this.params.disturbanceStrength * 0.98,
+          localDisturbance,
+        )
+        if (hashPresence > localCoverage) continue
         const baseY = this.baseGroundY(x, localZ)
         // organicNoise: world-scale variation from the hash grid, not sine waves.
         const organicNoise = organicField(x + hashOrganic * 0.4, localZ + hashOrganic * 0.3)

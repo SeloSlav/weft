@@ -5,13 +5,11 @@ import * as THREE from 'three'
 import { FishScaleSample } from './fishScaleSample'
 import { GrassFieldSample } from './grassFieldSample'
 import { RockFieldSample } from './rockFieldSample'
-import { FlowerFieldSample } from './flowerFieldSample'
 import { FireParticleSample, type FireWallParams } from './fireParticleSample'
 import { StarSkySample } from './starSkySample'
 import { getPreparedFishSurface } from './fishSurfaceText'
 import { getPreparedGrassSurface } from './grassSurfaceText'
 import { getPreparedRockSurface } from './rockSurfaceText'
-import { getPreparedFlowerSurface } from './flowerSurfaceText'
 import { getPreparedFireSurface } from './fireSurfaceText'
 import { getPreparedStarSurface } from './starSurfaceText'
 import { applyPlaygroundAtmosphere, addPlaygroundLighting } from './playgroundEnvironment'
@@ -24,9 +22,11 @@ import {
   DEFAULT_FISH_SCALE_PARAMS,
   DEFAULT_GRASS_FIELD_PARAMS,
   DEFAULT_ROCK_FIELD_PARAMS,
+  DEFAULT_STAR_SKY_PARAMS,
   type FishScaleParams,
   type GrassFieldParams,
   type RockFieldParams,
+  type StarSkyParams,
 } from './types'
 import {
   FIRE_POSITION,
@@ -69,10 +69,6 @@ export class PlaygroundRuntime {
     seedCursor,
     DEFAULT_ROCK_FIELD_PARAMS,
   )
-  private readonly flowerFieldSample = new FlowerFieldSample(
-    getPreparedFlowerSurface(),
-    seedCursor,
-  )
   private readonly fireParticleSample = new FireParticleSample(
     getPreparedFireSurface(),
     seedCursor,
@@ -80,6 +76,7 @@ export class PlaygroundRuntime {
   private readonly starSkySample = new StarSkySample(
     getPreparedStarSurface(),
     seedCursor,
+    DEFAULT_STAR_SKY_PARAMS,
   )
   private readonly controller = new ThirdPersonController()
   private readonly shotAudio = new Audio('/gun_shot.mp3')
@@ -109,6 +106,7 @@ export class PlaygroundRuntime {
   private fishScaleParams: FishScaleParams = { ...DEFAULT_FISH_SCALE_PARAMS }
   private grassFieldParams: GrassFieldParams = { ...DEFAULT_GRASS_FIELD_PARAMS }
   private rockFieldParams: RockFieldParams = { ...DEFAULT_ROCK_FIELD_PARAMS }
+  private starSkyParams: StarSkyParams = { ...DEFAULT_STAR_SKY_PARAMS }
   private zoomDistance = PLAYGROUND_ZOOM.current
 
   constructor(host: HTMLElement) {
@@ -137,7 +135,6 @@ export class PlaygroundRuntime {
     this.scene.add(this.grassFieldSample.group)
     this.scene.add(this.fishScaleSample.group)
     this.scene.add(this.rockFieldSample.group)
-    this.scene.add(this.flowerFieldSample.group)
     this.scene.add(this.starSkySample.group)
 
     // Position the campfire on the ground surface.
@@ -197,12 +194,13 @@ export class PlaygroundRuntime {
     this.rockFieldSample.setParams(this.rockFieldParams)
   }
 
-  setFlowerLayoutDensity(density: number): void {
-    this.flowerFieldSample.setLayoutDensity(density)
-  }
-
   setFireWallParams(params: Partial<FireWallParams>): void {
     this.fireParticleSample.setParams(params)
+  }
+
+  setStarSkyParams(params: Partial<StarSkyParams>): void {
+    this.starSkyParams = { ...this.starSkyParams, ...params }
+    this.starSkySample.setParams(this.starSkyParams)
   }
 
   clearFishWounds(): void {
@@ -246,7 +244,6 @@ export class PlaygroundRuntime {
     this.scene.remove(this.grassFieldSample.group)
     this.scene.remove(this.fishScaleSample.group)
     this.scene.remove(this.rockFieldSample.group)
-    this.scene.remove(this.flowerFieldSample.group)
     this.scene.remove(this.starSkySample.group)
     this.scene.remove(this.fireParticleSample.group)
     this.scene.remove(this.controller.player.group)
@@ -254,7 +251,6 @@ export class PlaygroundRuntime {
     this.fishScaleSample.dispose()
     this.grassFieldSample.dispose()
     this.rockFieldSample.dispose()
-    this.flowerFieldSample.dispose()
     this.starSkySample.dispose()
     this.fireParticleSample.dispose()
     this.controller.player.dispose()
@@ -314,9 +310,6 @@ export class PlaygroundRuntime {
 
   private getGroundHeightAtWorld = (x: number, z: number): number =>
     this.grassFieldSample.getGroundHeightAtWorld(x, z)
-
-  private getDisturbanceAtWorld = (x: number, z: number): number =>
-    this.grassFieldSample.getDisturbanceAtWorld(x, z)
 
   private handlePointerDown = (event: PointerEvent): void => {
     this.canvas.focus()
@@ -579,7 +572,6 @@ export class PlaygroundRuntime {
     // Grass update first so later samples read the current flattened field state.
     this.grassFieldSample.update(elapsed)
     this.rockFieldSample.update(this.getGroundHeightAtWorld)
-    this.flowerFieldSample.update(elapsed, this.getGroundHeightAtWorld, this.getDisturbanceAtWorld)
     this.fireParticleSample.update(elapsed)
     this.starSkySample.update(elapsed)
     this.skybox.position.copy(this.camera.position)

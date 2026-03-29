@@ -29,7 +29,7 @@ export type GrassFieldParams = {
   trampleDepth: number
   wind: number
   recoveryRate: number
-  /** Multiplier on layout width — higher fits more blade glyphs per slot (same knob as rocks/flowers). */
+  /** Multiplier on layout width — higher fits more blade glyphs per slot. */
   layoutDensity: number
 }
 
@@ -40,6 +40,16 @@ export const DEFAULT_GRASS_FIELD_PARAMS: GrassFieldParams = {
   wind: 0.62,
   recoveryRate: 0.8,
   layoutDensity: 8,
+}
+
+export type StarSkyParams = {
+  layoutDensity: number
+  recoveryRate: number
+}
+
+export const DEFAULT_STAR_SKY_PARAMS: StarSkyParams = {
+  layoutDensity: 1,
+  recoveryRate: 0.38,
 }
 
 export type RockFieldParams = {

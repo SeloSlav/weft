@@ -41,6 +41,19 @@ type SurfaceFrame = {
   normal: THREE.Vector3
 }
 
+function uhash(n: number): number {
+  n = (n ^ 61) ^ (n >>> 16)
+  n = Math.imul(n, 0x45d9f3b)
+  n ^= n >>> 4
+  n = Math.imul(n, 0xd3833e2d)
+  n ^= n >>> 15
+  return (n >>> 0) / 4294967296
+}
+
+function glyphHash(a: number, b: number, c = 0): number {
+  return uhash(a ^ Math.imul(b, 0x9e3779b9) ^ Math.imul(c, 0x85ebca6b))
+}
+
 function createScaleGeometry(): THREE.ExtrudeGeometry {
   const shape = new THREE.Shape()
   shape.moveTo(0, 0.58)
@@ -331,11 +344,9 @@ export class FishScaleSample {
   }
 
   private getSlotMaxWidth(slot: SurfaceLayoutSlot, elapsedTime: number): number {
-    const damage = this.damageAt(slot.spanCenter, slot.lineCoord)
     const surface = this.sampleSurface(slot.spanCenter, slot.lineCoord, elapsedTime)
     const arcWorld = slot.spanSize * Math.max(1, surface.tangentX.length())
-    const widthMultiplier = THREE.MathUtils.lerp(1, this.params.woundNarrow, damage)
-    return arcWorld * LAYOUT_PX_PER_WORLD * widthMultiplier
+    return arcWorld * LAYOUT_PX_PER_WORLD
   }
 
   private projectLine(
@@ -355,6 +366,9 @@ export class FishScaleSample {
       const x = slot.spanStart + t01 * slot.spanSize
       const y = slot.lineCoord
       const localDamage = this.damageAt(x, y)
+      const localCoverage = THREE.MathUtils.lerp(1, this.params.woundNarrow, localDamage)
+      const hashPresence = glyphHash(identity, slot.row * 131 + slot.sector, k)
+      if (hashPresence > localCoverage) continue
       const frame = this.sampleSurface(x, y, elapsedTime)
       const scaleWidth = 0.145 + meta.widthBias + (identity % 5) * 0.012
       const scaleHeight = 0.2 + meta.heightBias + (identity % 7) * 0.014

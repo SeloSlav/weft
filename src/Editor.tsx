@@ -4,6 +4,7 @@ import {
   DEFAULT_FISH_SCALE_PARAMS,
   DEFAULT_GRASS_FIELD_PARAMS,
   DEFAULT_ROCK_FIELD_PARAMS,
+  DEFAULT_STAR_SKY_PARAMS,
 } from "./playground/types";
 
 type ControlSectionProps = {
@@ -73,9 +74,14 @@ export function Editor() {
   const [rockSizeScale, setRockSizeScale] = useState(
     DEFAULT_ROCK_FIELD_PARAMS.sizeScale,
   );
-  const [flowerDensity, setFlowerDensity] = useState(0);
   const [fireRecoveryRate, setFireRecoveryRate] = useState(0.35);
   const [fireHoleSize, setFireHoleSize] = useState(1.0);
+  const [starLayoutDensity, setStarLayoutDensity] = useState(
+    DEFAULT_STAR_SKY_PARAMS.layoutDensity,
+  );
+  const [starRecoveryRate, setStarRecoveryRate] = useState(
+    DEFAULT_STAR_SKY_PARAMS.recoveryRate,
+  );
 
   useEffect(() => {
     const host = hostRef.current;
@@ -110,8 +116,11 @@ export function Editor() {
           layoutDensity: grassLayoutDensity,
         });
         runtime.setRockFieldParams({ layoutDensity: rockLayoutDensity, sizeScale: rockSizeScale });
-        runtime.setFlowerLayoutDensity(flowerDensity);
         runtime.setFireWallParams({ recoveryRate: fireRecoveryRate, holeSize: fireHoleSize });
+        runtime.setStarSkyParams({
+          layoutDensity: starLayoutDensity,
+          recoveryRate: starRecoveryRate,
+        });
         setRuntimeState("ready");
       })
       .catch((error: unknown) => {
@@ -175,12 +184,15 @@ export function Editor() {
   }, [rockLayoutDensity, rockSizeScale]);
 
   useEffect(() => {
-    runtimeRef.current?.setFlowerLayoutDensity(flowerDensity);
-  }, [flowerDensity]);
-
-  useEffect(() => {
     runtimeRef.current?.setFireWallParams({ recoveryRate: fireRecoveryRate, holeSize: fireHoleSize });
   }, [fireRecoveryRate, fireHoleSize]);
+
+  useEffect(() => {
+    runtimeRef.current?.setStarSkyParams({
+      layoutDensity: starLayoutDensity,
+      recoveryRate: starRecoveryRate,
+    });
+  }, [starLayoutDensity, starRecoveryRate]);
 
   return (
     <div className="app-shell">
@@ -422,25 +434,6 @@ export function Editor() {
                   </label>
                 </ControlSection>
 
-                <ControlSection
-                  title="Flower Field Controls"
-                  summary="Density"
-                >
-                  <label className="control">
-                    <span>
-                      Glyphs per slot ({flowerDensity.toFixed(2)}x) — how many flowers fit in each layout cell
-                    </span>
-                    <input
-                      type="range"
-                      min={0}
-                      max={12}
-                      step={0.05}
-                      value={flowerDensity}
-                      onChange={(e) => setFlowerDensity(Number(e.target.value))}
-                    />
-                  </label>
-                </ControlSection>
-
                 <ControlSection title="Fire Wall Controls" summary="Shoot the wall to punch holes">
                   <label className="control-row">
                     <span>
@@ -466,6 +459,35 @@ export function Editor() {
                       step={0.05}
                       value={fireHoleSize}
                       onChange={(e) => setFireHoleSize(Number(e.target.value))}
+                    />
+                  </label>
+                </ControlSection>
+
+                <ControlSection title="Star Sky Controls" summary="Wound density and recovery">
+                  <label className="control-row">
+                    <span>
+                      Layout density ({starLayoutDensity.toFixed(2)}x) — how many stars fit in each sky slot
+                    </span>
+                    <input
+                      type="range"
+                      min={0.2}
+                      max={2.5}
+                      step={0.05}
+                      value={starLayoutDensity}
+                      onChange={(e) => setStarLayoutDensity(Number(e.target.value))}
+                    />
+                  </label>
+                  <label className="control-row">
+                    <span>
+                      Recovery rate ({starRecoveryRate.toFixed(2)}) — how fast sky wounds settle
+                    </span>
+                    <input
+                      type="range"
+                      min={0.05}
+                      max={0.8}
+                      step={0.01}
+                      value={starRecoveryRate}
+                      onChange={(e) => setStarRecoveryRate(Number(e.target.value))}
                     />
                   </label>
                 </ControlSection>
