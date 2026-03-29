@@ -145,7 +145,7 @@ export function getPreparedMySurface() {
             />
           </div>
           <p className="landing__demo-caption">
-            The same controls can tune grass, rock, and star densities live without switching to a different
+            The same controls can tune grass and doodad densities live without switching to a different
             placement workflow for each surface.
           </p>
         </section>

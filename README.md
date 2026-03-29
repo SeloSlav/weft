@@ -2,6 +2,9 @@
 
 Pretext Weft is a prototype surface-layout engine for interactive 3D built around one practical idea: reactive surfaces should not need one system for placement and another for gameplay response. Instead of scattering meshes with noise and then layering separate damage, growth, weather, or state logic on top, it treats a surface like a page: Pretext measures a glyph stream, breaks it into rows and sectors, and the renderer projects the result back into the world.
 
+- Live site: [pretext-weft.vercel.app](https://pretext-weft.vercel.app)
+- Video demo: [x.com/SeloSlav/status/2038245103643333014](https://x.com/SeloSlav/status/2038245103643333014)
+
 ![Playground screenshot](public/readme-playground-screenshot.png)
 
 The current site has two faces:
