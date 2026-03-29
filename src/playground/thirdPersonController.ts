@@ -116,6 +116,7 @@ export class PlayerActor {
     }),
   )
   private readonly visualRoot = new THREE.Group()
+  private readonly fallbackVisual = this.createFallbackVisual()
   private readonly loader = new GLTFLoader()
   private readonly geometries = new Set<THREE.BufferGeometry>()
   private readonly materials = new Set<THREE.Material>([this.aimRing.material, this.aimCore.material])
@@ -133,6 +134,7 @@ export class PlayerActor {
     this.reticle.renderOrder = 999
     this.reticle.position.set(0, 0, -RETICLE_LOCAL_DISTANCE)
     this.reticle.scale.setScalar(RETICLE_LOCAL_SCALE)
+    this.visualRoot.add(this.fallbackVisual)
     this.group.add(this.visualRoot)
     this.loadModel()
   }
@@ -211,6 +213,7 @@ export class PlayerActor {
       })
 
       this.visualRoot.add(model)
+      this.fallbackVisual.visible = false
       this.visualRoot.scale.setScalar(PLAYER_VISUAL_SCALE)
       this.mixer = new THREE.AnimationMixer(model)
 
@@ -254,6 +257,69 @@ export class PlayerActor {
     }
 
     this.activeAction = nextAction
+  }
+
+  private createFallbackVisual(): THREE.Group {
+    const root = new THREE.Group()
+
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: '#4e555d',
+      roughness: 0.72,
+      metalness: 0.35,
+    })
+    const glowMat = new THREE.MeshStandardMaterial({
+      color: '#6ef2ff',
+      emissive: '#39ddec',
+      emissiveIntensity: 1.4,
+      roughness: 0.2,
+      metalness: 0.1,
+    })
+
+    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 0.72, 6, 10), bodyMat)
+    torso.position.set(0, 1.02, 0)
+    root.add(torso)
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 18, 14), bodyMat)
+    head.position.set(0, 1.82, 0.02)
+    root.add(head)
+
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.14), glowMat)
+    visor.position.set(0, 1.82, 0.17)
+    root.add(visor)
+
+    const leftLeg = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.52, 4, 8), bodyMat)
+    leftLeg.position.set(-0.14, 0.36, 0)
+    leftLeg.rotation.z = -0.06
+    root.add(leftLeg)
+
+    const rightLeg = leftLeg.clone()
+    rightLeg.position.x = 0.14
+    rightLeg.rotation.z = 0.06
+    root.add(rightLeg)
+
+    const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.42, 4, 8), bodyMat)
+    leftArm.position.set(-0.42, 1.1, 0)
+    leftArm.rotation.z = Math.PI * 0.22
+    root.add(leftArm)
+
+    const rightArm = leftArm.clone()
+    rightArm.position.x = 0.42
+    rightArm.rotation.z = -Math.PI * 0.22
+    root.add(rightArm)
+
+    const chestGlow = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.2, 0.08), glowMat)
+    chestGlow.position.set(0, 1.08, 0.25)
+    root.add(chestGlow)
+
+    root.traverse((child) => {
+      const mesh = child as THREE.Mesh
+      if (!mesh.isMesh) return
+      this.geometries.add(mesh.geometry)
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+      mats.forEach((material) => this.materials.add(material))
+    })
+
+    return root
   }
 }
 
