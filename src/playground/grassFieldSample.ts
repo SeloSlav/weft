@@ -185,11 +185,23 @@ function createGroundTexture(): THREE.CanvasTexture {
   return texture
 }
 
-function fieldNoise(x: number, z: number): number {
-  const a = Math.sin(x * 0.21 + z * 0.07)
-  const b = Math.sin(x * 0.08 - z * 0.17 + 1.3)
-  const c = Math.sin((x + z) * 0.05 - 0.9)
-  return THREE.MathUtils.clamp(0.5 + a * 0.22 + b * 0.18 + c * 0.1, 0, 1)
+// Integer hash — avalanches all bits so any two nearby inputs look unrelated.
+// This is the core of the "pretext noise" idea: the glyph stream itself is the
+// entropy source, not a periodic sine field.
+function uhash(n: number): number {
+  n = (n ^ 61) ^ (n >>> 16)
+  n = Math.imul(n, 0x45d9f3b)
+  n ^= n >>> 4
+  n = Math.imul(n, 0xd3833e2d)
+  n ^= n >>> 15
+  return (n >>> 0) / 4294967296
+}
+
+// Combine up to four integer keys into one [0,1) value.
+// Using code + row + sector + blade index gives each instance a unique,
+// non-periodic hash with no visible grid structure.
+function glyphHash(a: number, b: number, c = 0, d = 0): number {
+  return uhash(a ^ Math.imul(b, 0x9e3779b9) ^ Math.imul(c, 0x85ebca6b) ^ Math.imul(d, 0xc2b2ae35))
 }
 
 function lineSignature(text: string): number {
@@ -201,10 +213,48 @@ function lineSignature(text: string): number {
   return (hash >>> 0) / 4294967295
 }
 
+// Per-blade scatter: mixes code point, line hash, and blade index through
+// independent hash channels so lateral and depth jitter are uncorrelated.
 function glyphScatter(code: number, lineSeed: number, index: number): number {
   const waveA = Math.sin(code * 0.073 + lineSeed * 6.1 + index * 1.7)
   const waveB = Math.sin(code * 0.031 + lineSeed * 11.3 + index * 0.83)
   return THREE.MathUtils.clamp(waveA * 0.7 + waveB * 0.3, -1, 1)
+}
+
+// Large-scale organic variation — replaces the old sine fieldNoise.
+// Uses two independent hash channels so X and Z variation are uncorrelated,
+// then blends them at different scales to mimic multi-octave noise without
+// any periodicity. The "world cell" granularity is deliberately coarse so
+// patches of density/colour emerge at a readable scale.
+function organicField(x: number, z: number): number {
+  // Coarse cell — large patches
+  const cx = Math.floor(x * 0.18)
+  const cz = Math.floor(z * 0.18)
+  const fx = (x * 0.18) - cx
+  const fz = (z * 0.18) - cz
+  // Smooth-step the fractional parts for C1 continuity between cells
+  const ux = fx * fx * (3 - 2 * fx)
+  const uz = fz * fz * (3 - 2 * fz)
+  const v00 = uhash(cx * 1619 + cz * 31337)
+  const v10 = uhash((cx + 1) * 1619 + cz * 31337)
+  const v01 = uhash(cx * 1619 + (cz + 1) * 31337)
+  const v11 = uhash((cx + 1) * 1619 + (cz + 1) * 31337)
+  const coarse = v00 + ux * (v10 - v00) + uz * (v01 - v00) + ux * uz * (v00 - v10 - v01 + v11)
+
+  // Fine cell — small ripples
+  const cx2 = Math.floor(x * 0.55)
+  const cz2 = Math.floor(z * 0.55)
+  const fx2 = (x * 0.55) - cx2
+  const fz2 = (z * 0.55) - cz2
+  const ux2 = fx2 * fx2 * (3 - 2 * fx2)
+  const uz2 = fz2 * fz2 * (3 - 2 * fz2)
+  const w00 = uhash(cx2 * 7919 + cz2 * 104729)
+  const w10 = uhash((cx2 + 1) * 7919 + cz2 * 104729)
+  const w01 = uhash(cx2 * 7919 + (cz2 + 1) * 104729)
+  const w11 = uhash((cx2 + 1) * 7919 + (cz2 + 1) * 104729)
+  const fine = w00 + ux2 * (w10 - w00) + uz2 * (w01 - w00) + ux2 * uz2 * (w00 - w10 - w01 + w11)
+
+  return THREE.MathUtils.clamp(coarse * 0.65 + fine * 0.35, 0, 1)
 }
 
 export class GrassFieldSample {
@@ -429,33 +479,34 @@ export class GrassFieldSample {
         if (instanceIndex >= MAX_INSTANCES) break
 
         const pretextScatter = glyphScatter(code, lineSeed, k * BLADES_PER_SLOT + blade)
-        const fieldRandom = fieldNoise(
-          slot.spanCenter + k * 0.37 + blade * 1.9 + pretextScatter * 0.9,
-          slot.lineCoord + blade * 0.23 + lineDepthShift,
-        )
-        const t01 = (k + 0.18 + blade * 0.34) / (n + BLADES_PER_SLOT * 0.2)
-        const clusteredT = THREE.MathUtils.clamp(
-          t01 +
-            pretextScatter * lineClusterStrength +
-            Math.sin((t01 + lineSeed * 0.4) * Math.PI * 2) * 0.02,
-          0.04,
-          0.96,
+        // Per-blade hash: independent channels for lateral and depth so the two
+        // axes of jitter are completely uncorrelated — no diagonal banding.
+        const hashLat = glyphHash(code, slot.row, k, blade)
+        const hashDep = glyphHash(code + 1, slot.sector, k, blade ^ 0xff)
+        const hashOrganic = glyphHash(code + 2, slot.row ^ slot.sector, k + blade * 31)
+
+        // Replace even t01 spacing with hash-driven placement within the slot.
+        // Blades no longer form a regular comb — they bunch and gap naturally.
+        const t01 = THREE.MathUtils.clamp(
+          (k + hashLat * 0.9 + 0.05) / (n + 0.1) +
+            pretextScatter * lineClusterStrength,
+          0.02, 0.98,
         )
         const x =
           slot.spanStart +
-          clusteredT * slot.spanSize +
+          t01 * slot.spanSize +
           lineLateralShift +
-          (blade - 0.5) * slot.sectorStep * 0.14 +
-          (fieldRandom - 0.5) * slot.sectorStep * 0.2 +
+          (hashLat - 0.5) * slot.sectorStep * 0.38 +
           pretextScatter * slot.sectorStep * 0.11
+        // Depth jitter is now per-blade via hash, not shared across the line.
         const zJitter =
-          (blade - 0.5) * rowStep * 0.24 +
-          (fieldRandom - 0.5) * rowStep * 0.18 +
+          (hashDep - 0.5) * rowStep * 0.52 +
           pretextScatter * rowStep * 0.12
         const localZ = slot.lineCoord + lineDepthShift + zJitter
         const localDisturbance = this.disturbanceAt(x, localZ)
         const baseY = this.groundY(x, localZ)
-        const organicNoise = fieldNoise(x, localZ)
+        // organicNoise: world-scale variation from the hash grid, not sine waves.
+        const organicNoise = organicField(x + hashOrganic * 0.4, localZ + hashOrganic * 0.3)
 
         let awayX = 0
         let awayZ = 1

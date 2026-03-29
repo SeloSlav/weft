@@ -16,10 +16,18 @@ const LAYOUT_PX_PER_WORLD = 6.5
 const tmpColor = new THREE.Color()
 const dummy = new THREE.Object3D()
 
-function fieldNoise(x: number, z: number): number {
-  const a = Math.sin(x * 0.31 + z * 0.13)
-  const b = Math.sin(x * 0.11 - z * 0.27 + 2.1)
-  return THREE.MathUtils.clamp(0.5 + a * 0.28 + b * 0.22, 0, 1)
+// Same integer hash as grass — avalanches all bits, no periodicity.
+function uhash(n: number): number {
+  n = (n ^ 61) ^ (n >>> 16)
+  n = Math.imul(n, 0x45d9f3b)
+  n ^= n >>> 4
+  n = Math.imul(n, 0xd3833e2d)
+  n ^= n >>> 15
+  return (n >>> 0) / 4294967296
+}
+
+function glyphHash(a: number, b: number, c = 0, d = 0): number {
+  return uhash(a ^ Math.imul(b, 0x9e3779b9) ^ Math.imul(c, 0x85ebca6b) ^ Math.imul(d, 0xc2b2ae35))
 }
 
 function lineSignature(text: string): number {
@@ -29,6 +37,35 @@ function lineSignature(text: string): number {
     hash = Math.imul(hash, 16777619)
   }
   return (hash >>> 0) / 4294967296
+}
+
+// Two-octave value noise using the same hash grid — no sine waves, no periodicity.
+function organicField(x: number, z: number): number {
+  const cx = Math.floor(x * 0.22)
+  const cz = Math.floor(z * 0.22)
+  const fx = (x * 0.22) - cx
+  const fz = (z * 0.22) - cz
+  const ux = fx * fx * (3 - 2 * fx)
+  const uz = fz * fz * (3 - 2 * fz)
+  const v00 = uhash(cx * 1619 + cz * 31337)
+  const v10 = uhash((cx + 1) * 1619 + cz * 31337)
+  const v01 = uhash(cx * 1619 + (cz + 1) * 31337)
+  const v11 = uhash((cx + 1) * 1619 + (cz + 1) * 31337)
+  const coarse = v00 + ux * (v10 - v00) + uz * (v01 - v00) + ux * uz * (v00 - v10 - v01 + v11)
+
+  const cx2 = Math.floor(x * 0.7)
+  const cz2 = Math.floor(z * 0.7)
+  const fx2 = (x * 0.7) - cx2
+  const fz2 = (z * 0.7) - cz2
+  const ux2 = fx2 * fx2 * (3 - 2 * fx2)
+  const uz2 = fz2 * fz2 * (3 - 2 * fz2)
+  const w00 = uhash(cx2 * 7919 + cz2 * 104729)
+  const w10 = uhash((cx2 + 1) * 7919 + cz2 * 104729)
+  const w01 = uhash(cx2 * 7919 + (cz2 + 1) * 104729)
+  const w11 = uhash((cx2 + 1) * 7919 + (cz2 + 1) * 104729)
+  const fine = w00 + ux2 * (w10 - w00) + uz2 * (w01 - w00) + ux2 * uz2 * (w00 - w10 - w01 + w11)
+
+  return THREE.MathUtils.clamp(coarse * 0.6 + fine * 0.4, 0, 1)
 }
 
 // Each glyph gets a stable size identity from its code point.
@@ -146,17 +183,22 @@ export class RockFieldSample {
       const glyph = glyphs[k]!
       const code = glyph.codePointAt(0) ?? 0
 
-      // Scatter position within the slot, anchored to glyph index
-      const t01 = (k + 0.5) / n
-      const scatter = Math.sin(code * 0.091 + lineSeed * 7.3 + k * 1.4) * 0.5
+      // Independent hash channels per rock — lateral and depth are uncorrelated.
+      const hashLat = glyphHash(code, slot.row, k)
+      const hashDep = glyphHash(code + 1, slot.sector, k ^ 0xab)
+      const hashOrg = glyphHash(code + 2, slot.row ^ slot.sector, k + 17)
+
+      // Hash-driven lateral position breaks the even t01 comb.
+      const t01 = THREE.MathUtils.clamp((k + hashLat * 0.85 + 0.08) / (n + 0.1), 0.02, 0.98)
       const x =
         slot.spanStart +
         t01 * slot.spanSize +
         lineLateralShift +
-        scatter * slot.sectorStep * 0.18
-      const noise = fieldNoise(x, slot.lineCoord)
-      const zJitter = (noise - 0.5) * rowStep * 0.32 + lineDepthShift
+        (hashLat - 0.5) * slot.sectorStep * 0.42
+      // Per-rock depth jitter via its own hash channel — no shared line shift.
+      const zJitter = (hashDep - 0.5) * rowStep * 0.58 + lineDepthShift
       const z = slot.lineCoord + zJitter
+      const noise = organicField(x + hashOrg * 0.3, z + hashOrg * 0.2)
 
       const groundY = getGroundHeight(x, z)
       const sizeBase = glyphSizeIdentity(code)
