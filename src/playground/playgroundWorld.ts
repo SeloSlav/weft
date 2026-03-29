@@ -157,7 +157,7 @@ export const BREACHABLE_FACADE_ZONES: BreachZone[] = [
   },
   {
     kind: 'ivy',
-    bounds: { minX: -12.98, maxX: -11.82, minZ: -2.38, maxZ: 6.38, maxY: 6.9 },
+    bounds: { minX: -13.24, maxX: -11.56, minZ: -2.72, maxZ: 6.72, maxY: 6.9 },
   },
   {
     kind: 'neon',
