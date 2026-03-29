@@ -101,6 +101,123 @@ body,
   border-color: rgba(126, 184, 255, 0.28);
 }
 
+/* --- Demo (Moby-Dick book scene) --- */
+.demo-shell {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.demo-viewport-host {
+  position: absolute;
+  inset: 0;
+}
+
+.demo-viewport-host .canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+}
+
+.demo-hint {
+  pointer-events: none;
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  max-width: min(420px, 92vw);
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(6, 10, 18, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #c8d4e6;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  z-index: 2;
+}
+
+.demo-hint__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.demo-hint strong {
+  display: block;
+  color: #eef4fc;
+  font-size: 0.95rem;
+}
+
+.demo-hint__close {
+  pointer-events: auto;
+  flex-shrink: 0;
+  margin: -4px -6px 0 0;
+  padding: 2px 8px;
+  line-height: 1;
+  font-size: 1.25rem;
+  color: rgba(238, 244, 252, 0.75);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.demo-hint__close:hover {
+  color: #eef4fc;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.demo-hint__close:focus-visible {
+  outline: 2px solid rgba(126, 184, 255, 0.6);
+  outline-offset: 2px;
+}
+
+.demo-hint__keys {
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+
+.demo-hint__keys li {
+  margin: 4px 0;
+}
+
+.demo-hint kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-family: ui-monospace, monospace;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.demo-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(6, 10, 18, 0.72);
+  color: #b8c4d8;
+  font-size: 0.88rem;
+  z-index: 3;
+}
+
+.demo-status strong {
+  color: #eef4fc;
+  font-size: 1rem;
+}
+
 .site-nav__meta {
   display: flex;
   align-items: center;

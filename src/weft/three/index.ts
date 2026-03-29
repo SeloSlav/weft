@@ -63,3 +63,12 @@ export {
 } from './presets/starSky.ts'
 export type { CreateStarSkyEffectOptions, StarSkyParams } from './presets/starSky.ts'
 export { getPreparedStarSurface } from './presets/starSkySource.ts'
+
+export {
+  BookPageEffect,
+  createBookPageEffect,
+  DEFAULT_BOOK_PAGE_PARAMS,
+} from './presets/bookPage.ts'
+export type { BookPageParams, CreateBookPageEffectOptions } from './presets/bookPage.ts'
+export { createBookPageSurface } from './presets/bookPageSource.ts'
+export type { BookGlyphMeta } from './presets/bookPageSource.ts'

@@ -87,6 +87,7 @@ function clipWithoutBoneScaleTracks(clip: THREE.AnimationClip): THREE.AnimationC
   return stripped
 }
 
+/** GLB-backed character used by the playground and the book demo scene. */
 export class PlayerActor {
   readonly group = new THREE.Group()
   readonly reticle = new THREE.Group()
