@@ -565,7 +565,7 @@ export function Editor() {
                     <input
                       type="range"
                       min={0.005}
-                      max={0.35}
+                      max={2.0}
                       step={0.005}
                       value={fireRecoveryRate}
                       onChange={(e) => setFireRecoveryRate(Number(e.target.value))}

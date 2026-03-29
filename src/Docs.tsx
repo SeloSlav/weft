@@ -2,6 +2,8 @@ type DocsProps = {
   onEnterEditor: () => void
 }
 
+import weftGuideUrl from '../weft.md?url'
+
 const API_GROUPS = [
   {
     title: 'Core helpers',
@@ -126,6 +128,27 @@ const grass = createGrassEffect({
 scene.add(grass.group)`,
   },
   {
+    title: 'Where Weft goes in your app',
+    code: `const scene = new THREE.Scene()
+
+const grass = createGrassEffect({
+  seedCursor,
+  surface,
+  initialParams: DEFAULT_GRASS_FIELD_PARAMS,
+})
+
+scene.add(grass.group)
+
+function update(dt: number) {
+  // Your game/runtime code stays here.
+  // Drive Weft params, damage, or semantic state from gameplay.
+}
+
+function render() {
+  renderer.render(scene, camera)
+}`,
+  },
+  {
     title: 'Semantic palette source',
     code: `import { createSurfaceSource } from 'weft-sdk/three'
 
@@ -171,9 +194,26 @@ export function Docs({ onEnterEditor }: DocsProps) {
         <p className="docs__lead">
           This page documents the current SDK surface that ships in the package today. It is guide-first,
           but every section maps back to the real exports from <code className="docs__code-inline">weft-sdk/three</code>.
-          The live playground is an edge-of-town intersection: shutter and ivy facades, a neon sign wall, roadside
-          grass, rubble in a corner lot, and star sky — all driven by the same layout presets.
+          The main value is not just that you can place dense surfaces. It is that the same authored
+          surface can handle placement, damage, thinning, recovery, and state change under one deterministic
+          model.
         </p>
+        <div className="docs__callout docs__callout--agent">
+          <strong className="docs__callout-title">AI agent guide</strong>
+          <p className="docs__callout-text">
+            Need a high-signal file for Claude, Cursor, or other coding agents? Read{' '}
+            <a href={weftGuideUrl} target="_blank" rel="noreferrer">
+              <code className="docs__code-inline">weft.md</code>
+            </a>
+            . It is written as copy-pasteable integration context. You can paste it directly into a Cursor
+            rule, Claude project knowledge/instructions, or another agent setup file so codegen tools have
+            the right mental model, real exports, and integration guidance for Weft.
+          </p>
+          <p className="docs__callout-text">
+            If you are using an AI coding assistant, this is the file to hand it before asking for examples,
+            integration help, architecture suggestions, or new surface ideas.
+          </p>
+        </div>
 
         <div className="docs__actions">
           <button type="button" className="btn btn--primary" onClick={onEnterEditor}>
@@ -186,6 +226,7 @@ export function Docs({ onEnterEditor }: DocsProps) {
 
         <nav className="docs__toc" aria-label="Docs sections">
           <a className="docs__toc-link" href="#quick-start">Quick start</a>
+          <a className="docs__toc-link" href="#where-it-fits">Where it fits</a>
           <a className="docs__toc-link" href="#concepts">Concepts</a>
           <a className="docs__toc-link" href="#presets">Preset guides</a>
           <a className="docs__toc-link" href="#api-reference">API reference</a>
@@ -196,7 +237,8 @@ export function Docs({ onEnterEditor }: DocsProps) {
           <h2 className="docs__section-title">Quick start</h2>
           <p className="docs__text">
             Install <code className="docs__code-inline">weft-sdk</code> with <code className="docs__code-inline">three</code>,
-            then start by creating a measured source and feed it into a preset factory.
+            then start by creating a measured source and feeding it into a preset factory. The preset gives
+            you a Three.js group that you mount into your own scene like any other scene object.
           </p>
           <div className="docs__code-block">
             <p className="docs__code-label">Install</p>
@@ -224,6 +266,49 @@ const grass = createGrassEffect({
 })
 
 scene.add(grass.group)`}</pre>
+          </div>
+        </section>
+
+        <section id="where-it-fits" className="docs__section">
+          <h2 className="docs__section-title">Where Weft fits in your app</h2>
+          <p className="docs__text">
+            A common beginner question is "where does this actually go?" The short answer is: Weft plugs
+            into your existing scene and runtime. It does not replace your camera, renderer, world update
+            loop, ECS, player controller, or gameplay architecture.
+          </p>
+          <div className="docs__concept-grid">
+            <article className="docs__concept-card">
+              <h3 className="docs__card-title">1. Create the effect</h3>
+              <p className="docs__card-text">
+                Build a source with <code className="docs__code-inline">createSurfaceSource()</code>, then
+                create a preset effect such as <code className="docs__code-inline">createGrassEffect()</code>.
+              </p>
+            </article>
+            <article className="docs__concept-card">
+              <h3 className="docs__card-title">2. Mount it into your scene</h3>
+              <p className="docs__card-text">
+                Each preset exposes a group. Add that group to your Three.js scene the same way you would
+                add any mesh, light, or instanced object.
+              </p>
+            </article>
+            <article className="docs__concept-card">
+              <h3 className="docs__card-title">3. Drive it from gameplay</h3>
+              <p className="docs__card-text">
+                Your app still owns player input, collisions, world state, and timing. Weft is the surface
+                layer that responds to those signals through params, damage, recovery, and semantic state.
+              </p>
+            </article>
+          </div>
+          <div className="docs__callout">
+            <strong className="docs__callout-title">What Weft handles vs. what you handle</strong>
+            <p className="docs__callout-text">
+              Weft handles source preparation, deterministic layout, thinning, recovery helpers, and
+              world-space projection for reactive surfaces.
+            </p>
+            <p className="docs__callout-text">
+              Your app handles scene setup, camera control, render loop ownership, collision/gameplay rules,
+              save state, networking, and any broader engine architecture around those surfaces.
+            </p>
           </div>
         </section>
 
@@ -265,6 +350,9 @@ scene.add(grass.group)`}</pre>
               The main primitives behind that model are <code className="docs__code-inline">createSurfaceSource()</code>,{' '}
               <code className="docs__code-inline">recoverableDamage()</code>, and the layout helpers in{' '}
               <code className="docs__code-inline">weft-sdk/three</code>.
+            </p>
+            <p className="docs__callout-text">
+              If you are evaluating fit, a good rule of thumb is this: Weft is strongest when world scatter can be treated as a deterministic reactive surface: ground cover, facade layers, rubble bands, crops, shell-like clutter, and other distributions that benefit from shared placement, thinning, recovery, and state change.
             </p>
           </div>
         </section>
@@ -330,6 +418,15 @@ scene.add(grass.group)`}</pre>
                 <pre className="docs__pre">{example.code}</pre>
               </div>
             ))}
+          </div>
+          <div className="docs__actions docs__actions--final-cta">
+            <p className="docs__text docs__text--final-cta">
+              Thanks for reading along. Open the playground to see the same ideas running under one surface
+              runtime.
+            </p>
+            <button type="button" className="btn btn--primary docs__final-cta-btn" onClick={onEnterEditor}>
+              Open playground and explore the SDK
+            </button>
           </div>
         </section>
       </div>
