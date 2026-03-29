@@ -21,8 +21,44 @@ const tmpPos = new THREE.Vector3()
 const tmpColor = new THREE.Color()
 const tmpLocalPoint = new THREE.Vector3()
 const dummy = new THREE.Object3D()
-const groundBaseColor = new THREE.Color('#8cab72')
-const groundDarkColor = new THREE.Color('#587044')
+
+const STATE_BLADE_BASE = [
+  new THREE.Color('#4d9e36'),
+  new THREE.Color('#c7a43a'),
+  new THREE.Color('#5c2a77'),
+  new THREE.Color('#756f63'),
+] as const
+const STATE_BLADE_TIP = [
+  new THREE.Color('#b9f27f'),
+  new THREE.Color('#efd277'), 
+  new THREE.Color('#b374ff'),
+  new THREE.Color('#aca59a'),
+] as const
+const STATE_GROUND_TINT = [
+  new THREE.Color('#7ca655'),
+  new THREE.Color('#9a7d44'),
+  new THREE.Color('#55316d'),
+  new THREE.Color('#8a8175'),
+] as const
+const STATE_GROUND_BASE = [
+  new THREE.Color('#7fa154'),
+  new THREE.Color('#8b6f31'),
+  new THREE.Color('#6b3f84'),
+  new THREE.Color('#93897b'),
+] as const
+const STATE_GROUND_DARK = [
+  new THREE.Color('#566d3d'),
+  new THREE.Color('#5f4623'),
+  new THREE.Color('#412154'),
+  new THREE.Color('#645d54'),
+] as const
+const STATE_LAYOUT_DENSITY = [1.2, 0.88, 0.95, 0.58] as const
+const STATE_PRESENCE = [1, 0.92, 0.82, 0.62] as const
+const STATE_HEIGHT = [1.18, 0.92, 1.02, 0.62] as const
+const STATE_WIDTH = [1.06, 1.22, 0.94, 0.72] as const
+const STATE_BEND = [1.05, 0.82, 1.45, 0.48] as const
+const STATE_LEAN = [0.02, 0.12, 0.28, 0.1] as const
+const STATE_DISTURBANCE_LIFT = [1, 0.9, 1.05, 0.75] as const
 
 type Disturbance = {
   x: number
@@ -280,7 +316,8 @@ export class GrassFieldSample {
   })
   private readonly groundSurfaceMesh = new THREE.Mesh(this.groundGeometry, this.groundMaterial)
   private readonly baseGroundPositions = Float32Array.from(this.groundGeometry.attributes.position.array as ArrayLike<number>)
-  private readonly layoutDriver: SurfaceLayoutDriver<GrassTokenId, GrassTokenMeta>
+  private readonly seedCursor: SeedCursorFactory
+  private layoutDriver: SurfaceLayoutDriver<GrassTokenId, GrassTokenMeta>
   private readonly disturbances: Disturbance[] = []
   private lastElapsedTime = 0
 
@@ -292,15 +329,8 @@ export class GrassFieldSample {
     initialParams: GrassFieldParams,
   ) {
     this.params = { ...initialParams }
-    this.layoutDriver = new SurfaceLayoutDriver({
-      surface,
-      rows: ROWS,
-      sectors: SECTORS,
-      advanceForRow: (row) => row * 13 + 5,
-      seedCursor,
-      staggerFactor: 0.45,
-      minSpanFactor: 0.33,
-    })
+    this.seedCursor = seedCursor
+    this.layoutDriver = this.createLayoutDriver(surface)
 
     this.bladeMesh.frustumCulled = false
     this.bladeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
@@ -309,6 +339,7 @@ export class GrassFieldSample {
     this.groundSurfaceMesh.rotation.x = -Math.PI / 2
     this.groundSurfaceMesh.position.y = 0.01
     this.groundSurfaceMesh.renderOrder = -1
+    this.groundMaterial.color.copy(STATE_GROUND_TINT[this.stateIndex()])
 
     this.updateGround()
     this.group.add(this.groundSurfaceMesh)
@@ -318,9 +349,14 @@ export class GrassFieldSample {
 
   setParams(params: Partial<GrassFieldParams>): void {
     this.params = { ...this.params, ...params }
+    this.groundMaterial.color.copy(STATE_GROUND_TINT[this.stateIndex()])
     for (const disturbance of this.disturbances) {
       disturbance.radius = this.params.disturbanceRadius * DISTURBANCE_RADIUS_MULTIPLIER
     }
+  }
+
+  setSurface(surface: PreparedSurfaceSource<GrassTokenId, GrassTokenMeta>): void {
+    this.layoutDriver = this.createLayoutDriver(surface)
   }
 
   clearDisturbances(): void {
@@ -430,6 +466,22 @@ export class GrassFieldSample {
     return 0.12 * Math.sin(x * 0.22) * Math.cos(z * 0.18) + 0.03 * Math.sin((x + z) * 0.65)
   }
 
+  private stateIndex(): number {
+    return THREE.MathUtils.clamp(Math.round(this.params.state), 0, STATE_BLADE_BASE.length - 1)
+  }
+
+  private createLayoutDriver(surface: PreparedSurfaceSource<GrassTokenId, GrassTokenMeta>) {
+    return new SurfaceLayoutDriver({
+      surface,
+      rows: ROWS,
+      sectors: SECTORS,
+      advanceForRow: (row) => row * 13 + 5,
+      seedCursor: this.seedCursor,
+      staggerFactor: 0.45,
+      minSpanFactor: 0.33,
+    })
+  }
+
   private updateGround(): void {
     const position = this.groundGeometry.attributes.position
     for (let i = 0; i < position.count; i++) {
@@ -464,7 +516,7 @@ export class GrassFieldSample {
   }
 
   private getSlotMaxWidth(slot: SurfaceLayoutSlot): number {
-    return slot.spanSize * LAYOUT_PX_PER_WORLD * this.params.layoutDensity
+    return slot.spanSize * LAYOUT_PX_PER_WORLD * this.params.layoutDensity * STATE_LAYOUT_DENSITY[this.stateIndex()]
   }
 
   private projectLine(
@@ -519,9 +571,10 @@ export class GrassFieldSample {
         const localDisturbance = this.disturbanceAt(x, localZ)
         // Keep slot layout stable and thin blades locally instead of shrinking the
         // slot width, which would reflow every later sector in the row.
+        const stateIndex = this.stateIndex()
         const localCoverage = THREE.MathUtils.lerp(
-          1,
-          1 - this.params.disturbanceStrength * 0.98,
+          STATE_PRESENCE[stateIndex]!,
+          Math.max(0.02, STATE_PRESENCE[stateIndex]! * (1 - this.params.disturbanceStrength * 0.98)),
           localDisturbance,
         )
         if (hashPresence > localCoverage) continue
@@ -550,9 +603,14 @@ export class GrassFieldSample {
           0.55 * Math.sin(elapsedTime * 2.8 + x * 1.1 - localZ * 0.62)
         const windYaw = gust * this.params.wind * 0.14
         const windBend = (0.24 + Math.abs(gust) * 0.18) * this.params.wind
-        const trampleBend = localDisturbance * 1.15
-        const height = (0.88 + meta.heightBias + (identity % 7) * 0.08 + organicNoise * 0.14 + blade * 0.07) * 0.5
-        const width = 0.072 + meta.widthBias + (identity % 5) * 0.008 + organicNoise * 0.015 + blade * 0.006
+        const trampleBend = localDisturbance * 1.15 * STATE_DISTURBANCE_LIFT[stateIndex]!
+        const height =
+          (0.88 + meta.heightBias + (identity % 7) * 0.08 + organicNoise * 0.14 + blade * 0.07) *
+          0.5 *
+          STATE_HEIGHT[stateIndex]!
+        const width =
+          (0.072 + meta.widthBias + (identity % 5) * 0.008 + organicNoise * 0.015 + blade * 0.006) *
+          STATE_WIDTH[stateIndex]!
 
         tmpPos.set(
           x + awayX * localDisturbance * 0.22,
@@ -561,8 +619,8 @@ export class GrassFieldSample {
         )
         dummy.position.copy(tmpPos)
         dummy.rotation.set(0, bendDirection + windYaw, 0)
-        dummy.rotateX((organicNoise - 0.5) * 0.12)
-        dummy.rotateZ((windBend + trampleBend) * Math.sign(awayX || 1))
+        dummy.rotateX((organicNoise - 0.5) * 0.12 * STATE_BEND[stateIndex]!)
+        dummy.rotateZ(((windBend + trampleBend) * Math.sign(awayX || 1) + STATE_LEAN[stateIndex]!) * STATE_BEND[stateIndex]!)
         dummy.scale.set(
           width * (1 - localDisturbance * 0.42),
           Math.max(height * (1 - localDisturbance * 0.88), 0.18),
@@ -571,20 +629,14 @@ export class GrassFieldSample {
         dummy.updateMatrix()
         this.bladeMesh.setMatrixAt(instanceIndex, dummy.matrix)
 
-        // Base hue drifts with field noise; glyph identity shifts it further so
-        // each distinct semantic blade token reads as a slightly different colour family.
-        const hue = 0.275 + organicNoise * 0.038 + meta.hueShift
-        // Blades taller in the slot (blade index 1) are slightly paler — tip effect.
+        const bladeBaseColor = STATE_BLADE_BASE[stateIndex]!
+        const bladeTipColor = STATE_BLADE_TIP[stateIndex]!
+        const groundBaseColor = STATE_GROUND_BASE[stateIndex]!
+        const groundDarkColor = STATE_GROUND_DARK[stateIndex]!
         const tipFade = blade * 0.055
-        const sat = THREE.MathUtils.clamp(
-          THREE.MathUtils.lerp(0.78, 0.18, localDisturbance) + meta.satShift,
-          0.1, 1,
-        )
-        const light = THREE.MathUtils.clamp(
-          THREE.MathUtils.lerp(0.41, 0.68, 0.3 + organicNoise * 0.7) + meta.lightShift + tipFade,
-          0.28, 0.78,
-        )
-        tmpColor.setHSL(hue, sat, light)
+        const stateBrightness = 0.18 + organicNoise * 0.64 + meta.lightShift + tipFade
+        tmpColor.copy(bladeBaseColor)
+        tmpColor.lerp(bladeTipColor, THREE.MathUtils.clamp(stateBrightness, 0, 1))
         tmpColor.lerp(groundBaseColor, localDisturbance * 0.06)
         tmpColor.lerp(groundDarkColor, localDisturbance * 0.28)
         this.bladeMesh.setColorAt(instanceIndex, tmpColor)

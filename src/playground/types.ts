@@ -29,6 +29,7 @@ export type GrassFieldParams = {
   trampleDepth: number
   wind: number
   recoveryRate: number
+  state: number
   /** Multiplier on layout width — higher fits more blade glyphs per slot. */
   layoutDensity: number
 }
@@ -39,6 +40,7 @@ export const DEFAULT_GRASS_FIELD_PARAMS: GrassFieldParams = {
   trampleDepth: 0.68,
   wind: 0.62,
   recoveryRate: 0.8,
+  state: 0,
   layoutDensity: 8,
 }
 

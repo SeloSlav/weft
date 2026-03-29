@@ -1,125 +1,93 @@
 # Pretext Weft
 
-Pretext Weft is a prototype **surface-layout engine** for games and interactive 3D. The flagship demo is a close-up fish-scale patch: click the skin, open a wound, and nearby scales **repack around the damage** instead of behaving like random scatter.
+Pretext Weft is a prototype surface-layout engine for interactive 3D. Instead of scattering meshes with noise and then layering separate gameplay logic on top, it treats a surface like a page: Pretext measures a glyph stream, breaks it into rows and sectors, and the renderer projects the result back into the world.
 
-That is the core claim of the project:
+![Playground screenshot](public/readme-playground-screenshot.png)
 
-- prepare a measured stream of units
-- derive changing available width from geometry and damage
-- run deterministic layout with Pretext
-- project the result back onto the surface as geometry
+The current site has two faces:
 
-This is not really about “text on a torus.” It is about using **layout as a runtime primitive for skin, ornament, and surface detail**.
+- `Overview`: explains the engine argument and compares it to traditional scatter workflows
+- `Playground`: a live WebGPU scene where multiple surface types share the same layout driver
 
-## Why this matters
+## Core idea
 
-Most procedural surface detail in games comes from:
+The landing page is the current product thesis in one sentence:
 
-- hand placement
-- baked textures
-- decals
-- noise / scatter
-- one-off custom packing logic
+**typography as a 3D placement engine**
 
-Those can look good, but they do not behave like authored layout. They are often hard to reflow when the model bends, breaks, opens, or takes damage.
+Instead of hand-tuning density, spacing, and variation per effect, this project uses typographic line breaking as the common placement primitive. A surface only needs:
 
-Pretext Weft takes a different approach:
+- a glyph vocabulary, or a weighted semantic palette with ids and metadata
+- a projection that turns laid-out rows and sectors into world-space instances
 
-- the surface is treated like a page
-- bands and rows become lines
-- wounds and obstacles become width constraints
-- Pretext decides what fits
-- the renderer places the chosen units back onto the model
+Gameplay response then becomes a width problem. Narrow a slot, and fewer glyphs fit. Return zero width, and that part of the surface disappears. Some samples use direct width changes; others keep layout stable and apply deterministic thinning on top.
 
-So instead of “sprinkle meshes on a surface,” the system becomes “run a deterministic layout pass on a surface.”
+## Current playground
 
-## Why Pretext
+The current `Editor` is no longer a single fish demo. It hosts one shared runtime scene with controls for:
 
-[Pretext](https://www.npmjs.com/package/@chenglou/pretext) already gives the engine the hard 1D layout pieces:
+- grass field: trampling, disturbance radius, wind, seasonal palette, density, recovery
+- fish wall: wound radius, retained width, crater depth, scale lift, surface flex, recovery
+- rock field: layout density and overall rock scale
+- fire wall: bullet-hole size and recovery
+- star sky: density and sky-wound recovery
+- scene actions: clear grass, fish wall, fire, sky, or everything at once
 
-- segmentation
-- measurement
-- deterministic line breaking
-- fast reflow against changing widths
+All of those surfaces are mounted together inside one plain TypeScript `PlaygroundRuntime`, not separate React demos.
 
-Pretext Weft uses that machinery as the **layout core** and maps it onto 3D geometry.
+## Runtime interaction
 
-## The flagship demo
+In the current playground:
 
-The current demo is a **fish-scale wound field**.
+- `W`, `A`, `S`, `D` move
+- `Shift` sprints
+- `Space` jumps
+- right mouse drag looks around
+- mouse wheel zooms
+- left click shoots the reticle target
 
-What it demonstrates:
+Shots affect the world based on what is under the reticle:
 
-- the scales are **ordered**, not randomly scattered
-- clicking creates **persistent wounds**
-- the patch **deforms physically**
-- nearby scales **lift and repack**
-- local damage changes the **available width field** that Pretext lays out against
+- grass gets local disturbance
+- the fish wall gets persistent wounds
+- the fire wall gets punched holes
+- the sky can be wounded when you shoot upward past world geometry
 
-This is meant to communicate the value proposition clearly:
+## How it is built
 
-**damage changes structure, not just shading**
+The architecture is intentionally split so the engine idea is not coupled to React:
 
-## Architecture
+- React is only the site shell, landing page, and control UI
+- `Three.js` + `WebGPU` run the renderer
+- the render path is plain TypeScript, with no React Three Fiber
+- Pretext provides measurement and deterministic line breaking
 
-The project is intentionally split so the engine idea does not depend on React:
+At a high level the pipeline is:
 
-- **React** is only used for the site shell and controls
-- **Three.js + WebGPU** run the actual demo renderer
-- **No React Three Fiber** is used in the runtime
-- **Plain TypeScript** owns the scene, layout pass, click interaction, and rendering updates
-
-That keeps the core direction portable to other runtimes and tools.
-
-## Pipeline
-
-```mermaid
-flowchart LR
-  unitStream[UnitStream] --> prepare[PretextPrepare]
-  prepare --> cachedWidths[CachedWidths]
-  surfacePatch[SurfacePatch] --> widthField[WidthField]
-  wounds[Wounds] --> widthField
-  cachedWidths --> layout[layoutNextLine]
-  widthField --> layout
-  layout --> placements[ScalePlacements]
-  wounds --> deformation[PatchDeformation]
-  placements --> renderer[InstancedRenderer]
-  deformation --> renderer
-```
-
-1. **Prepare**  
-   Build a unit stream and let Pretext measure it once.
-
-2. **Sample the surface**  
-   Turn the fish skin patch into rows and sectors with available width.
-
-3. **Apply damage**  
-   Clicking creates wounds that reduce local width and deform the patch.
-
-4. **Layout**  
-   Use stable seeded cursors and `layoutNextLine()` to generate placements from the damaged width field.
-
-5. **Project and render**  
-   Convert the placements into instanced scales with position, orientation, color, and lift.
+1. Prepare a measured glyph stream with Pretext.
+2. Describe a surface as rows, sectors, and available width.
+3. Run deterministic layout with seeded cursors.
+4. Project laid-out glyphs into world-space instances.
+5. Re-run layout or thinning when gameplay changes the width field.
 
 ## Quick start
 
-Requirements: Node.js 20+ recommended.
+Node.js 20+ is recommended.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the Vite URL in a **WebGPU-capable** browser.
+Then open the Vite URL in a **WebGPU-capable browser**.
 
 Important:
 
-- the playground is **WebGPU only**
-- Three.js WebGL fallback is disabled
-- if WebGPU is unavailable, the demo should fail instead of silently switching APIs
+- this playground is WebGPU-only
+- Three.js WebGL fallback is intentionally disabled
+- if WebGPU is unavailable, the app should fail clearly instead of silently switching renderers
 
-Build for production:
+Production build:
 
 ```bash
 npm run build
@@ -130,36 +98,33 @@ npm run preview
 
 ```text
 src/
-  App.tsx                     React shell
-  Landing.tsx                 Product framing
-  Editor.tsx                  Controls + runtime host
-  skinText.ts                 Pretext stream preparation and seeded cursors
+  App.tsx                     Site shell with Overview / Playground navigation
+  Landing.tsx                 Product framing and engine explanation
+  Editor.tsx                  Playground controls and runtime host
+  skinText.ts                 Surface text preparation and seeded cursors
   createWebGPURenderer.ts     WebGPU-only renderer bootstrap
   playground/
-    PlaygroundRuntime.ts      Plain Three.js/WebGPU runtime
-    fishScaleSample.ts        Flagship demo logic
-    types.ts                  Runtime parameter types
-  samples/
-    sampleMeta.ts             UI copy for the flagship demo
-    graphemes.ts              Shared grapheme helper
+    PlaygroundRuntime.ts      Shared world runtime and interaction loop
+    grassFieldSample.ts       Ground-cover layout and disturbance response
+    fishScaleSample.ts        Wounded fish-wall surface
+    rockFieldSample.ts        Rock placement sample
+    fireParticleSample.ts     Shootable fire wall with recovering holes
+    starSkySample.ts          Sky layout and wound response
+    types.ts                  Runtime parameter types and defaults
 ```
 
-## What this is not yet
+## What this repo is
+
+- a reference prototype for layout-driven surface placement
+- a playground for comparing multiple surface types under one API
+- a proof that gameplay-driven density can come from layout instead of scatter rebuilds
+
+## What it is not yet
 
 - not a packaged engine
-- not a full editor workflow
-- not a generalized authoring tool for all surface types
-- not yet integrated with external game engines
-
-Right now this repo is a **reference prototype** designed to prove the idea in the clearest possible way.
-
-## Next steps
-
-- extract a renderer-agnostic `core` package
-- define generic placement/output data structures
-- support more surface parameterizations than the fish patch
-- add authoring tools for width masks, paths, and stream design
-- explore export/runtime stories for game engines
+- not a polished editor workflow
+- not a generalized content pipeline for every surface type
+- not yet integrated into an external game engine
 
 ## Credits
 

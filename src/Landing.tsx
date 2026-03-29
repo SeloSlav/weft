@@ -47,6 +47,7 @@ export function Landing({ onEnterEditor }: LandingProps) {
               <li>Line-breaking over a rows × sectors world grid</li>
               <li>Density emerges from font metrics and slot width</li>
               <li>Gameplay narrows a slot width and the layout engine handles the rest</li>
+              <li>One control can swap a field between healthy, dry, corrupted, and dead states with the same projection code</li>
               <li>Every surface type shares the same driver and API</li>
               <li>Variation is token-seeded and deterministic per row band</li>
             </ul>
@@ -107,8 +108,8 @@ this.driver.forEachLaidOutLine({
           The <code className="landing__code-inline">getMaxWidth</code> callback receives the current slot
           on every frame. Return a smaller number and fewer glyphs fit, so the surface visibly thins out.
           Return zero and the slot is empty. Some surfaces use that directly, while others keep layout
-          stable and apply deterministic local thinning for wound and disturbance response, with no
-          separate damage texture or compute pass.
+          stable while swapping semantic source weights to move the exact same terrain between visibly
+          different world states, with no separate damage texture or compute pass.
         </p>
 
         <div className="landing__code-block">
@@ -120,7 +121,8 @@ this.driver.forEachLaidOutLine({
 
         <p className="landing__lead">
           In a traditional scatter pipeline, making density respond to gameplay is a non-trivial
-          engineering task. Here it's just one multiplication inside one callback.
+          engineering task. Here the same surface can also become healthy, dry, corrupted, or dead just
+          by changing the semantic source and re-running layout through the same projection callback.
         </p>
 
         <ul className="landing__features" aria-label="Engine properties">

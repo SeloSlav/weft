@@ -8,7 +8,7 @@ import { RockFieldSample } from './rockFieldSample'
 import { FireParticleSample, type FireWallParams } from './fireParticleSample'
 import { StarSkySample } from './starSkySample'
 import { getPreparedFishSurface } from './fishSurfaceText'
-import { getPreparedGrassSurface } from './grassSurfaceText'
+import { buildGrassStateSurface } from './grassSurfaceText'
 import { getPreparedRockSurface } from './rockSurfaceText'
 import { getPreparedFireSurface } from './fireSurfaceText'
 import { getPreparedStarSurface } from './starSurfaceText'
@@ -60,7 +60,7 @@ export class PlaygroundRuntime {
     DEFAULT_FISH_SCALE_PARAMS,
   )
   private readonly grassFieldSample = new GrassFieldSample(
-    getPreparedGrassSurface(),
+    buildGrassStateSurface(DEFAULT_GRASS_FIELD_PARAMS.state),
     seedCursor,
     DEFAULT_GRASS_FIELD_PARAMS,
   )
@@ -186,6 +186,9 @@ export class PlaygroundRuntime {
 
   setGrassFieldParams(params: Partial<GrassFieldParams>): void {
     this.grassFieldParams = { ...this.grassFieldParams, ...params }
+    if (params.state !== undefined) {
+      this.grassFieldSample.setSurface(buildGrassStateSurface(this.grassFieldParams.state))
+    }
     this.grassFieldSample.setParams(this.grassFieldParams)
   }
 

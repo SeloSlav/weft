@@ -13,6 +13,8 @@ type ControlSectionProps = {
   children: ReactNode;
 };
 
+const GRASS_STATE_LABELS = ["Healthy", "Dry", "Corrupted", "Dead"] as const;
+
 function ControlSection({ title, summary, children }: ControlSectionProps) {
   return (
     <details className="control-section" open>
@@ -65,6 +67,7 @@ export function Editor() {
   const [recoveryRate, setRecoveryRate] = useState(
     DEFAULT_GRASS_FIELD_PARAMS.recoveryRate,
   );
+  const [grassState, setGrassState] = useState(DEFAULT_GRASS_FIELD_PARAMS.state);
   const [grassLayoutDensity, setGrassLayoutDensity] = useState(
     DEFAULT_GRASS_FIELD_PARAMS.layoutDensity,
   );
@@ -113,6 +116,7 @@ export function Editor() {
           trampleDepth,
           wind,
           recoveryRate,
+          state: grassState,
           layoutDensity: grassLayoutDensity,
         });
         runtime.setRockFieldParams({ layoutDensity: rockLayoutDensity, sizeScale: rockSizeScale });
@@ -165,12 +169,14 @@ export function Editor() {
       trampleDepth,
       wind,
       recoveryRate,
+      state: grassState,
       layoutDensity: grassLayoutDensity,
     });
   }, [
     disturbanceRadius,
     disturbanceStrength,
     grassLayoutDensity,
+    grassState,
     recoveryRate,
     trampleDepth,
     wind,
@@ -235,7 +241,7 @@ export function Editor() {
               <div className="sample-controls">
                 <ControlSection
                   title="Grass Controls"
-                  summary="Ground response"
+                  summary="Ground response and world-state swap"
                 >
                   <label className="control">
                     <span>
@@ -304,6 +310,19 @@ export function Editor() {
                       onChange={(e) =>
                         setGrassLayoutDensity(Number(e.target.value))
                       }
+                    />
+                  </label>
+                  <label className="control">
+                    <span>
+                      Field state ({GRASS_STATE_LABELS[grassState] ?? "Healthy"})
+                    </span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={3}
+                      step={1}
+                      value={grassState}
+                      onChange={(e) => setGrassState(Number(e.target.value))}
                     />
                   </label>
                   <label className="control">
