@@ -57,7 +57,7 @@ export function Landing({ onEnterEditor }: LandingProps) {
           second bespoke runtime.
         </p>
         <p className="landing__lead">
-          Weft is for authored reactive surfaces: grass, facades, rubble bands, fire walls, sky wounds,
+          Weft is for authored reactive surfaces: grass, facades, rubble bands, fire walls, wounds,
           crops, shell-like coverings. Think in terms of <strong style={{ color: '#c8d6e8' }}>source -&gt; layout -&gt; effect</strong>.
           The surface owns rows, sectors, and width; gameplay changes width or semantic state; the same
           projection code keeps doing the work.

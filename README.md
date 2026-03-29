@@ -1,6 +1,6 @@
 # Weft
 
-Deterministic reactive surface SDK for Three.js. Author grass, facades, debris bands, fire walls, and sky wounds under one layout model instead of rebuilding scatter logic for every gameplay response.
+Deterministic reactive surface SDK for Three.js. Author grass, facades, debris bands, fire walls, and wounds under one layout model instead of rebuilding scatter logic for every gameplay response.
 
 - Live site: [pretext-weft.vercel.app](https://pretext-weft.vercel.app)
 - Video demo: [x.com/SeloSlav/status/2038245103643333014](https://x.com/SeloSlav/status/2038245103643333014)
