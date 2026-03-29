@@ -78,18 +78,18 @@ export function applyPlaygroundAtmosphere(scene: THREE.Scene): THREE.Mesh {
 }
 
 export function addPlaygroundLighting(scene: THREE.Scene): void {
-  scene.add(new THREE.AmbientLight('#8fa8e8', 0.38))
-  scene.add(new THREE.HemisphereLight('#4a6ab8', '#151820', 0.72))
+  scene.add(new THREE.AmbientLight('#8fa8e8', 0.34))
+  scene.add(new THREE.HemisphereLight('#4a6ab8', '#151820', 0.68))
 
-  const moonLight = new THREE.DirectionalLight('#b8d4ff', 0.55)
+  const moonLight = new THREE.DirectionalLight('#b8d4ff', 0.48)
   moonLight.position.set(-22, 34, 14)
   scene.add(moonLight)
 
-  const frontFill = new THREE.DirectionalLight('#ffd9a8', 0.55)
+  const frontFill = new THREE.DirectionalLight('#ffd9a8', 0.4)
   frontFill.position.set(8, 14, 28)
   scene.add(frontFill)
 
-  const rim = new THREE.DirectionalLight('#6080ff', 0.28)
+  const rim = new THREE.DirectionalLight('#6080ff', 0.2)
   rim.position.set(18, 6, -16)
   scene.add(rim)
 }

@@ -61,8 +61,9 @@ export const IVY_WALL_LAYOUT = {
 export const WINDOW_GLASS_LAYOUTS = [
   { x: -5.6, y: 5.3, z: -15.02, rotationY: 0, scaleX: 0.84, scaleY: 0.9, scaleZ: 0.12 },
   { x: 5.6, y: 5.3, z: -15.02, rotationY: 0, scaleX: 0.84, scaleY: 0.9, scaleZ: 0.12 },
-  { x: 12.74, y: 4.4, z: -6.2, rotationY: -Math.PI / 2, scaleX: 0.72, scaleY: 0.86, scaleZ: 0.12 },
-  { x: 12.74, y: 4.4, z: -1.6, rotationY: -Math.PI / 2, scaleX: 0.72, scaleY: 0.86, scaleZ: 0.12 },
+  // East building: nudge x slightly more −X so glass sits a bit further off the façade than 12.74.
+  { x: 12.64, y: 4.4, z: -6.2, rotationY: -Math.PI / 2, scaleX: 0.72, scaleY: 0.86, scaleZ: 0.12 },
+  { x: 12.64, y: 4.4, z: -1.6, rotationY: -Math.PI / 2, scaleX: 0.72, scaleY: 0.86, scaleZ: 0.12 },
 ] as const
 
 /**
@@ -99,10 +100,10 @@ export const STREET_LAMP_GLOBE_EMISSIVE_MAX = 0.88
 
 /** Shared glass tuning for lamps and building windows. */
 export const DEFAULT_GLASS_SURFACE_PARAMS = {
-  woundRadius: 0.36,
+  woundRadius: 1.4,
   woundNarrow: 0.2,
   woundDepth: 0.62,
   scaleLift: 0.48,
   surfaceFlex: 0.22,
-  recoveryRate: 0.38,
+  recoveryRate: 0,
 } as const

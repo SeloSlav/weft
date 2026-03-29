@@ -67,7 +67,7 @@ function starColor(identity: number, twinkle: number, polar: number): THREE.Colo
   const sat = 0.18 + t * 0.22
   const zenithBoost = THREE.MathUtils.smoothstep(MAX_POLAR, MIN_POLAR, polar)
   const light = 0.72 + twinkle * 0.18 + zenithBoost * 0.12 + (identity % 7 - 3) * 0.012
-  return tmpColor.setHSL(hue, sat, light).clone()
+  return tmpColor.setHSL(hue, sat, light)
 }
 
 export class StarSkyEffect {
@@ -142,6 +142,10 @@ export class StarSkyEffect {
     this.wounds.length = 0
   }
 
+  hasWounds(): boolean {
+    return this.wounds.length > 0
+  }
+
   update(elapsedTime: number): void {
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, elapsedTime - this.lastElapsed)
     this.lastElapsed = elapsedTime
@@ -157,11 +161,12 @@ export class StarSkyEffect {
   private deformDirection(dir: THREE.Vector3): THREE.Vector3 {
     for (const wound of this.wounds) {
       const s = THREE.MathUtils.clamp(wound.strength, 0, 1)
-      const dot = wound.x * dir.x + wound.y * dir.y + wound.z * dir.z
-      const angle = Math.acos(THREE.MathUtils.clamp(dot, -1, 1))
+      const dot = THREE.MathUtils.clamp(wound.x * dir.x + wound.y * dir.y + wound.z * dir.z, -1, 1)
       const radius = WOUND_RADIUS * Math.max(s, 0.001)
-      if (angle >= radius) continue
+      // angle >= radius  <=>  dot <= cos(radius); skip cheaply before acos
+      if (dot <= Math.cos(radius)) continue
 
+      const angle = Math.acos(dot)
       const t = 1 - angle / radius
       const push = t * t * WOUND_PUSH * s
       tmpPush.set(

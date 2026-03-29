@@ -87,14 +87,14 @@ function fireColor(
     const sat = 0.85
     const light = THREE.MathUtils.clamp(0.35 + heat * 0.45, 0.25, 0.92)
     const nudge = (uhash(identity * 2654435761) - 0.5) * 0.04
-    return tmpColor.setHSL(hue + nudge, sat, light).clone()
+    return tmpColor.setHSL(hue + nudge, sat, light)
   }
   const heat = (1 - age01) * (1 - rowNorm * 0.55) + meta.heatBias * 0.08
   const hue = THREE.MathUtils.lerp(0.0, 0.14, Math.pow(heat, 0.6))
   const sat = 1.0
   const light = THREE.MathUtils.clamp(0.12 + heat * 0.78, 0.08, 0.88)
   const nudge = (uhash(identity * 2654435761) - 0.5) * 0.025
-  return tmpColor.setHSL(hue + nudge, sat, light).clone()
+  return tmpColor.setHSL(hue + nudge, sat, light)
 }
 
 type FireWound = {
@@ -245,6 +245,10 @@ export class FireWallEffect {
 
   clearWounds(): void {
     this.wounds.length = 0
+  }
+
+  hasWounds(): boolean {
+    return this.wounds.length > 0
   }
 
   update(elapsedTime: number): void {

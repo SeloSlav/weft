@@ -63,7 +63,7 @@ const RETICLE_LOCAL_DISTANCE = 1.8
 const RETICLE_LOCAL_SCALE = 0.18
 const CAMERA_GROUND_CLEARANCE = 0.22
 /** Applied on `visualRoot` so size is identical for every clip (not animated). */
-const PLAYER_VISUAL_SCALE = 0.9
+const PLAYER_VISUAL_SCALE = 0.9 * 1.2
 
 const ANIMATION_ASSET_BY_STATE: Record<PlayerAnimationState, string> = {
   idle: '/Meshy_AI_WarHero_biped_Animation_Idle_withSkin.glb',

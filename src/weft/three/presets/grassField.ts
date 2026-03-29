@@ -460,14 +460,40 @@ export class GrassFieldEffect {
   }
 
   private disturbanceAt(x: number, z: number): number {
+    return this.disturbanceAndBend(x, z).disturbance
+  }
+
+  /** Single pass over disturbances: scalar field + strongest direction for blade bend. */
+  private disturbanceAndBend(x: number, z: number): {
+    disturbance: number
+    awayX: number
+    awayZ: number
+  } {
+    if (this.disturbances.length === 0) {
+      return { disturbance: 0, awayX: 0, awayZ: 1 }
+    }
     let disturbance = 0
+    let awayX = 0
+    let awayZ = 1
+    let strongest = 0
     for (const hit of this.disturbances) {
       const dx = x - hit.x
       const dz = z - hit.z
       const n = Math.sqrt(dx * dx + dz * dz) / Math.max(hit.radius, 0.0001)
-      disturbance = Math.max(disturbance, Math.pow(smoothPulse(n), 0.45) * hit.strength)
+      const sp = smoothPulse(n)
+      disturbance = Math.max(disturbance, Math.pow(sp, 0.45) * hit.strength)
+      const influence = sp * hit.strength
+      if (influence > strongest) {
+        strongest = influence
+        awayX = dx
+        awayZ = dz
+      }
     }
-    return THREE.MathUtils.clamp(disturbance, 0, 1)
+    return {
+      disturbance: THREE.MathUtils.clamp(disturbance, 0, 1),
+      awayX,
+      awayZ,
+    }
   }
 
   private updateDisturbances(delta: number): void {
@@ -582,7 +608,7 @@ export class GrassFieldEffect {
           weftScatter * rowStep * 0.12
         const localZ = slot.lineCoord + lineDepthShift + zJitter
         if (isCrossRoadAsphalt(x, localZ)) continue
-        const localDisturbance = this.disturbanceAt(x, localZ)
+        const { disturbance: localDisturbance, awayX, awayZ } = this.disturbanceAndBend(x, localZ)
         const stateIndex = this.stateIndex()
         let localCoverage = THREE.MathUtils.lerp(
           STATE_PRESENCE[stateIndex]!,
@@ -595,21 +621,6 @@ export class GrassFieldEffect {
         if (hashPresence > localCoverage) continue
         const baseY = this.baseGroundY(x, localZ)
         const organicNoise = organicField(x + hashOrganic * 0.4, localZ + hashOrganic * 0.3)
-
-        let awayX = 0
-        let awayZ = 1
-        let strongest = 0
-        for (const hit of this.disturbances) {
-          const dx = x - hit.x
-          const dz = localZ - hit.z
-          const n = Math.sqrt(dx * dx + dz * dz) / Math.max(hit.radius, 0.0001)
-          const influence = smoothPulse(n) * hit.strength
-          if (influence > strongest) {
-            strongest = influence
-            awayX = dx
-            awayZ = dz
-          }
-        }
 
         const bendDirection = Math.atan2(awayX, awayZ) + (organicNoise - 0.5) * 0.35
         const gust =

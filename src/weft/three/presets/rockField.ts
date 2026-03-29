@@ -93,7 +93,7 @@ function rockStoneColor(identity: number, noise: number, meta: RockTokenMeta): T
   const hue = (t < 0.4 ? 0.06 + t * 0.05 : 0.55 + (t - 0.4) * 0.08) + meta.warmth
   const sat = 0.08 + t * 0.14 + noise * 0.06
   const light = 0.28 + noise * 0.22 + t * 0.08
-  return tmpColor.setHSL(hue, sat, light).clone()
+  return tmpColor.setHSL(hue, sat, light)
 }
 
 function makeRockGeometry(): THREE.BufferGeometry {

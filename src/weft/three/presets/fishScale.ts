@@ -65,7 +65,7 @@ const tmpWorldMatrix = new THREE.Matrix4()
 const dummy = new THREE.Object3D()
 const DAMAGE_TINT_FISH = new THREE.Color('#3f332f')
 const DAMAGE_TINT_IVY = new THREE.Color('#2a1810')
-const DAMAGE_TINT_GLASS = new THREE.Color('#1a2838')
+const DAMAGE_TINT_GLASS = new THREE.Color('#24313b')
 
 type Wound = {
   x: number
@@ -119,14 +119,14 @@ function createScaleGeometry(): THREE.ExtrudeGeometry {
 
 function createGlassShardGeometry(): THREE.ExtrudeGeometry {
   const shape = new THREE.Shape()
-  shape.moveTo(-0.52, 0.46)
-  shape.lineTo(-0.14, 0.62)
-  shape.lineTo(0.34, 0.5)
-  shape.lineTo(0.56, 0.08)
-  shape.lineTo(0.28, -0.58)
-  shape.lineTo(-0.18, -0.66)
-  shape.lineTo(-0.58, -0.16)
-  shape.lineTo(-0.46, 0.22)
+  shape.moveTo(-0.58, 0.34)
+  shape.lineTo(-0.18, 0.72)
+  shape.lineTo(0.14, 0.58)
+  shape.lineTo(0.46, 0.26)
+  shape.lineTo(0.62, -0.08)
+  shape.lineTo(0.18, -0.72)
+  shape.lineTo(-0.08, -0.52)
+  shape.lineTo(-0.54, -0.18)
   shape.closePath()
 
   const geometry = new THREE.ExtrudeGeometry(shape, {
@@ -228,6 +228,11 @@ export class FishScaleEffect {
     this.wounds.length = 0
   }
 
+  /** True when there are active wounds (for runtime update throttling). */
+  hasWounds(): boolean {
+    return this.wounds.length > 0
+  }
+
   /**
    * Normalized aggregate wound strength (0 = intact, 1 = at or past `breakThreshold`).
    * Useful for gameplay tied to recoverable fish-scale damage (e.g. lamp outage while glass heals).
@@ -282,6 +287,9 @@ export class FishScaleEffect {
 
   private applyAppearanceMaterials(): void {
     if (this.appearance === 'shutter') {
+      this.patchMaterial.transparent = false
+      this.patchMaterial.opacity = 1
+      this.patchMaterial.depthWrite = true
       this.scaleMaterial.color.set('#9aa8b8')
       this.scaleMaterial.emissive.set('#223040')
       this.scaleMaterial.emissiveIntensity = 0.35
@@ -291,6 +299,9 @@ export class FishScaleEffect {
       this.patchMaterial.emissive.set('#121a24')
       this.patchMaterial.emissiveIntensity = 0.22
     } else if (this.appearance === 'ivy') {
+      this.patchMaterial.transparent = false
+      this.patchMaterial.opacity = 1
+      this.patchMaterial.depthWrite = true
       this.scaleMaterial.color.set('#4a8f52')
       this.scaleMaterial.emissive.set('#1a3020')
       this.scaleMaterial.emissiveIntensity = 0.18
@@ -300,14 +311,21 @@ export class FishScaleEffect {
       this.patchMaterial.emissive.set('#0f1a12')
       this.patchMaterial.emissiveIntensity = 0.12
     } else if (this.appearance === 'glass' || this.appearance === 'glassBulb') {
-      this.scaleMaterial.color.set('#cfeef8')
-      this.scaleMaterial.emissive.set('#7ec8e8')
-      this.scaleMaterial.emissiveIntensity = 0.38
-      this.scaleMaterial.metalness = 0.06
-      this.scaleMaterial.roughness = 0.09
-      this.patchMaterial.color.set('#5a7a8c')
-      this.patchMaterial.emissive.set('#2a4558')
-      this.patchMaterial.emissiveIntensity = 0.2
+      this.scaleMaterial.color.set('#f2fbff')
+      this.scaleMaterial.emissive.set('#101822')
+      this.scaleMaterial.emissiveIntensity = 0.06
+      this.scaleMaterial.metalness = 0.02
+      this.scaleMaterial.roughness = 0.12
+      // Same backing on every window: semi-transparent cool gray so destroyed regions read consistently
+      // (matches the lighter-facade look everywhere).
+      this.patchMaterial.color.set('#d7ebf4')
+      this.patchMaterial.emissive.set('#09121a')
+      this.patchMaterial.emissiveIntensity = 0.03
+      this.patchMaterial.roughness = 0.08
+      this.patchMaterial.metalness = 0.01
+      this.patchMaterial.transparent = true
+      this.patchMaterial.depthWrite = false
+      this.patchMaterial.opacity = this.appearance === 'glass' ? 0.34 : 0.42
     }
   }
 
@@ -648,32 +666,45 @@ export class FishScaleEffect {
       if (hashPresence > localCoverage) continue
       const frame = this.sampleSurface(x, y, elapsedTime)
       const isGlassLike = this.appearance === 'glass' || this.appearance === 'glassBulb'
+      const isPaneGlass = this.appearance === 'glass'
       const scaleWidth = isGlassLike
-        ? 0.11 + meta.widthBias * 0.65 + (identity % 5) * 0.02
+        ? isPaneGlass
+          ? 0.078 + meta.widthBias * 0.35 + (identity % 5) * 0.012
+          : 0.1 + meta.widthBias * 0.5 + (identity % 5) * 0.016
         : 0.145 + meta.widthBias + (identity % 5) * 0.012
       const scaleHeight = isGlassLike
-        ? 0.16 + meta.heightBias * 0.55 + (identity % 7) * 0.022
+        ? isPaneGlass
+          ? 0.2 + meta.heightBias * 0.38 + (identity % 7) * 0.014
+          : 0.18 + meta.heightBias * 0.42 + (identity % 7) * 0.018
         : 0.2 + meta.heightBias + (identity % 7) * 0.014
       const scaleDepth = isGlassLike
-        ? 0.018 + meta.depthBias * 0.3 + (identity % 4) * 0.003
+        ? isPaneGlass
+          ? 0.01 + meta.depthBias * 0.14 + (identity % 4) * 0.0015
+          : 0.015 + meta.depthBias * 0.18 + (identity % 4) * 0.002
         : 0.05 + meta.depthBias + (identity % 4) * 0.004
-      const lift = BASE_SCALE_LIFT + localDamage * this.params.scaleLift * 0.18
+      const lift = isGlassLike
+        ? isPaneGlass
+          ? 0.012 + localDamage * this.params.scaleLift * 0.03
+          : 0.02 + localDamage * this.params.scaleLift * 0.06
+        : BASE_SCALE_LIFT + localDamage * this.params.scaleLift * 0.18
 
       dummy.position.copy(frame.position).addScaledVector(frame.normal, lift)
 
       tmpMatrix.makeBasis(frame.tangentX, frame.tangentY, frame.normal)
       dummy.quaternion.setFromRotationMatrix(tmpMatrix)
-      const isPaneGlass = this.appearance === 'glass'
       dummy.rotateX(
         this.isSphericalGlassSurface()
           ? 0.08 + localDamage * 0.2
           : isPaneGlass
-            ? 0.12 + localDamage * 0.18
+            ? 0.01 + localDamage * 0.06
             : 0.28 + localDamage * 0.5,
       )
       dummy.rotateZ(
-        (((identity % 17) / 17) - 0.5) * (this.isSphericalGlassSurface() ? 0.14 : isPaneGlass ? 0.08 : 0.24),
+        (((identity % 17) / 17) - 0.5) * (this.isSphericalGlassSurface() ? 0.14 : isPaneGlass ? 0.52 : 0.24),
       )
+      if (isPaneGlass) {
+        dummy.rotateY((((identity % 23) / 23) - 0.5) * 0.16)
+      }
       dummy.scale.set(
         scaleWidth * (1 - localDamage * (isGlassLike ? 0.04 : 0.08)),
         scaleHeight * (1 - localDamage * (isGlassLike ? 0.08 : 0.12)),
@@ -686,17 +717,17 @@ export class FishScaleEffect {
         this.appearance === 'ivy'
           ? 0.28 + slot.row * 0.006 + meta.hueBias
           : this.appearance === 'glass' || this.appearance === 'glassBulb'
-            ? 0.52 + slot.row * 0.004 + meta.hueBias * 0.015
+            ? 0.55 + slot.row * 0.0015 + meta.hueBias * 0.004
             : 0.44 + slot.row * 0.008 + meta.hueBias
       const hue = hueBase + (identity % 11) * 0.0025
       const saturation = THREE.MathUtils.lerp(
-        this.appearance === 'glass' || this.appearance === 'glassBulb' ? 0.28 : 0.22,
-        this.appearance === 'glass' || this.appearance === 'glassBulb' ? 0.55 : 0.46,
+        this.appearance === 'glass' || this.appearance === 'glassBulb' ? 0.04 : 0.22,
+        this.appearance === 'glass' || this.appearance === 'glassBulb' ? 0.16 : 0.46,
         1 - localDamage,
       )
       const lightness = THREE.MathUtils.lerp(
-        this.appearance === 'glass' || this.appearance === 'glassBulb' ? 0.42 : 0.28,
-        this.appearance === 'glass' || this.appearance === 'glassBulb' ? 0.78 : 0.56,
+        this.appearance === 'glass' || this.appearance === 'glassBulb' ? 0.56 : 0.28,
+        this.appearance === 'glass' || this.appearance === 'glassBulb' ? 0.92 : 0.56,
         0.5 + Math.sin(slot.row * 0.35 + k * 0.3) * 0.25,
       )
       tmpColor.setHSL(hue, saturation, lightness)

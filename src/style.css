@@ -841,6 +841,36 @@ body,
   pointer-events: none;
 }
 
+.perf-hud {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(126, 184, 255, 0.28);
+  background: rgba(8, 12, 18, 0.78);
+  backdrop-filter: blur(10px);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(200, 230, 255, 0.92);
+  pointer-events: none;
+}
+
+.control-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgba(200, 210, 224, 0.72);
+}
+
+.control-hint code {
+  font-size: 0.85em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
 .docs {
   flex: 1;
   min-height: 0;

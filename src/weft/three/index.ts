@@ -22,7 +22,7 @@ export {
   FishScaleEffect,
 } from './presets/fishScale.ts'
 export type { CreateFishScaleEffectOptions, FishScaleAppearance, FishScaleParams } from './presets/fishScale.ts'
-export { getPreparedFishSurface } from './presets/fishScaleSource.ts'
+export { getPreparedFishSurface, getPreparedGlassSurface } from './presets/fishScaleSource.ts'
 export { getPreparedIvySurface } from './presets/ivyScaleSource.ts'
 
 export {

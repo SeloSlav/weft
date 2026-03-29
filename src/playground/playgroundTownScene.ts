@@ -190,27 +190,55 @@ export function createTownIntersectionScene(): TownIntersectionScene {
   west.position.set(-14.5, 3.4, 2)
   root.add(west)
 
-  const east = new THREE.Mesh(new THREE.BoxGeometry(4.5, 6, 12), buildingMat)
-  east.position.set(15, 3, -4)
+  const east = new THREE.Mesh(new THREE.BoxGeometry(4.5, 7, 12), buildingMat)
+  east.position.set(15, 3.5, -4)
   root.add(east)
 
   const windowPaneMat = new THREE.MeshStandardMaterial({
-    color: '#8cb7d2',
-    emissive: '#27465f',
-    emissiveIntensity: 0.24,
-    roughness: 0.14,
-    metalness: 0.02,
+    color: '#d9edf6',
+    emissive: '#122230',
+    emissiveIntensity: 0.08,
+    roughness: 0.08,
+    metalness: 0.05,
     transparent: true,
-    opacity: 0.5,
+    opacity: 0.24,
+    depthWrite: false,
   })
   const windowFrameMat = new THREE.MeshStandardMaterial({
     color: '#516270',
     roughness: 0.62,
     metalness: 0.22,
   })
+  /** Solid “room interior” read behind glass — buildings are uncut boxes, so without this, holes show the wall shader. */
+  const windowBackingMat = new THREE.MeshStandardMaterial({
+    color: '#2a3848',
+    emissive: '#141c28',  
+    emissiveIntensity: 0.45,
+    roughness: 1,
+    metalness: 0,
+    depthWrite: true,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+  })
 
   for (const layout of WINDOW_GLASS_LAYOUTS) {
-    const pane = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 4.4), windowPaneMat.clone())
+    const backing = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 4.4), windowBackingMat)
+    backing.position.set(layout.x, layout.y, layout.z)
+    backing.rotation.y = layout.rotationY
+    backing.scale.set(layout.scaleX * 0.88, layout.scaleY * 0.88, 1)
+    // North (rotation ≈ 0): inset along −Z between pane (−0.05) and wall.
+    // East (−π/2): local +Z is −world X. Pane ends at layout.x + 0.05; wall ~ +0.11 past layout.
+    // Backing must sit *behind* the pane but *in front* of the wall — same idea as north, so use a
+    // similar inset magnitude (~−0.08…−0.09), not −0.006 (that put the backing *in front of* the pane).
+    if (Math.abs(layout.rotationY) < 0.01) {
+      backing.translateZ(-0.14)
+    } else {
+      backing.translateZ(-0.088)
+    }
+    root.add(backing)
+
+    const pane = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 4.4), windowPaneMat)
     pane.position.set(layout.x, layout.y, layout.z)
     pane.rotation.y = layout.rotationY
     pane.scale.set(layout.scaleX * 0.9, layout.scaleY * 0.9, 1)

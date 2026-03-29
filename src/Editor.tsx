@@ -8,6 +8,10 @@ import {
   DEFAULT_STAR_SKY_PARAMS,
 } from "./weft/three";
 import { DEFAULT_GLASS_SURFACE_PARAMS } from "./playground/playgroundWorld";
+import {
+  PLAYGROUND_QUALITY_DEFAULT,
+  type PlaygroundQuality,
+} from "./playground/playgroundQuality";
 
 type ControlSectionProps = {
   title: string;
@@ -97,6 +101,11 @@ export function Editor() {
   const [starRecoveryRate, setStarRecoveryRate] = useState(
     DEFAULT_STAR_SKY_PARAMS.recoveryRate,
   );
+  const [quality, setQuality] = useState<PlaygroundQuality>(
+    PLAYGROUND_QUALITY_DEFAULT,
+  );
+  /** Set when `?perf=1` — last effect-update block time (ms). */
+  const [perfEffectMs, setPerfEffectMs] = useState<number | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -158,6 +167,24 @@ export function Editor() {
       runtimeRef.current = null;
       runtime.dispose();
     };
+  }, []);
+
+  useEffect(() => {
+    if (runtimeState !== "ready") return;
+    runtimeRef.current?.setQuality(quality);
+  }, [quality, runtimeState]);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("perf") !== "1") {
+      return;
+    }
+    let id = 0;
+    const tick = () => {
+      setPerfEffectMs(runtimeRef.current?.effectUpdateMs ?? 0);
+      id = requestAnimationFrame(tick);
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
   }, []);
 
   useEffect(() => {
@@ -262,6 +289,28 @@ export function Editor() {
 
             <section className="sample-detail">
               <div className="sample-controls">
+                <ControlSection
+                  title="Performance"
+                  summary="DPR cap + layout density scaling"
+                >
+                  <label className="control">
+                    <span>Quality</span>
+                    <select
+                      value={quality}
+                      onChange={(e) =>
+                        setQuality(e.target.value as PlaygroundQuality)
+                      }
+                    >
+                      <option value="low">Low (game-style)</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High (showcase)</option>
+                    </select>
+                  </label>
+                  <p className="control-hint">
+                    Add <code>?perf=1</code> to the URL to show effect-update
+                    time (ms) on the canvas.
+                  </p>
+                </ControlSection>
                 <ControlSection
                   title="Roadside grass"
                   summary="Ground response and world-state swap"
@@ -463,7 +512,7 @@ export function Editor() {
                     </span>
                     <input
                       type="range"
-                      min={0.02}
+                      min={0}
                       max={0.8}
                       step={0.02}
                       value={glassRecoveryRate}
@@ -622,6 +671,11 @@ export function Editor() {
 
       <main className="viewport">
         <div ref={hostRef} className="viewport-host" />
+        {perfEffectMs !== null && (
+          <div className="perf-hud" aria-hidden>
+            Effects update: {perfEffectMs.toFixed(2)} ms
+          </div>
+        )}
         {runtimeState !== "ready" && (
           <div className="viewport-status" role="status">
             <strong>

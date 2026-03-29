@@ -12,6 +12,7 @@ import {
   DEFAULT_ROCK_FIELD_PARAMS,
   DEFAULT_STAR_SKY_PARAMS,
   getPreparedFireSurface,
+  getPreparedGlassSurface,
   getPreparedFishSurface,
   getPreparedIvySurface,
   getPreparedRockSurface,
@@ -30,8 +31,18 @@ import { applyPlaygroundAtmosphere, addPlaygroundLighting } from './playgroundEn
 import {
   type PlayerAnimationState,
   ThirdPersonController,
+  type ThirdPersonControllerConfig,
   type ThirdPersonControllerFrame,
+  type ThirdPersonControllerInput,
 } from './thirdPersonController'
+import {
+  getQualityGrassLayoutScale,
+  getQualityPixelRatioCap,
+  getQualityRockLayoutScale,
+  getQualityStarLayoutScale,
+  type PlaygroundQuality,
+  PLAYGROUND_QUALITY_DEFAULT,
+} from './playgroundQuality'
 import {
   createTownIntersectionScene,
   STREET_LAMP_BULB_Y_OFFSET,
@@ -133,6 +144,19 @@ export class PlaygroundRuntime {
   private pendingShoot = false
   private pendingJump = false
   private activeFrame: ThirdPersonControllerFrame | null = null
+  private readonly laserBeamGroup: THREE.Group
+  private readonly laserBeamOuter: THREE.Mesh
+  private readonly laserBeamCore: THREE.Mesh
+  private readonly laserEndPoint = new THREE.Vector3()
+  private readonly laserImpactLocked = new THREE.Vector3()
+  private laserImpactValid = false
+  private readonly laserPlayerForward = new THREE.Vector3()
+  private readonly laserMuzzle = new THREE.Vector3()
+  private readonly laserDir = new THREE.Vector3()
+  private readonly laserMid = new THREE.Vector3()
+  private readonly laserAxisY = new THREE.Vector3(0, 1, 0)
+  private laserLifeRemaining = 0
+  private readonly laserDurationSec = 0.11
 
   private fishScaleParams: FishScaleParams = { ...DEFAULT_FISH_SCALE_PARAMS }
   private glassSurfaceParams: FishScaleParams = { ...DEFAULT_GLASS_SURFACE_PARAMS }
@@ -145,6 +169,29 @@ export class PlaygroundRuntime {
   private readonly lampGlobes: THREE.Mesh[]
   private readonly lampEffects: FishScaleEffect[]
   private readonly windowGlassEffects: FishScaleEffect[]
+  /** Stable interaction targets for raycasts (no per-frame array allocation). */
+  private readonly raycastTargets: THREE.Object3D[]
+  /** Reused controller input to avoid per-frame object allocation. */
+  private readonly frameInput: ThirdPersonControllerInput = {
+    moveForward: false,
+    moveBackward: false,
+    moveLeft: false,
+    moveRight: false,
+    sprint: false,
+    jump: false,
+    lookActive: false,
+    lookDeltaX: 0,
+    lookDeltaY: 0,
+  }
+  private readonly controllerConfig: ThirdPersonControllerConfig = { ...PLAYGROUND_CONTROLLER }
+  private quality: PlaygroundQuality = PLAYGROUND_QUALITY_DEFAULT
+  /** Editor-facing layout densities before quality scaling. */
+  private userGrassLayoutDensity = DEFAULT_GRASS_FIELD_PARAMS.layoutDensity
+  private userStarLayoutDensity = DEFAULT_STAR_SKY_PARAMS.layoutDensity
+  private userRockLayoutDensity = DEFAULT_ROCK_FIELD_PARAMS.layoutDensity
+  private frameTick = 0
+  /** Last frame CPU time spent in effect updates (ms), for debugging. */
+  effectUpdateMs = 0
 
   constructor(host: HTMLElement) {
     this.host = host
@@ -189,7 +236,7 @@ export class PlaygroundRuntime {
     for (let i = 0; i < STREET_LIGHT_XZ.length; i++) {
       const pos = STREET_LIGHT_XZ[i]!
       const lampEffect = createFishScaleEffect({
-        surface: getPreparedFishSurface(),
+        surface: getPreparedGlassSurface(),
         seedCursor,
         effectId: `street-lamp-glass-${i}`,
         appearance: 'glassBulb',
@@ -207,19 +254,35 @@ export class PlaygroundRuntime {
     for (let i = 0; i < WINDOW_GLASS_LAYOUTS.length; i++) {
       const layout = WINDOW_GLASS_LAYOUTS[i]!
       const glassEffect = createFishScaleEffect({
-        surface: getPreparedFishSurface(),
+        surface: getPreparedGlassSurface(),
         seedCursor,
         effectId: `building-window-glass-${i}`,
         appearance: 'glass',
         initialParams: this.glassSurfaceParams,
       })
+      // Match static pane XY footprint (0.9). Do not mirror pane `translateZ(-0.05)` here — the Weft
+      // group’s local axes + thin `scaleZ` recess the glass into the wall if we offset the same way.
       glassEffect.group.position.set(layout.x, layout.y, layout.z)
       glassEffect.group.rotation.y = layout.rotationY
-      glassEffect.group.scale.set(layout.scaleX, layout.scaleY, layout.scaleZ)
+      glassEffect.group.scale.set(layout.scaleX * 0.9, layout.scaleY * 0.9, layout.scaleZ)
       this.scene.add(glassEffect.group)
       windowGlassEffects.push(glassEffect)
     }
     this.windowGlassEffects = windowGlassEffects
+
+    const raycastList: THREE.Object3D[] = [
+      this.shutterEffect.interactionMesh,
+      this.ivyEffect.interactionMesh,
+      this.grassEffect.interactionMesh,
+      this.neonSignEffect.interactionMesh,
+    ]
+    for (const e of this.lampEffects) {
+      raycastList.push(e.interactionMesh)
+    }
+    for (const e of this.windowGlassEffects) {
+      raycastList.push(e.interactionMesh)
+    }
+    this.raycastTargets = raycastList
 
     this.scene.add(this.grassEffect.group)
     this.scene.add(this.shutterEffect.group)
@@ -231,6 +294,29 @@ export class PlaygroundRuntime {
     this.scene.add(this.controller.player.group)
     this.camera.add(this.controller.player.reticle)
     this.controller.player.setReticleVisible(true)
+
+    const makeLaserMat = (hex: number, opacity: number): THREE.MeshBasicMaterial =>
+      new THREE.MeshBasicMaterial({
+        color: hex,
+        transparent: true,
+        opacity,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        toneMapped: false,
+      })
+    const outerGeom = new THREE.CylinderGeometry(0.038, 0.038, 1, 12)
+    const coreGeom = new THREE.CylinderGeometry(0.012, 0.012, 1, 8)
+    this.laserBeamOuter = new THREE.Mesh(outerGeom, makeLaserMat(0xff1538, 0.88))
+    this.laserBeamCore = new THREE.Mesh(coreGeom, makeLaserMat(0xffeaee, 0.95))
+    this.laserBeamOuter.frustumCulled = false
+    this.laserBeamCore.frustumCulled = false
+    this.laserBeamOuter.renderOrder = 12
+    this.laserBeamCore.renderOrder = 13
+    this.laserBeamGroup = new THREE.Group()
+    this.laserBeamGroup.add(this.laserBeamOuter)
+    this.laserBeamGroup.add(this.laserBeamCore)
+    this.laserBeamGroup.visible = false
+    this.scene.add(this.laserBeamGroup)
 
     this.resetPlayer()
   }
@@ -250,7 +336,7 @@ export class PlaygroundRuntime {
     this.resize()
     this.resizeObserver = new ResizeObserver(() => this.resize())
     this.resizeObserver.observe(this.host)
-    this.canvas.addEventListener('mousedown', this.handleMouseDown)
+    window.addEventListener('mousedown', this.handleWindowMouseDownForShoot, true)
     this.canvas.addEventListener('pointerdown', this.handlePointerDown)
     this.canvas.addEventListener('pointermove', this.handlePointerMove)
     this.canvas.addEventListener('pointerup', this.handlePointerUp)
@@ -283,6 +369,11 @@ export class PlaygroundRuntime {
 
   setGrassFieldParams(params: Partial<GrassFieldParams>): void {
     this.grassFieldParams = { ...this.grassFieldParams, ...params }
+    if (params.layoutDensity !== undefined) {
+      this.userGrassLayoutDensity = params.layoutDensity
+    }
+    this.grassFieldParams.layoutDensity =
+      this.userGrassLayoutDensity * getQualityGrassLayoutScale(this.quality)
     if (params.state !== undefined) {
       this.grassEffect.setSurface(buildGrassStateSurface(this.grassFieldParams.state))
     }
@@ -291,6 +382,11 @@ export class PlaygroundRuntime {
 
   setRockFieldParams(params: Partial<RockFieldParams>): void {
     this.rockFieldParams = { ...this.rockFieldParams, ...params }
+    if (params.layoutDensity !== undefined) {
+      this.userRockLayoutDensity = params.layoutDensity
+    }
+    this.rockFieldParams.layoutDensity =
+      this.userRockLayoutDensity * getQualityRockLayoutScale(this.quality)
     this.rockFieldEffect.setParams(this.rockFieldParams)
   }
 
@@ -300,7 +396,31 @@ export class PlaygroundRuntime {
 
   setStarSkyParams(params: Partial<StarSkyParams>): void {
     this.starSkyParams = { ...this.starSkyParams, ...params }
+    if (params.layoutDensity !== undefined) {
+      this.userStarLayoutDensity = params.layoutDensity
+    }
+    this.starSkyParams.layoutDensity =
+      this.userStarLayoutDensity * getQualityStarLayoutScale(this.quality)
     this.starSkyEffect.setParams(this.starSkyParams)
+  }
+
+  /** Low/Medium/High: DPR cap + scaled grass/star/rock layout density (editor values preserved). */
+  setQuality(quality: PlaygroundQuality): void {
+    this.quality = quality
+    this.grassFieldParams.layoutDensity =
+      this.userGrassLayoutDensity * getQualityGrassLayoutScale(this.quality)
+    this.grassEffect.setParams(this.grassFieldParams)
+    this.starSkyParams.layoutDensity =
+      this.userStarLayoutDensity * getQualityStarLayoutScale(this.quality)
+    this.starSkyEffect.setParams(this.starSkyParams)
+    this.rockFieldParams.layoutDensity =
+      this.userRockLayoutDensity * getQualityRockLayoutScale(this.quality)
+    this.rockFieldEffect.setParams(this.rockFieldParams)
+    this.resize()
+  }
+
+  getQuality(): PlaygroundQuality {
+    return this.quality
   }
 
   clearFishWounds(): void {
@@ -341,7 +461,7 @@ export class PlaygroundRuntime {
     this.disposed = true
     cancelAnimationFrame(this.rafId)
     this.resizeObserver?.disconnect()
-    this.canvas.removeEventListener('mousedown', this.handleMouseDown)
+    window.removeEventListener('mousedown', this.handleWindowMouseDownForShoot, true)
     this.canvas.removeEventListener('pointerdown', this.handlePointerDown)
     this.canvas.removeEventListener('pointermove', this.handlePointerMove)
     this.canvas.removeEventListener('pointerup', this.handlePointerUp)
@@ -369,6 +489,11 @@ export class PlaygroundRuntime {
     }
     this.scene.remove(this.controller.player.group)
     this.camera.remove(this.controller.player.reticle)
+    this.scene.remove(this.laserBeamGroup)
+    this.laserBeamOuter.geometry.dispose()
+    this.laserBeamCore.geometry.dispose()
+    ;(this.laserBeamOuter.material as THREE.MeshBasicMaterial).dispose()
+    ;(this.laserBeamCore.material as THREE.MeshBasicMaterial).dispose()
     this.shutterEffect.dispose()
     this.ivyEffect.dispose()
     this.grassEffect.dispose()
@@ -390,7 +515,8 @@ export class PlaygroundRuntime {
 
     this.camera.aspect = width / height
     this.camera.updateProjectionMatrix()
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+    const cap = getQualityPixelRatioCap(this.quality)
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, cap))
     this.renderer.setSize(width, height, false)
   }
 
@@ -404,10 +530,11 @@ export class PlaygroundRuntime {
     this.walkStampDistance = 0
     this.pendingJump = false
     this.controller.setSpawn(spawn, PLAYGROUND_SPAWN.yaw, PLAYGROUND_SPAWN.yaw, PLAYGROUND_SPAWN.pitch)
+    this.controllerConfig.cameraDistance = this.zoomDistance
     this.activeFrame = this.controller.update(
       this.camera,
-      this.getFrameInput(),
-      this.getControllerConfig(),
+      this.syncFrameInput(),
+      this.controllerConfig,
       PLAYGROUND_BOUNDS,
       this.getGroundHeightAtWorld,
       1,
@@ -423,15 +550,20 @@ export class PlaygroundRuntime {
       glass.update(elapsed)
     }
     this.grassEffect.update(elapsed)
-    this.updateReticleFromCamera()
     this.controller.player.update(0, 'idle')
   }
 
-  private getControllerConfig() {
-    return {
-      ...PLAYGROUND_CONTROLLER,
-      cameraDistance: this.zoomDistance,
-    }
+  private syncFrameInput(): ThirdPersonControllerInput {
+    this.frameInput.moveForward = this.inputState.moveForward
+    this.frameInput.moveBackward = this.inputState.moveBackward
+    this.frameInput.moveLeft = this.inputState.moveLeft
+    this.frameInput.moveRight = this.inputState.moveRight
+    this.frameInput.sprint = this.inputState.sprint
+    this.frameInput.lookActive = this.inputState.lookActive
+    this.frameInput.lookDeltaX = this.inputState.lookDeltaX
+    this.frameInput.lookDeltaY = this.inputState.lookDeltaY
+    this.frameInput.jump = this.pendingJump
+    return this.frameInput
   }
 
   private getGroundHeightAtWorld = (x: number, z: number): number => {
@@ -442,18 +574,23 @@ export class PlaygroundRuntime {
     return gy
   }
 
+  /**
+   * Use `mousedown` instead of `pointerdown` so LMB still fires while RMB is already held
+   * for orbit/pan; pointer events do not emit a second `pointerdown` for chorded mouse buttons.
+   */
+  private handleWindowMouseDownForShoot = (event: MouseEvent): void => {
+    if (this.disposed || event.button !== 0) return
+    const t = event.target
+    if (!(t instanceof Node) || !this.host.contains(t)) return
+    this.pendingShoot = true
+    this.canvas.focus()
+  }
+
   private handlePointerDown = (event: PointerEvent): void => {
     this.canvas.focus()
     if (event.button === 2) {
       this.inputState.lookActive = true
       this.canvas.setPointerCapture(event.pointerId)
-    }
-  }
-
-  private handleMouseDown = (event: MouseEvent): void => {
-    if (event.button === 0) {
-      this.canvas.focus()
-      this.pendingShoot = true
     }
   }
 
@@ -533,13 +670,6 @@ export class PlaygroundRuntime {
     this.inputState.lookActive = false
   }
 
-  private getFrameInput() {
-    return {
-      ...this.inputState,
-      jump: this.pendingJump,
-    }
-  }
-
   private getPlayerAnimationState(frame: ThirdPersonControllerFrame | null): PlayerAnimationState {
     if (!frame?.isMoving) return 'idle'
     if (frame.isSprinting) return 'running'
@@ -581,17 +711,7 @@ export class PlaygroundRuntime {
     this.raycaster.setFromCamera(this.ndcCenter, this.camera)
     this.raycaster.far = 140
 
-    const hits = this.raycaster.intersectObjects(
-      [
-        this.shutterEffect.interactionMesh,
-        this.ivyEffect.interactionMesh,
-        this.grassEffect.interactionMesh,
-        this.neonSignEffect.interactionMesh,
-        ...this.lampEffects.map((e) => e.interactionMesh),
-        ...this.windowGlassEffects.map((e) => e.interactionMesh),
-      ],
-      false,
-    )
+    const hits = this.raycaster.intersectObjects(this.raycastTargets, false)
     const hit = hits[0]
     if (!hit?.point) return null
 
@@ -604,6 +724,57 @@ export class PlaygroundRuntime {
     else targetKind = 'grass'
 
     return { ...hit, targetKind }
+  }
+
+  /** World point where the center-screen ray meets the scene (matches shot impact logic). */
+  private getLaserImpactPoint(hit: ReticleHit | null, out: THREE.Vector3): void {
+    if (hit?.point) {
+      out.copy(hit.point)
+      return
+    }
+    if (!hit && this.raycaster.ray.direction.y > 0.02) {
+      out.copy(this.raycaster.ray.origin).addScaledVector(this.raycaster.ray.direction, 96)
+      return
+    }
+    if (!hit) {
+      const grassHit = this.getGrassFallbackHit()
+      if (grassHit?.point) {
+        out.copy(grassHit.point)
+        return
+      }
+    }
+    out.copy(this.raycaster.ray.origin).addScaledVector(this.raycaster.ray.direction, this.raycaster.far)
+  }
+
+  /** Chest-height point in front of the character mesh (world space), not the camera ray. */
+  private getLaserMuzzleWorld(frame: ThirdPersonControllerFrame, out: THREE.Vector3): void {
+    this.controller.player.group.getWorldDirection(this.laserPlayerForward)
+    this.laserPlayerForward.negate()
+    this.laserPlayerForward.y = 0
+    if (this.laserPlayerForward.lengthSq() < 1e-8) {
+      this.laserPlayerForward.set(0, 0, -1)
+    } else {
+      this.laserPlayerForward.normalize()
+    }
+    out.copy(frame.playerPosition)
+    out.y += 1.14
+    out.addScaledVector(this.laserPlayerForward, 0.48)
+  }
+
+  private refreshLaserBeamGeometry(frame: ThirdPersonControllerFrame, endWorld: THREE.Vector3): void {
+    this.getLaserMuzzleWorld(frame, this.laserMuzzle)
+    const dist = this.laserMuzzle.distanceTo(endWorld)
+    if (dist < 0.05) {
+      this.laserBeamGroup.visible = false
+      return
+    }
+    this.laserDir.subVectors(endWorld, this.laserMuzzle).normalize()
+    this.laserMid.copy(this.laserMuzzle).add(endWorld).multiplyScalar(0.5)
+    for (const mesh of [this.laserBeamOuter, this.laserBeamCore]) {
+      mesh.position.copy(this.laserMid)
+      mesh.scale.set(1, dist, 1)
+      mesh.quaternion.setFromUnitVectors(this.laserAxisY, this.laserDir)
+    }
   }
 
   private getGrassFallbackHit(): ReticleHit | null {
@@ -622,6 +793,18 @@ export class PlaygroundRuntime {
 
   private fireShot(): void {
     const hit = this.getCenterRayHit()
+    if (this.activeFrame) {
+      this.getLaserImpactPoint(hit, this.laserEndPoint)
+      this.laserImpactLocked.copy(this.laserEndPoint)
+      this.laserImpactValid = true
+      this.refreshLaserBeamGeometry(this.activeFrame, this.laserImpactLocked)
+      const outerMat = this.laserBeamOuter.material as THREE.MeshBasicMaterial
+      const coreMat = this.laserBeamCore.material as THREE.MeshBasicMaterial
+      outerMat.opacity = 0.88
+      coreMat.opacity = 0.95
+      this.laserBeamGroup.visible = true
+      this.laserLifeRemaining = this.laserDurationSec
+    }
 
     if (hit?.targetKind === 'shutter') {
       this.shutterEffect.addWoundFromWorldPoint(hit.point, this.raycaster.ray.direction)
@@ -669,19 +852,6 @@ export class PlaygroundRuntime {
     this.grassEffect.addDisturbanceFromWorldPoint(hit.point, { radiusScale: 1.15, strength: 1.45, deformGround: false })
   }
 
-  private showFallbackReticle(): void {
-    this.controller.player.setReticleVisible(true)
-  }
-
-  private updateReticleFromCamera(): void {
-    const hit = this.getCenterRayHit() ?? this.getGrassFallbackHit()
-    if (!hit?.point) {
-      this.showFallbackReticle()
-      return
-    }
-    this.controller.player.setReticleVisible(true)
-  }
-
   /** Dim point light and bulb emissive as glass wound load rises; recovers with Weft wound decay. */
   private updateStreetLampLighting(): void {
     for (let i = 0; i < this.lampEffects.length; i++) {
@@ -709,11 +879,13 @@ export class PlaygroundRuntime {
     const elapsed = this.timer.getElapsed()
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsed - this.lastElapsed))
     this.lastElapsed = elapsed
+    this.frameTick++
 
+    this.controllerConfig.cameraDistance = this.zoomDistance
     this.activeFrame = this.controller.update(
       this.camera,
-      this.getFrameInput(),
-      this.getControllerConfig(),
+      this.syncFrameInput(),
+      this.controllerConfig,
       PLAYGROUND_BOUNDS,
       this.getGroundHeightAtWorld,
       delta,
@@ -731,24 +903,51 @@ export class PlaygroundRuntime {
       this.pendingShoot = false
     }
 
+    if (this.laserLifeRemaining > 0 && this.laserImpactValid && this.activeFrame) {
+      this.refreshLaserBeamGeometry(this.activeFrame, this.laserImpactLocked)
+    }
+
+    if (this.laserLifeRemaining > 0) {
+      this.laserLifeRemaining = Math.max(0, this.laserLifeRemaining - delta)
+      const k = this.laserLifeRemaining > 0 ? Math.min(1, this.laserLifeRemaining / this.laserDurationSec) : 0
+      ;(this.laserBeamOuter.material as THREE.MeshBasicMaterial).opacity = 0.88 * k
+      ;(this.laserBeamCore.material as THREE.MeshBasicMaterial).opacity = 0.95 * k
+      if (this.laserLifeRemaining <= 0) {
+        this.laserBeamGroup.visible = false
+        this.laserImpactValid = false
+      }
+    }
+
+    const tEffect0 = typeof performance !== 'undefined' ? performance.now() : 0
+
     this.controller.player.update(delta, this.getPlayerAnimationState(this.activeFrame))
     this.shutterEffect.update(elapsed)
     this.ivyEffect.update(elapsed)
     for (const lamp of this.lampEffects) {
-      lamp.update(elapsed)
+      if (lamp.hasWounds() || (this.frameTick & 1) === 0) {
+        lamp.update(elapsed)
+      }
     }
     for (const glass of this.windowGlassEffects) {
-      glass.update(elapsed)
+      if (glass.hasWounds() || (this.frameTick & 1) === 0) {
+        glass.update(elapsed)
+      }
     }
     // Grass update first so later samples read the current flattened field state.
     this.grassEffect.update(elapsed)
     this.rockFieldEffect.update(this.getGroundHeightAtWorld)
-    this.neonSignEffect.update(elapsed)
+    if (this.neonSignEffect.hasWounds() || (this.frameTick & 1) === 0) {
+      this.neonSignEffect.update(elapsed)
+    }
     this.starSkyEffect.update(elapsed)
     this.updateStreetLampLighting()
     this.skybox.position.copy(this.camera.position)
     this.starSkyEffect.group.position.copy(this.camera.position)
-    this.updateReticleFromCamera()
+
+    if (typeof performance !== 'undefined') {
+      this.effectUpdateMs = performance.now() - tEffect0
+    }
+
     this.renderer.render(this.scene, this.camera)
     this.rafId = requestAnimationFrame(this.frame)
   }
