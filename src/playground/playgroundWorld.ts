@@ -1,11 +1,9 @@
 import type { MovementBounds, ThirdPersonControllerConfig } from './thirdPersonController'
-import { CROSS_EXTENT } from './townRoadMask'
-
 export const PLAYGROUND_BOUNDS: MovementBounds = {
-  minX: -20,
-  maxX: 20,
-  minZ: -20,
-  maxZ: 20,
+  minX: -28,
+  maxX: 28,
+  minZ: -28,
+  maxZ: 28,
 }
 
 export const PLAYGROUND_CONTROLLER: ThirdPersonControllerConfig = {
@@ -41,7 +39,7 @@ export const PLAYGROUND_SPAWN = {
 /** Shutter-style facade on the north building, facing the intersection. */
 export const SHUTTER_WALL_LAYOUT = {
   x: 0,
-  z: -14,
+  z: -15.02,
   wallCenterHeight: 2.45,
   wallWidth: 8.8,
   wallHeight: 7.2,
@@ -66,17 +64,24 @@ export const WINDOW_GLASS_LAYOUTS = [
   { x: 12.64, y: 4.4, z: -1.6, rotationY: -Math.PI / 2, scaleX: 0.72, scaleY: 0.86, scaleZ: 0.12 },
 ] as const
 
-/**
- * Neon barrier: wide wall along +X that spans the whole cross so it reads as a square blockade
- * across the intersection (facing traffic from +Z toward town).
- */
-export const NEON_BARRIER = {
-  x: 0,
-  z: 3.92,
-  rotationY: 0,
-  wallWidth: CROSS_EXTENT * 2 + 2.6,
-  wallHeight: 6.6,
+export const INTERIOR_FLOOR_Y = 0.14
+
+const BUILDING_INTERIORS = [
+  { minX: -12.74, maxX: 12.74, minZ: -23.49, maxZ: -15.51 },
+  { minX: -20.49, maxX: -12.51, minZ: -4.74, maxZ: 8.74 },
+  { minX: 12.76, maxX: 21.24, minZ: -9.74, maxZ: 1.74 },
+] as const
+
+export function isInsideBuildingInterior(x: number, z: number): boolean {
+  return BUILDING_INTERIORS.some((interior) =>
+    x >= interior.minX && x <= interior.maxX && z >= interior.minZ && z <= interior.maxZ,
+  )
 }
+
+/** Keep only the south neon wall segment on the open side with no building behind it. */
+export const NEON_BARRIERS = [
+  { x: 0, z: 9, rotationY: 0, wallWidth: 18, wallHeight: 6.6 },
+] as const
 
 /** Rubble / fracture field: empty lot beside the road. */
 export const RUBBLE_ZONE = {

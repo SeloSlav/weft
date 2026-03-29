@@ -17,6 +17,7 @@ import {
   getPreparedIvySurface,
   getPreparedRockSurface,
   getPreparedStarSurface,
+  type FireWallEffect,
   type FireWallParams,
   type FishScaleEffect,
   type FishScaleParams,
@@ -50,8 +51,9 @@ import {
 } from './playgroundTownScene'
 import { TOWN_ROAD_SURFACE_Y, isCrossRoadAsphalt } from './townRoadMask'
 import {
+  INTERIOR_FLOOR_Y,
   IVY_WALL_LAYOUT,
-  NEON_BARRIER,
+  NEON_BARRIERS,
   PLAYGROUND_BOUNDS,
   PLAYGROUND_CONTROLLER,
   PLAYGROUND_SPAWN,
@@ -62,6 +64,7 @@ import {
   STREET_LAMP_GLOBE_EMISSIVE_MAX,
   STREET_LAMP_POINT_INTENSITY_MAX,
   WINDOW_GLASS_LAYOUTS,
+  isInsideBuildingInterior,
 } from './playgroundWorld'
 
 type ReticleHit = THREE.Intersection & {
@@ -69,6 +72,15 @@ type ReticleHit = THREE.Intersection & {
 }
 
 export class PlaygroundRuntime {
+  private static readonly INDOOR_CAMERA_DISTANCE_MAX = 3.15
+  private static readonly INDOOR_SHOULDER_OFFSET = 0.24
+  private static readonly INDOOR_CAMERA_HEIGHT = 1.95
+  private static readonly INDOOR_FOLLOW_LERP = 14
+  private static readonly OUTDOOR_FOV = 32
+  private static readonly INDOOR_FOV = 37
+  private static readonly CAMERA_OBSTRUCTION_PADDING = 0.22
+  private static readonly CAMERA_GROUND_CLEARANCE = 0.22
+
   private readonly host: HTMLElement
   private readonly canvas = document.createElement('canvas')
   private readonly timer = new Timer()
@@ -76,10 +88,14 @@ export class PlaygroundRuntime {
   private readonly camera = new THREE.PerspectiveCamera(32, 1, 0.2, 600)
   private readonly cameraFill = new THREE.PointLight('#fff4dc', 1.65, 26, 2)
   private readonly raycaster = new THREE.Raycaster()
+  private readonly cameraCollisionRaycaster = new THREE.Raycaster()
   private readonly grassAimPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
   private readonly grassFallbackPoint = new THREE.Vector3()
   private readonly playerForward = new THREE.Vector3()
   private readonly footstepPoint = new THREE.Vector3()
+  private readonly cameraAimToEye = new THREE.Vector3()
+  private readonly cameraLookTarget = new THREE.Vector3()
+  private readonly cameraSafePosition = new THREE.Vector3()
   private readonly ndcCenter = new THREE.Vector2(0, 0)
   private readonly shutterEffect = createFishScaleEffect({
     surface: getPreparedFishSurface(),
@@ -105,18 +121,20 @@ export class PlaygroundRuntime {
     seedCursor,
     initialParams: DEFAULT_ROCK_FIELD_PARAMS,
   })
-  private readonly neonSignEffect = createFireWallEffect({
-    surface: getPreparedFireSurface(),
-    seedCursor,
-    initialParams: {
-      ...DEFAULT_FIRE_WALL_PARAMS,
-      appearance: 'neon',
-      wallWidth: NEON_BARRIER.wallWidth,
-      wallHeight: NEON_BARRIER.wallHeight,
-      recoveryRate: 0.42,
-      holeSize: 0.92,
-    },
-  })
+  private readonly neonSignEffects: FireWallEffect[] = NEON_BARRIERS.map((barrier) =>
+    createFireWallEffect({
+      surface: getPreparedFireSurface(),
+      seedCursor,
+      initialParams: {
+        ...DEFAULT_FIRE_WALL_PARAMS,
+        appearance: 'neon',
+        wallWidth: barrier.wallWidth,
+        wallHeight: barrier.wallHeight,
+        recoveryRate: 0.42,
+        holeSize: 0.92,
+      },
+    }),
+  )
   private readonly starSkyEffect = createStarSkyEffect({
     surface: getPreparedStarSurface(),
     seedCursor,
@@ -165,6 +183,7 @@ export class PlaygroundRuntime {
   private starSkyParams: StarSkyParams = { ...DEFAULT_STAR_SKY_PARAMS }
   private zoomDistance = PLAYGROUND_ZOOM.current
   private readonly townGroup: THREE.Group
+  private readonly cameraObstacles: THREE.Object3D[]
   private readonly lampLights: THREE.PointLight[]
   private readonly lampGlobes: THREE.Mesh[]
   private readonly lampEffects: FishScaleEffect[]
@@ -189,6 +208,7 @@ export class PlaygroundRuntime {
   private userGrassLayoutDensity = DEFAULT_GRASS_FIELD_PARAMS.layoutDensity
   private userStarLayoutDensity = DEFAULT_STAR_SKY_PARAMS.layoutDensity
   private userRockLayoutDensity = DEFAULT_ROCK_FIELD_PARAMS.layoutDensity
+  private indoorCameraBlend = 0
   private frameTick = 0
   /** Last frame CPU time spent in effect updates (ms), for debugging. */
   effectUpdateMs = 0
@@ -204,6 +224,7 @@ export class PlaygroundRuntime {
 
     const townScene = createTownIntersectionScene()
     this.townGroup = townScene.root
+    this.cameraObstacles = townScene.cameraObstacles
     this.lampLights = townScene.lampLights
     this.lampGlobes = townScene.lampGlobes
     this.scene.add(this.townGroup)
@@ -227,9 +248,13 @@ export class PlaygroundRuntime {
     )
     this.ivyEffect.group.rotation.y = Math.PI / 2
 
-    const neonGroundY = this.grassEffect.getGroundHeightAtWorld(NEON_BARRIER.x, NEON_BARRIER.z)
-    this.neonSignEffect.group.position.set(NEON_BARRIER.x, neonGroundY + 0.06, NEON_BARRIER.z)
-    this.neonSignEffect.group.rotation.y = NEON_BARRIER.rotationY
+    for (let i = 0; i < this.neonSignEffects.length; i++) {
+      const barrier = NEON_BARRIERS[i]!
+      const effect = this.neonSignEffects[i]!
+      const neonGroundY = this.grassEffect.getGroundHeightAtWorld(barrier.x, barrier.z)
+      effect.group.position.set(barrier.x, neonGroundY + 0.06, barrier.z)
+      effect.group.rotation.y = barrier.rotationY
+    }
 
     const bulbY = TOWN_ROAD_SURFACE_Y + STREET_LAMP_BULB_Y_OFFSET
     const lamps: FishScaleEffect[] = []
@@ -274,8 +299,10 @@ export class PlaygroundRuntime {
       this.shutterEffect.interactionMesh,
       this.ivyEffect.interactionMesh,
       this.grassEffect.interactionMesh,
-      this.neonSignEffect.interactionMesh,
     ]
+    for (const e of this.neonSignEffects) {
+      raycastList.push(e.interactionMesh)
+    }
     for (const e of this.lampEffects) {
       raycastList.push(e.interactionMesh)
     }
@@ -289,7 +316,9 @@ export class PlaygroundRuntime {
     this.scene.add(this.ivyEffect.group)
     this.scene.add(this.rockFieldEffect.group)
     this.scene.add(this.starSkyEffect.group)
-    this.scene.add(this.neonSignEffect.group)
+    for (const effect of this.neonSignEffects) {
+      this.scene.add(effect.group)
+    }
 
     this.scene.add(this.controller.player.group)
     this.camera.add(this.controller.player.reticle)
@@ -391,7 +420,9 @@ export class PlaygroundRuntime {
   }
 
   setFireWallParams(params: Partial<FireWallParams>): void {
-    this.neonSignEffect.setParams({ ...params, appearance: 'neon' })
+    for (const effect of this.neonSignEffects) {
+      effect.setParams({ ...params, appearance: 'neon' })
+    }
   }
 
   setStarSkyParams(params: Partial<StarSkyParams>): void {
@@ -442,7 +473,9 @@ export class PlaygroundRuntime {
   }
 
   clearFireWounds(): void {
-    this.neonSignEffect.clearWounds()
+    for (const effect of this.neonSignEffects) {
+      effect.clearWounds()
+    }
   }
 
   clearSkyWounds(): void {
@@ -478,7 +511,9 @@ export class PlaygroundRuntime {
     this.scene.remove(this.ivyEffect.group)
     this.scene.remove(this.rockFieldEffect.group)
     this.scene.remove(this.starSkyEffect.group)
-    this.scene.remove(this.neonSignEffect.group)
+    for (const effect of this.neonSignEffects) {
+      this.scene.remove(effect.group)
+    }
     for (const lamp of this.lampEffects) {
       this.scene.remove(lamp.group)
       lamp.dispose()
@@ -499,7 +534,9 @@ export class PlaygroundRuntime {
     this.grassEffect.dispose()
     this.rockFieldEffect.dispose()
     this.starSkyEffect.dispose()
-    this.neonSignEffect.dispose()
+    for (const effect of this.neonSignEffects) {
+      effect.dispose()
+    }
     this.controller.player.dispose()
     this.renderer?.dispose()
     this.timer.dispose()
@@ -568,6 +605,9 @@ export class PlaygroundRuntime {
 
   private getGroundHeightAtWorld = (x: number, z: number): number => {
     const gy = this.grassEffect.getGroundHeightAtWorld(x, z)
+    if (isInsideBuildingInterior(x, z)) {
+      return Math.max(gy, INTERIOR_FLOOR_Y)
+    }
     if (isCrossRoadAsphalt(x, z)) {
       return Math.max(gy, TOWN_ROAD_SURFACE_Y)
     }
@@ -696,7 +736,10 @@ export class PlaygroundRuntime {
 
     this.footstepPoint.copy(frame.playerPosition).addScaledVector(this.playerForward, -0.18)
     this.footstepPoint.y = this.grassEffect.getGroundHeightAtWorld(this.footstepPoint.x, this.footstepPoint.z)
-    if (isCrossRoadAsphalt(this.footstepPoint.x, this.footstepPoint.z)) {
+    if (
+      isCrossRoadAsphalt(this.footstepPoint.x, this.footstepPoint.z) ||
+      isInsideBuildingInterior(this.footstepPoint.x, this.footstepPoint.z)
+    ) {
       return
     }
     this.grassEffect.addDisturbanceFromWorldPoint(this.footstepPoint, {
@@ -718,7 +761,7 @@ export class PlaygroundRuntime {
     let targetKind: ReticleHit['targetKind']
     if (hit.object === this.shutterEffect.interactionMesh) targetKind = 'shutter'
     else if (hit.object === this.ivyEffect.interactionMesh) targetKind = 'ivy'
-    else if (hit.object === this.neonSignEffect.interactionMesh) targetKind = 'neon'
+    else if (this.neonSignEffects.some((e) => e.interactionMesh === hit.object)) targetKind = 'neon'
     else if (this.lampEffects.some((e) => e.interactionMesh === hit.object)) targetKind = 'lamp'
     else if (this.windowGlassEffects.some((e) => e.interactionMesh === hit.object)) targetKind = 'glass'
     else targetKind = 'grass'
@@ -829,7 +872,8 @@ export class PlaygroundRuntime {
     }
 
     if (hit?.targetKind === 'neon') {
-      this.neonSignEffect.addWoundFromWorldPoint(hit.point)
+      const neon = this.neonSignEffects.find((e) => e.interactionMesh === hit.object)
+      neon?.addWoundFromWorldPoint(hit.point)
       return
     }
 
@@ -881,7 +925,7 @@ export class PlaygroundRuntime {
     this.lastElapsed = elapsed
     this.frameTick++
 
-    this.controllerConfig.cameraDistance = this.zoomDistance
+    this.updateCameraProfile(delta)
     this.activeFrame = this.controller.update(
       this.camera,
       this.syncFrameInput(),
@@ -890,6 +934,9 @@ export class PlaygroundRuntime {
       this.getGroundHeightAtWorld,
       delta,
     )
+    if (this.activeFrame) {
+      this.applyCameraObstruction(this.activeFrame)
+    }
     this.pendingJump = false
     this.inputState.lookDeltaX = 0
     this.inputState.lookDeltaY = 0
@@ -936,8 +983,10 @@ export class PlaygroundRuntime {
     // Grass update first so later samples read the current flattened field state.
     this.grassEffect.update(elapsed)
     this.rockFieldEffect.update(this.getGroundHeightAtWorld)
-    if (this.neonSignEffect.hasWounds() || (this.frameTick & 1) === 0) {
-      this.neonSignEffect.update(elapsed)
+    for (const effect of this.neonSignEffects) {
+      if (effect.hasWounds() || (this.frameTick & 1) === 0) {
+        effect.update(elapsed)
+      }
     }
     this.starSkyEffect.update(elapsed)
     this.updateStreetLampLighting()
@@ -950,5 +999,77 @@ export class PlaygroundRuntime {
 
     this.renderer.render(this.scene, this.camera)
     this.rafId = requestAnimationFrame(this.frame)
+  }
+
+  private updateCameraProfile(delta: number): void {
+    const playerPos = this.activeFrame?.playerPosition ?? this.controller.player.group.position
+    const isIndoor = isInsideBuildingInterior(playerPos.x, playerPos.z)
+    if (delta <= 0) {
+      this.indoorCameraBlend = isIndoor ? 1 : 0
+    } else {
+      const blendAlpha = 1 - Math.exp(-(isIndoor ? 10 : 7) * delta)
+      this.indoorCameraBlend = THREE.MathUtils.lerp(this.indoorCameraBlend, isIndoor ? 1 : 0, blendAlpha)
+    }
+
+    const indoorDistance = Math.min(this.zoomDistance, PlaygroundRuntime.INDOOR_CAMERA_DISTANCE_MAX)
+    this.controllerConfig.cameraDistance = THREE.MathUtils.lerp(this.zoomDistance, indoorDistance, this.indoorCameraBlend)
+    this.controllerConfig.shoulderOffset = THREE.MathUtils.lerp(
+      PLAYGROUND_CONTROLLER.shoulderOffset,
+      PlaygroundRuntime.INDOOR_SHOULDER_OFFSET,
+      this.indoorCameraBlend,
+    )
+    this.controllerConfig.cameraHeight = THREE.MathUtils.lerp(
+      PLAYGROUND_CONTROLLER.cameraHeight,
+      PlaygroundRuntime.INDOOR_CAMERA_HEIGHT,
+      this.indoorCameraBlend,
+    )
+    this.controllerConfig.cameraFollowLerp = THREE.MathUtils.lerp(
+      PLAYGROUND_CONTROLLER.cameraFollowLerp,
+      PlaygroundRuntime.INDOOR_FOLLOW_LERP,
+      this.indoorCameraBlend,
+    )
+
+    const targetFov = THREE.MathUtils.lerp(
+      PlaygroundRuntime.OUTDOOR_FOV,
+      PlaygroundRuntime.INDOOR_FOV,
+      this.indoorCameraBlend,
+    )
+    if (Math.abs(this.camera.fov - targetFov) > 0.01) {
+      this.camera.fov = targetFov
+      this.camera.updateProjectionMatrix()
+    }
+  }
+
+  private applyCameraObstruction(frame: ThirdPersonControllerFrame): void {
+    this.cameraAimToEye.subVectors(this.camera.position, frame.aimOrigin)
+    const targetDistance = this.cameraAimToEye.length()
+    if (targetDistance <= 0.001 || this.cameraObstacles.length === 0) {
+      return
+    }
+
+    this.cameraAimToEye.divideScalar(targetDistance)
+    this.cameraCollisionRaycaster.set(frame.aimOrigin, this.cameraAimToEye)
+    this.cameraCollisionRaycaster.far = targetDistance
+    const hit = this.cameraCollisionRaycaster.intersectObjects(this.cameraObstacles, false)[0]
+    if (!hit || hit.distance >= targetDistance) {
+      return
+    }
+
+    const safeDistance = Math.max(
+      0.12,
+      hit.distance - PlaygroundRuntime.CAMERA_OBSTRUCTION_PADDING,
+    )
+    this.cameraSafePosition.copy(frame.aimOrigin).addScaledVector(this.cameraAimToEye, safeDistance)
+    this.cameraSafePosition.y = Math.max(
+      this.cameraSafePosition.y,
+      this.getGroundHeightAtWorld(this.cameraSafePosition.x, this.cameraSafePosition.z) +
+        PlaygroundRuntime.CAMERA_GROUND_CLEARANCE,
+    )
+    this.camera.position.copy(this.cameraSafePosition)
+
+    this.cameraLookTarget.copy(frame.playerPosition)
+    this.cameraLookTarget.y += this.controllerConfig.cameraHeight * 0.86
+    this.cameraLookTarget.addScaledVector(frame.aimDirection, this.controllerConfig.reticleDistance * 0.42)
+    this.camera.lookAt(this.cameraLookTarget)
   }
 }

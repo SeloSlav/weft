@@ -13,6 +13,7 @@ import {
   recoverableDamage,
 } from '../api'
 import { PLAYGROUND_BOUNDS } from '../../../playground/playgroundWorld'
+import { isInsideBuildingInterior } from '../../../playground/playgroundWorld'
 import { isCrossRoadAsphalt, isVergeStrip } from '../../../playground/townRoadMask'
 import { smoothPulse } from '../../../playground/mathUtils'
 import {
@@ -607,7 +608,7 @@ export class GrassFieldEffect {
           (hashDep - 0.5) * rowStep * 0.52 +
           weftScatter * rowStep * 0.12
         const localZ = slot.lineCoord + lineDepthShift + zJitter
-        if (isCrossRoadAsphalt(x, localZ)) continue
+        if (isCrossRoadAsphalt(x, localZ) || isInsideBuildingInterior(x, localZ)) continue
         const { disturbance: localDisturbance, awayX, awayZ } = this.disturbanceAndBend(x, localZ)
         const stateIndex = this.stateIndex()
         let localCoverage = THREE.MathUtils.lerp(

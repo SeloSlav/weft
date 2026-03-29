@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { CROSS_EXTENT, CROSS_HALF_WIDTH, TOWN_ROAD_SURFACE_Y } from './townRoadMask'
-import { WINDOW_GLASS_LAYOUTS } from './playgroundWorld'
+import { INTERIOR_FLOOR_Y, WINDOW_GLASS_LAYOUTS } from './playgroundWorld'
 
 /** Lamp foot positions (world XZ); used by the playground for Weft lamp targets. */
 export const STREET_LIGHT_XZ = [
@@ -19,6 +19,22 @@ export type TownIntersectionScene = {
   lampLights: THREE.PointLight[]
   /** Emissive globe meshes paired with `lampLights` by index. */
   lampGlobes: THREE.Mesh[]
+  /** Wall and roof shell meshes used for third-person camera obstruction. */
+  cameraObstacles: THREE.Object3D[]
+}
+
+type HollowBuildingOptions = {
+  x: number
+  y: number
+  z: number
+  width: number
+  height: number
+  depth: number
+  wallThickness?: number
+  roofThickness?: number
+  floorThickness?: number
+  lightRange?: number
+  floorWorldY?: number
 }
 
 function createAsphaltTexture(): THREE.CanvasTexture {
@@ -95,6 +111,115 @@ function createRoadStripeTexture(): THREE.CanvasTexture {
   return tex
 }
 
+function createInteriorConcreteTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas')
+  canvas.width = 768
+  canvas.height = 768
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    const t = new THREE.CanvasTexture(canvas)
+    t.colorSpace = THREE.SRGBColorSpace
+    return t
+  }
+
+  const base = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
+  base.addColorStop(0, '#5e646b')
+  base.addColorStop(0.5, '#747a82')
+  base.addColorStop(1, '#4f565d')
+  ctx.fillStyle = base
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+  for (let i = 0; i < 70000; i++) {
+    const x = Math.random() * canvas.width
+    const y = Math.random() * canvas.height
+    const shade = 95 + Math.random() * 55
+    ctx.fillStyle = `rgba(${shade},${shade},${shade + 4},${0.03 + Math.random() * 0.08})`
+    ctx.fillRect(x, y, 1.4, 1.4)
+  }
+
+  for (let i = 0; i < 1800; i++) {
+    const x = Math.random() * canvas.width
+    const y = Math.random() * canvas.height
+    const length = 8 + Math.random() * 26
+    ctx.strokeStyle = `rgba(30, 34, 40, ${0.025 + Math.random() * 0.05})`
+    ctx.lineWidth = 0.8 + Math.random() * 1.8
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    ctx.lineTo(x + (Math.random() - 0.5) * length, y + (Math.random() - 0.5) * length)
+    ctx.stroke()
+  }
+
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.wrapS = THREE.RepeatWrapping
+  tex.wrapT = THREE.RepeatWrapping
+  tex.repeat.set(2.2, 2.2)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
+function addHollowBuilding(
+  root: THREE.Group,
+  options: HollowBuildingOptions,
+  wallMat: THREE.Material,
+  floorMat: THREE.Material,
+): { group: THREE.Group; cameraObstacles: THREE.Object3D[] } {
+  const {
+    x,
+    y,
+    z,
+    width,
+    height,
+    depth,
+    wallThickness = 0.26,
+    roofThickness = 0.24,
+    floorThickness = 0.12,
+    lightRange = 14,
+    floorWorldY = INTERIOR_FLOOR_Y,
+  } = options
+
+  const group = new THREE.Group()
+  group.position.set(x, y, z)
+
+  const halfW = width * 0.5
+  const halfH = height * 0.5
+  const halfD = depth * 0.5
+  const innerDepth = Math.max(0.2, depth - wallThickness * 2)
+
+  const northWall = new THREE.Mesh(new THREE.BoxGeometry(width, height, wallThickness), wallMat)
+  northWall.position.set(0, 0, -halfD + wallThickness * 0.5)
+  group.add(northWall)
+
+  const southWall = northWall.clone()
+  southWall.position.z = halfD - wallThickness * 0.5
+  group.add(southWall)
+
+  const westWall = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, height, innerDepth), wallMat)
+  westWall.position.set(-halfW + wallThickness * 0.5, 0, 0)
+  group.add(westWall)
+
+  const eastWall = westWall.clone()
+  eastWall.position.x = halfW - wallThickness * 0.5
+  group.add(eastWall)
+
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(width, roofThickness, depth), wallMat)
+  roof.position.set(0, halfH - roofThickness * 0.5, 0)
+  group.add(roof)
+
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(width - wallThickness * 2, floorThickness, depth - wallThickness * 2), floorMat)
+  floor.position.set(0, floorWorldY - y + floorThickness * 0.5, 0)
+  group.add(floor)
+
+  const interiorLight = new THREE.PointLight('#d8e3ff', 0.42, lightRange, 2)
+  interiorLight.position.set(0, Math.max(1.2, halfH - 1.1), 0)
+  group.add(interiorLight)
+
+  root.add(group)
+  return {
+    group,
+    cameraObstacles: [northWall, southWall, westWall, eastWall, roof],
+  }
+}
+
 /**
  * Edge-of-town intersection: cross asphalt, yellow markings, curbs, simple blocks, poles.
  */
@@ -103,6 +228,7 @@ export function createTownIntersectionScene(): TownIntersectionScene {
   root.name = 'townIntersection'
   const lampLights: THREE.PointLight[] = []
   const lampGlobes: THREE.Mesh[] = []
+  const cameraObstacles: THREE.Object3D[] = []
 
   const asphaltMap = createAsphaltTexture()
   const asphaltMat = new THREE.MeshStandardMaterial({
@@ -178,21 +304,51 @@ export function createTownIntersectionScene(): TownIntersectionScene {
     metalness: 0.12,
   })
   const trimMat = new THREE.MeshStandardMaterial({ color: '#4a5a6e', roughness: 0.65, metalness: 0.25 })
+  const interiorConcreteMap = createInteriorConcreteTexture()
+  const interiorFloorMat = new THREE.MeshStandardMaterial({
+    map: interiorConcreteMap,
+    color: '#d6dbe0',
+    emissive: '#0f141a',
+    emissiveIntensity: 0.08,
+    roughness: 0.97,
+    metalness: 0.03,
+  })
 
-  const north = new THREE.Mesh(new THREE.BoxGeometry(26, 9, 4.5), buildingMat)
-  north.position.set(0, 4.2, -17.5)
-  root.add(north)
-  const northTrim = new THREE.Mesh(new THREE.BoxGeometry(26.2, 0.35, 4.7), trimMat)
-  northTrim.position.set(0, 7.8, -17.5)
+  const northShell = addHollowBuilding(root, {
+    x: 0,
+    y: 4.2,
+    z: -19.5,
+    width: 26,
+    height: 9,
+    depth: 8.5,
+    lightRange: 18,
+  }, buildingMat, interiorFloorMat)
+  cameraObstacles.push(...northShell.cameraObstacles)
+  const northTrim = new THREE.Mesh(new THREE.BoxGeometry(26.2, 0.35, 8.7), trimMat)
+  northTrim.position.set(0, 7.8, -19.5)
   root.add(northTrim)
 
-  const west = new THREE.Mesh(new THREE.BoxGeometry(4.5, 7, 14), buildingMat)
-  west.position.set(-14.5, 3.4, 2)
-  root.add(west)
+  const westShell = addHollowBuilding(root, {
+    x: -16.5,
+    y: 3.4,
+    z: 2,
+    width: 8.5,
+    height: 7,
+    depth: 14,
+    lightRange: 14,
+  }, buildingMat, interiorFloorMat)
+  cameraObstacles.push(...westShell.cameraObstacles)
 
-  const east = new THREE.Mesh(new THREE.BoxGeometry(4.5, 7, 12), buildingMat)
-  east.position.set(15, 3.5, -4)
-  root.add(east)
+  const eastShell = addHollowBuilding(root, {
+    x: 17,
+    y: 3.5,
+    z: -4,
+    width: 8.5,
+    height: 7,
+    depth: 12,
+    lightRange: 13,
+  }, buildingMat, interiorFloorMat)
+  cameraObstacles.push(...eastShell.cameraObstacles)
 
   const windowPaneMat = new THREE.MeshStandardMaterial({
     color: '#d9edf6',
@@ -281,5 +437,5 @@ export function createTownIntersectionScene(): TownIntersectionScene {
     addStreetlight(x, z)
   }
 
-  return { root, lampLights, lampGlobes }
+  return { root, lampLights, lampGlobes, cameraObstacles }
 }
