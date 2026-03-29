@@ -46,6 +46,39 @@ npm install weft-sdk three
 
 `three` is a peer dependency. `@chenglou/pretext` is bundled as a normal dependency of `weft-sdk`.
 
+## Hello world
+
+This is the smallest package-consumer example: create a source, build a grass effect, and add its group to your scene.
+
+```ts
+import * as THREE from 'three'
+import {
+  DEFAULT_GRASS_FIELD_PARAMS,
+  createGrassEffect,
+  createSurfaceSource,
+} from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
+
+const scene = new THREE.Scene()
+
+const surface = createSurfaceSource({
+  cacheKey: 'hello-weft',
+  units: ['|', '/', '\\'],
+  repeat: 24,
+})
+
+const grass = createGrassEffect({
+  seedCursor,
+  surface,
+  initialParams: {
+    ...DEFAULT_GRASS_FIELD_PARAMS,
+    layoutDensity: 8,
+  },
+})
+
+scene.add(grass.group)
+```
+
 The SDK already supports a direct authoring path for new effects through source creation, layout helpers, behaviors, and presets:
 
 ```ts

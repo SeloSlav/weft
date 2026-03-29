@@ -41,6 +41,13 @@
     "reactive-surfaces"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SeloSlav/weft.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SeloSlav/weft/issues"
+  },
   "homepage": "https://pretext-weft.vercel.app",
   "engines": {
     "node": ">=20"
