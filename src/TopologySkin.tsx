@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { layoutNextLine, type LayoutCursor } from '@chenglou/pretext'
 import { getPreparedSkin, seedCursor } from './skinText'
@@ -57,20 +57,22 @@ export type TopologySkinProps = {
 export function TopologySkin({ woundHalfAngle, woundNarrow, deform }: TopologySkinProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const prepared = useMemo(() => getPreparedSkin(), [])
-  const bandCursors = useRef<LayoutCursor[]>([])
-
-  useEffect(() => {
-    bandCursors.current = Array.from({ length: NUM_BANDS }, (_, b) => seedCursor(prepared, b * 23 + 3))
-  }, [prepared])
+  const bandSeeds = useMemo(
+    () => Array.from({ length: NUM_BANDS }, (_, b) => seedCursor(prepared, b * 23 + 3)),
+    [prepared],
+  )
 
   const geometry = useMemo(() => new THREE.BoxGeometry(1, 1, 1), [])
   const material = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: '#8a9ba8',
-        metalness: 0.88,
-        roughness: 0.28,
-        envMapIntensity: 1.1,
+        color: '#a7b6c4',
+        metalness: 0.22,
+        roughness: 0.52,
+        envMapIntensity: 0,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1,
       }),
     [],
   )
@@ -82,12 +84,9 @@ export function TopologySkin({ woundHalfAngle, woundNarrow, deform }: TopologySk
     const mesh = meshRef.current
     if (!mesh) return
 
-    if (bandCursors.current.length !== NUM_BANDS) {
-      bandCursors.current = Array.from({ length: NUM_BANDS }, (_, b) => seedCursor(prepared, b * 23 + 3))
-    }
-
     const t = state.clock.elapsedTime
-    const woundCenter = t * 0.35
+    // Moving wound changes sector maxWidth every frame → layout reflow → jitter. Only drift when deform > 0.
+    const woundCenter = deform > 0 ? t * 0.35 : 0
     const R = baseR + deform * 0.22 * Math.sin(t * 0.7 + 0.3)
     const r = baser + deform * 0.12 * Math.sin(t * 1.1 + 1.7)
 
@@ -95,7 +94,9 @@ export function TopologySkin({ woundHalfAngle, woundNarrow, deform }: TopologySk
 
     for (let b = 0; b < NUM_BANDS; b++) {
       const v = -Math.PI * 0.72 + (b / (NUM_BANDS - 1)) * Math.PI * 1.44
-      let cursor = bandCursors.current[b] ?? { segmentIndex: 0, graphemeIndex: 0 }
+      let cursor: LayoutCursor = bandSeeds[b]
+        ? { ...bandSeeds[b] }
+        : { segmentIndex: 0, graphemeIndex: 0 }
 
       for (let s = 0; s < SECTORS; s++) {
         const u0 = (s / SECTORS) * Math.PI * 2
@@ -114,11 +115,9 @@ export function TopologySkin({ woundHalfAngle, woundNarrow, deform }: TopologySk
           line = layoutNextLine(prepared, cursor, minW)
         }
         if (line === null) {
-          bandCursors.current[b] = cursor
           continue
         }
         cursor = line.end
-        bandCursors.current[b] = cursor
 
         const glyphs = graphemesOf(line.text).filter((g) => !/^\s+$/.test(g))
         const n = glyphs.length

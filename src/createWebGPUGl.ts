@@ -18,6 +18,7 @@ export const createWebGPUGl: GLProps = async (defaultProps) => {
     antialias: defaultProps.antialias ?? true,
     alpha: defaultProps.alpha ?? true,
     powerPreference: webgpuPowerPreference(defaultProps.powerPreference),
+    logarithmicDepthBuffer: true,
   })
   type RendererWithFallback = { _getFallback: (() => unknown) | null }
   ;(renderer as unknown as RendererWithFallback)._getFallback = null

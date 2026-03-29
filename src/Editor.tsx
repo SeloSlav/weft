@@ -126,12 +126,13 @@ export function Editor() {
 
       <main className="viewport">
         <Canvas className="canvas" dpr={[1, 2]} gl={createWebGPUGl}>
-          <PerspectiveCamera makeDefault position={[4.2, 2.4, 4.8]} fov={42} />
-          <color attach="background" args={['#07090e']} />
-          <ambientLight intensity={0.22} />
-          <hemisphereLight args={['#c8d4f0', '#1a1e28', 0.35]} />
-          <directionalLight position={[6, 8, 4]} intensity={1.35} />
-          <directionalLight position={[-4, -2, -6]} intensity={0.35} color="#a8c4ff" />
+          <PerspectiveCamera makeDefault position={[4.2, 2.4, 4.8]} fov={42} near={0.22} far={36} />
+          <color attach="background" args={['#0a0d12']} />
+          <ambientLight intensity={0.48} />
+          <hemisphereLight args={['#e4eaf5', '#2a323c', 0.62]} />
+          <directionalLight position={[6, 8, 4]} intensity={1.85} />
+          <directionalLight position={[-4, -2, -6]} intensity={0.42} color="#b8ccff" />
+          <directionalLight position={[0, 1.5, 7]} intensity={0.55} color="#fff5eb" />
           {sampleId === 'torus-wound' && (
             <TopologySkin woundHalfAngle={woundHalfAngle} woundNarrow={woundNarrow} deform={deform} />
           )}

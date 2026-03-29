@@ -11,9 +11,11 @@ export function Landing({ onEnterEditor }: LandingProps) {
           Typesetting on <span className="landing__title-accent">geometry</span>
         </h1>
         <p className="landing__lead">
-          Pretext Weft packs measured visual units along bands and paths on 3D surfaces—like line layout,
-          except the “lines” follow contours, obstacles, and deformation. This site is the reference
-          implementation: batched measurement, a hot arithmetic layout path, and live samples you can steer.
+          In 3D, decoration is usually scatter, noise, or baked textures: it looks fine, but it is not
+          line-by-line layout. Pretext Weft treats bands and paths on a mesh like lines with changing
+          width: you measure a stream once, then reflow when the surface bends, cuts, or obstacles move.
+          This playground is the reference build: batched Pretext measurement, a fast numeric layout pass,
+          and samples you can drive in the browser.
         </p>
 
         <div className="landing__actions">
@@ -32,10 +34,10 @@ export function Landing({ onEnterEditor }: LandingProps) {
             <span>Walk bands with a layout cursor; variable sector width models wounds, vents, and obstacles.</span>
           </li>
           <li>
-            <strong>WebGPU only</strong>
+            <strong>WebGPU rendering</strong>
             <span>
-              The playground renders with Three.js <code>WebGPURenderer</code>—no WebGL backend or silent fallback.
-              Use a WebGPU-capable browser.
+              The scene uses Three.js <code>WebGPURenderer</code> so instancing and shading run on the modern
+              graphics API your browser exposes for compute-friendly, efficient GPU work.
             </span>
           </li>
         </ul>
