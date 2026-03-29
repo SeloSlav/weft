@@ -40,6 +40,8 @@ export {
 } from './presets/grassField.ts'
 export type {
   CreateGrassEffectOptions,
+  GrassFieldBounds,
+  GrassFieldPlacementMask,
   GrassDisturbanceOptions,
   GrassFieldParams,
 } from './presets/grassField.ts'
@@ -53,7 +55,12 @@ export {
   DEFAULT_ROCK_FIELD_PARAMS,
   RockFieldEffect,
 } from './presets/rockField.ts'
-export type { CreateRockFieldEffectOptions, RockFieldParams } from './presets/rockField.ts'
+export type {
+  CreateRockFieldEffectOptions,
+  RockFieldBounds,
+  RockFieldPlacementMask,
+  RockFieldParams,
+} from './presets/rockField.ts'
 export { getPreparedRockSurface } from './presets/rockFieldSource.ts'
 
 export {

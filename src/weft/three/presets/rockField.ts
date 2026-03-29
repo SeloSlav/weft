@@ -7,7 +7,6 @@ import type {
 } from '../../core'
 import { SurfaceLayoutDriver } from '../../core'
 import { createSurfaceEffect, fieldLayout } from '../api'
-import { isInsideRubbleZone, PLAYGROUND_BOUNDS } from '../../../playground/playgroundWorld'
 import {
   getPreparedRockSurface,
   type RockTokenId,
@@ -24,11 +23,28 @@ export const DEFAULT_ROCK_FIELD_PARAMS: RockFieldParams = {
   sizeScale: 1.0,
 }
 
+export type RockFieldBounds = {
+  minX: number
+  maxX: number
+  minZ: number
+  maxZ: number
+}
+
+export type RockFieldPlacementMask = {
+  bounds?: RockFieldBounds
+  includeAtXZ?: (x: number, z: number) => boolean
+}
+
+const DEFAULT_ROCK_FIELD_BOUNDS: RockFieldBounds = {
+  minX: -28,
+  maxX: 28,
+  minZ: -28,
+  maxZ: 28,
+}
+
 const ROWS = 18
 const SECTORS = 22
 const MAX_INSTANCES = 2_400
-const FIELD_WIDTH = PLAYGROUND_BOUNDS.maxX - PLAYGROUND_BOUNDS.minX
-const FIELD_DEPTH = PLAYGROUND_BOUNDS.maxZ - PLAYGROUND_BOUNDS.minZ
 const BASE_LAYOUT_PX_PER_WORLD = 6.5
 
 const tmpColor = new THREE.Color()
@@ -113,6 +129,9 @@ export class RockFieldEffect {
     this.rockMaterial,
     MAX_INSTANCES,
   )
+  private readonly placementMask: Required<RockFieldPlacementMask>
+  private readonly fieldWidth: number
+  private readonly fieldDepth: number
   private readonly layoutDriver: SurfaceLayoutDriver<RockTokenId, RockTokenMeta>
   private params: RockFieldParams
 
@@ -120,8 +139,16 @@ export class RockFieldEffect {
     surface: PreparedSurfaceSource<RockTokenId, RockTokenMeta>,
     seedCursor: SeedCursorFactory,
     initialParams: RockFieldParams,
+    placementMask: RockFieldPlacementMask = {},
   ) {
     this.params = { ...initialParams }
+    const bounds = placementMask.bounds ?? DEFAULT_ROCK_FIELD_BOUNDS
+    this.fieldWidth = bounds.maxX - bounds.minX
+    this.fieldDepth = bounds.maxZ - bounds.minZ
+    this.placementMask = {
+      bounds,
+      includeAtXZ: placementMask.includeAtXZ ?? (() => true),
+    }
     this.layoutDriver = new SurfaceLayoutDriver({
       surface,
       rows: ROWS,
@@ -155,13 +182,13 @@ export class RockFieldEffect {
   }
 
   private updateRocks(getGroundHeight: (x: number, z: number) => number): void {
-    const rowStep = FIELD_DEPTH / (ROWS + 1.1)
-    const backZ = FIELD_DEPTH * 0.48
+    const rowStep = this.fieldDepth / (ROWS + 1.1)
+    const backZ = this.fieldDepth * 0.48
     let instanceIndex = 0
 
     this.layoutDriver.forEachLaidOutLine({
-      spanMin: -FIELD_WIDTH * 0.5,
-      spanMax: FIELD_WIDTH * 0.5,
+      spanMin: -this.fieldWidth * 0.5,
+      spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
       getMaxWidth: (slot) => this.getSlotMaxWidth(slot),
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
@@ -208,7 +235,7 @@ export class RockFieldEffect {
         (hashLat - 0.5) * slot.sectorStep * 0.42
       const zJitter = (hashDep - 0.5) * rowStep * 0.58 + lineDepthShift
       const z = slot.lineCoord + zJitter
-      if (!isInsideRubbleZone(x, z)) continue
+      if (!this.placementMask.includeAtXZ(x, z)) continue
       const noise = organicField(x + hashOrg * 0.3, z + hashOrg * 0.2)
 
       const groundY = getGroundHeight(x, z)
@@ -236,12 +263,14 @@ export type CreateRockFieldEffectOptions = {
   seedCursor: SeedCursorFactory
   surface?: PreparedSurfaceSource<RockTokenId, RockTokenMeta>
   initialParams?: RockFieldParams
+  placementMask?: RockFieldPlacementMask
 }
 
 export function createRockFieldEffect({
   seedCursor,
   surface = getPreparedRockSurface(),
   initialParams = DEFAULT_ROCK_FIELD_PARAMS,
+  placementMask,
 }: CreateRockFieldEffectOptions): RockFieldEffect {
   const effect = createSurfaceEffect({
     id: 'rock-field',
@@ -256,5 +285,5 @@ export function createRockFieldEffect({
     seedCursor,
   })
 
-  return new RockFieldEffect(effect.source, seedCursor, initialParams)
+  return new RockFieldEffect(effect.source, seedCursor, initialParams, placementMask)
 }

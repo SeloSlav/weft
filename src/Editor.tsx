@@ -284,9 +284,10 @@ export function Editor() {
                 </button>
               </div>
               <p className="tagline">
-                Weft is evolving into a Three.js-first SDK for reactive
-                surfaces. These playground samples share the same layout core
-                while grass and fire now run through the emerging preset API.
+                Weft is a Three.js-first SDK for reactive surfaces. These
+                playground samples share the same layout core, while presets
+                like grass and fire demonstrate the higher-level authoring API
+                built on top of it.
               </p>
             </header>
 

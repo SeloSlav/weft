@@ -54,7 +54,7 @@ import {
   STREET_LAMP_BULB_Y_OFFSET,
   STREET_LIGHT_XZ,
 } from './playgroundTownScene'
-import { TOWN_ROAD_SURFACE_Y, isCrossRoadAsphalt } from './townRoadMask'
+import { TOWN_ROAD_SURFACE_Y, isCrossRoadAsphalt, isVergeStrip } from './townRoadMask'
 import {
   type BreachZone,
   BREACHABLE_FACADE_ZONES,
@@ -77,6 +77,7 @@ import {
   STREET_LAMP_POINT_INTENSITY_MAX,
   WINDOW_GLASS_LAYOUTS,
   isInsideBuildingInterior,
+  isInsideRubbleZone,
 } from './playgroundWorld'
 
 type ReticleHit = THREE.Intersection & {
@@ -128,11 +129,20 @@ export class PlaygroundRuntime {
     surface: buildGrassStateSurface(DEFAULT_GRASS_FIELD_PARAMS.state),
     seedCursor,
     initialParams: DEFAULT_GRASS_FIELD_PARAMS,
+    placementMask: {
+      bounds: PLAYGROUND_BOUNDS,
+      excludeAtXZ: (x, z) => isCrossRoadAsphalt(x, z) || isInsideBuildingInterior(x, z),
+      coverageMultiplierAtXZ: (x, z) => (isVergeStrip(x, z) ? 1.14 : 1),
+    },
   })
   private readonly rockFieldEffect = createRockFieldEffect({
     surface: getPreparedRockSurface(),
     seedCursor,
     initialParams: DEFAULT_ROCK_FIELD_PARAMS,
+    placementMask: {
+      bounds: PLAYGROUND_BOUNDS,
+      includeAtXZ: isInsideRubbleZone,
+    },
   })
   private readonly neonSignEffects: FireWallEffect[] = NEON_BARRIERS.map((barrier) =>
     createFireWallEffect({

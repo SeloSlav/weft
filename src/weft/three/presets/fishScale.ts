@@ -8,7 +8,7 @@ import type {
 import { SurfaceLayoutDriver } from '../../core'
 import { updateRecoveringImpacts } from '../../runtime'
 import { createSurfaceEffect, recoverableDamage, wallLayout } from '../api'
-import { smoothPulse } from '../../../playground/mathUtils'
+import { smoothPulse } from './sharedMath'
 import {
   getPreparedFishSurface,
   type FishTokenId,
@@ -293,7 +293,7 @@ export class FishScaleEffect {
   /**
    * Wounds in patch space for shell/mesh shaders that need the exact same hole mask as the facade effect.
    */
-  getWoundsForBreachingShader(max = 8): { x: number; y: number; radius: number; strength: number }[] {
+  getWoundCircles(max = 8): { x: number; y: number; radius: number; strength: number }[] {
     if (this.isSphericalGlassSurface()) return []
     const out: { x: number; y: number; radius: number; strength: number }[] = []
     for (const w of this.wounds) {
@@ -307,6 +307,11 @@ export class FishScaleEffect {
       if (out.length >= max) break
     }
     return out
+  }
+
+  /** Compatibility alias for older app integrations using the original playground-specific name. */
+  getWoundsForBreachingShader(max = 8): { x: number; y: number; radius: number; strength: number }[] {
+    return this.getWoundCircles(max)
   }
 
   addWoundFromWorldPoint(worldPoint: THREE.Vector3, worldDirection: THREE.Vector3): void {
@@ -480,7 +485,7 @@ export class FishScaleEffect {
     this.group.updateMatrixWorld(true)
     this.breachHoleUniforms.uFishInvWorldMatrix.value.copy(this.group.matrixWorld).invert()
 
-    const wounds = this.getWoundsForBreachingShader(8)
+    const wounds = this.getWoundCircles(8)
     this.breachHoleUniforms.uWoundCount.value = wounds.length
     this.breachHoleUniforms.uWoundXY.value.fill(0)
     this.breachHoleUniforms.uWoundRadius.value.fill(0)

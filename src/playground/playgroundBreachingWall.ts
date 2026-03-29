@@ -124,7 +124,7 @@ export function updateBreachingWallShaderUniforms(material: THREE.MeshStandardMa
   fish.group.updateMatrixWorld(true)
   u.uFishInvWorldMatrix.value.copy(fish.group.matrixWorld).invert()
 
-  const wounds = fish.getWoundsForBreachingShader(8)
+  const wounds = fish.getWoundCircles(8)
   u.uWoundCount.value = wounds.length
   u.uWoundXY.value.fill(0)
   u.uWoundRadius.value.fill(0)

@@ -12,10 +12,7 @@ import {
   fieldLayout,
   recoverableDamage,
 } from '../api'
-import { PLAYGROUND_BOUNDS } from '../../../playground/playgroundWorld'
-import { isInsideBuildingInterior } from '../../../playground/playgroundWorld'
-import { isCrossRoadAsphalt, isVergeStrip } from '../../../playground/townRoadMask'
-import { smoothPulse } from '../../../playground/mathUtils'
+import { smoothPulse } from './sharedMath'
 import {
   buildGrassStateSurface,
   type GrassTokenId,
@@ -42,12 +39,30 @@ export const DEFAULT_GRASS_FIELD_PARAMS: GrassFieldParams = {
   layoutDensity: 8,
 }
 
+export type GrassFieldBounds = {
+  minX: number
+  maxX: number
+  minZ: number
+  maxZ: number
+}
+
+export type GrassFieldPlacementMask = {
+  bounds?: GrassFieldBounds
+  excludeAtXZ?: (x: number, z: number) => boolean
+  coverageMultiplierAtXZ?: (x: number, z: number) => number
+}
+
+const DEFAULT_GRASS_FIELD_BOUNDS: GrassFieldBounds = {
+  minX: -28,
+  maxX: 28,
+  minZ: -28,
+  maxZ: 28,
+}
+
 const ROWS = 52
 const SECTORS = 68
 const BLADES_PER_SLOT = 2
 const MAX_INSTANCES = 72_000
-const FIELD_WIDTH = PLAYGROUND_BOUNDS.maxX - PLAYGROUND_BOUNDS.minX
-const FIELD_DEPTH = PLAYGROUND_BOUNDS.maxZ - PLAYGROUND_BOUNDS.minZ
 const LAYOUT_PX_PER_WORLD = 16
 const DISTURBANCE_RADIUS_MULTIPLIER = 2.35
 const MAX_ACTIVE_DISTURBANCES = 72
@@ -321,7 +336,10 @@ export class GrassFieldEffect {
   })
   private readonly bladeMesh = new THREE.InstancedMesh(this.bladeGeometry, this.bladeMaterial, MAX_INSTANCES)
   private readonly groundTexture = createGroundTexture()
-  private readonly groundGeometry = new THREE.PlaneGeometry(FIELD_WIDTH, FIELD_DEPTH, 40, 32)
+  private readonly placementMask: Required<GrassFieldPlacementMask>
+  private readonly fieldWidth: number
+  private readonly fieldDepth: number
+  private readonly groundGeometry: THREE.PlaneGeometry
   private readonly groundMaterial = new THREE.MeshBasicMaterial({
     color: '#ffffff',
     map: this.groundTexture,
@@ -333,8 +351,8 @@ export class GrassFieldEffect {
     depthWrite: false,
     side: THREE.DoubleSide,
   })
-  private readonly groundSurfaceMesh = new THREE.Mesh(this.groundGeometry, this.groundMaterial)
-  private readonly baseGroundPositions = Float32Array.from(this.groundGeometry.attributes.position.array as ArrayLike<number>)
+  private readonly groundSurfaceMesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
+  private readonly baseGroundPositions: Float32Array
   private readonly seedCursor: SeedCursorFactory
   private layoutDriver: SurfaceLayoutDriver<GrassTokenId, GrassTokenMeta>
   private readonly disturbances: Disturbance[] = []
@@ -345,9 +363,21 @@ export class GrassFieldEffect {
     surface: PreparedSurfaceSource<GrassTokenId, GrassTokenMeta>,
     seedCursor: SeedCursorFactory,
     initialParams: GrassFieldParams,
+    placementMask: GrassFieldPlacementMask = {},
   ) {
     this.params = { ...initialParams }
     this.seedCursor = seedCursor
+    const bounds = placementMask.bounds ?? DEFAULT_GRASS_FIELD_BOUNDS
+    this.fieldWidth = bounds.maxX - bounds.minX
+    this.fieldDepth = bounds.maxZ - bounds.minZ
+    this.placementMask = {
+      bounds,
+      excludeAtXZ: placementMask.excludeAtXZ ?? (() => false),
+      coverageMultiplierAtXZ: placementMask.coverageMultiplierAtXZ ?? (() => 1),
+    }
+    this.groundGeometry = new THREE.PlaneGeometry(this.fieldWidth, this.fieldDepth, 40, 32)
+    this.groundSurfaceMesh = new THREE.Mesh(this.groundGeometry, this.groundMaterial)
+    this.baseGroundPositions = Float32Array.from(this.groundGeometry.attributes.position.array as ArrayLike<number>)
     this.layoutDriver = this.createLayoutDriver(surface)
 
     this.bladeMesh.frustumCulled = false
@@ -385,8 +415,8 @@ export class GrassFieldEffect {
   addDisturbanceFromWorldPoint(worldPoint: THREE.Vector3, options: GrassDisturbanceOptions = {}): void {
     tmpLocalPoint.copy(worldPoint)
     this.group.worldToLocal(tmpLocalPoint)
-    const x = THREE.MathUtils.clamp(tmpLocalPoint.x, -FIELD_WIDTH * 0.46, FIELD_WIDTH * 0.46)
-    const z = THREE.MathUtils.clamp(tmpLocalPoint.z, -FIELD_DEPTH * 0.46, FIELD_DEPTH * 0.46)
+    const x = THREE.MathUtils.clamp(tmpLocalPoint.x, -this.fieldWidth * 0.46, this.fieldWidth * 0.46)
+    const z = THREE.MathUtils.clamp(tmpLocalPoint.z, -this.fieldDepth * 0.46, this.fieldDepth * 0.46)
     const radius = this.params.disturbanceRadius * DISTURBANCE_RADIUS_MULTIPLIER * (options.radiusScale ?? 1)
     const strength = options.strength ?? 1
     const deformGround = options.deformGround ?? true
@@ -539,13 +569,13 @@ export class GrassFieldEffect {
   }
 
   private updateBlades(elapsedTime: number): void {
-    const rowStep = FIELD_DEPTH / (ROWS + 1.1)
-    const backZ = FIELD_DEPTH * 0.48
+    const rowStep = this.fieldDepth / (ROWS + 1.1)
+    const backZ = this.fieldDepth * 0.48
     let instanceIndex = 0
 
     this.layoutDriver.forEachLaidOutLine({
-      spanMin: -FIELD_WIDTH * 0.5,
-      spanMax: FIELD_WIDTH * 0.5,
+      spanMin: -this.fieldWidth * 0.5,
+      spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
       getMaxWidth: (slot) => this.getSlotMaxWidth(slot),
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
@@ -608,7 +638,7 @@ export class GrassFieldEffect {
           (hashDep - 0.5) * rowStep * 0.52 +
           weftScatter * rowStep * 0.12
         const localZ = slot.lineCoord + lineDepthShift + zJitter
-        if (isCrossRoadAsphalt(x, localZ) || isInsideBuildingInterior(x, localZ)) continue
+        if (this.placementMask.excludeAtXZ(x, localZ)) continue
         const { disturbance: localDisturbance, awayX, awayZ } = this.disturbanceAndBend(x, localZ)
         const stateIndex = this.stateIndex()
         let localCoverage = THREE.MathUtils.lerp(
@@ -616,9 +646,7 @@ export class GrassFieldEffect {
           Math.max(0.02, STATE_PRESENCE[stateIndex]! * (1 - this.params.disturbanceStrength * 0.98)),
           localDisturbance,
         )
-        if (isVergeStrip(x, localZ)) {
-          localCoverage *= 1.14
-        }
+        localCoverage *= this.placementMask.coverageMultiplierAtXZ(x, localZ)
         if (hashPresence > localCoverage) continue
         const baseY = this.baseGroundY(x, localZ)
         const organicNoise = organicField(x + hashOrganic * 0.4, localZ + hashOrganic * 0.3)
@@ -679,12 +707,14 @@ export type CreateGrassEffectOptions = {
   seedCursor: SeedCursorFactory
   surface?: PreparedSurfaceSource<GrassTokenId, GrassTokenMeta>
   initialParams?: GrassFieldParams
+  placementMask?: GrassFieldPlacementMask
 }
 
 export function createGrassEffect({
   seedCursor,
   surface = buildGrassStateSurface(DEFAULT_GRASS_FIELD_PARAMS.state),
   initialParams = DEFAULT_GRASS_FIELD_PARAMS,
+  placementMask,
 }: CreateGrassEffectOptions): GrassFieldEffect {
   const effect = createSurfaceEffect({
     id: 'grass-field',
@@ -706,5 +736,5 @@ export function createGrassEffect({
     seedCursor,
   })
 
-  return new GrassFieldEffect(effect.source, seedCursor, initialParams)
+  return new GrassFieldEffect(effect.source, seedCursor, initialParams, placementMask)
 }
