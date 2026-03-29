@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
-  ResolvedSurfaceGlyph,
   SeedCursorFactory,
   SurfaceLayoutSlot,
 } from '../../core'
@@ -117,6 +116,21 @@ type Disturbance = {
   strength: number
   deformGround: boolean
   recoveryRate?: number
+}
+
+type CachedBladeInstance = {
+  x: number
+  z: number
+  baseY: number
+  baseWidth: number
+  baseHeight: number
+  baseRotateX: number
+  baseBendDirection: number
+  coverageMultiplier: number
+  hashPresence: number
+  baseColorR: number
+  baseColorG: number
+  baseColorB: number
 }
 
 export type GrassDisturbanceOptions = {
@@ -356,7 +370,10 @@ export class GrassFieldEffect {
   private readonly seedCursor: SeedCursorFactory
   private layoutDriver: SurfaceLayoutDriver<GrassTokenId, GrassTokenMeta>
   private readonly disturbances: Disturbance[] = []
+  private readonly cachedBlades: CachedBladeInstance[] = []
   private lastElapsedTime = 0
+  private bladeCacheDirty = true
+  private baseBladeColorsDirty = true
   private params: GrassFieldParams
 
   constructor(
@@ -397,7 +414,12 @@ export class GrassFieldEffect {
   }
 
   setParams(params: Partial<GrassFieldParams>): void {
+    const prevStateIndex = this.stateIndex()
+    const prevLayoutDensity = this.params.layoutDensity
     this.params = { ...this.params, ...params }
+    if (this.stateIndex() !== prevStateIndex || this.params.layoutDensity !== prevLayoutDensity) {
+      this.bladeCacheDirty = true
+    }
     this.groundMaterial.color.copy(STATE_GROUND_TINT[this.stateIndex()])
     for (const disturbance of this.disturbances) {
       disturbance.radius = this.params.disturbanceRadius * DISTURBANCE_RADIUS_MULTIPLIER
@@ -406,10 +428,12 @@ export class GrassFieldEffect {
 
   setSurface(surface: PreparedSurfaceSource<GrassTokenId, GrassTokenMeta>): void {
     this.layoutDriver = this.createLayoutDriver(surface)
+    this.bladeCacheDirty = true
   }
 
   clearDisturbances(): void {
     this.disturbances.length = 0
+    this.baseBladeColorsDirty = true
   }
 
   addDisturbanceFromWorldPoint(worldPoint: THREE.Vector3, options: GrassDisturbanceOptions = {}): void {
@@ -569,9 +593,89 @@ export class GrassFieldEffect {
   }
 
   private updateBlades(elapsedTime: number): void {
+    if (this.bladeCacheDirty) {
+      this.rebuildBladeCache()
+    }
+
+    const hasDisturbances = this.disturbances.length > 0
+    const stateIndex = this.stateIndex()
+    const statePresence = STATE_PRESENCE[stateIndex]!
+    const disturbedPresence = Math.max(0.02, statePresence * (1 - this.params.disturbanceStrength * 0.98))
+    const stateBend = STATE_BEND[stateIndex]!
+    const stateLean = STATE_LEAN[stateIndex]!
+    const disturbanceLift = STATE_DISTURBANCE_LIFT[stateIndex]!
+    if (!hasDisturbances && this.baseBladeColorsDirty) {
+      this.applyBaseBladeColors()
+    }
+
+    let instanceIndex = 0
+    for (let i = 0; i < this.cachedBlades.length; i++) {
+      const blade = this.cachedBlades[i]!
+      let localDisturbance = 0
+      let awayX = 0
+      let awayZ = 1
+      if (hasDisturbances) {
+        const disturbance = this.disturbanceAndBend(blade.x, blade.z)
+        localDisturbance = disturbance.disturbance
+        awayX = disturbance.awayX
+        awayZ = disturbance.awayZ
+        const localCoverage = THREE.MathUtils.lerp(statePresence, disturbedPresence, localDisturbance) * blade.coverageMultiplier
+        if (blade.hashPresence > localCoverage) continue
+      }
+
+      const gust =
+        Math.sin(elapsedTime * 1.55 + blade.x * 0.52 + blade.z * 0.34) +
+        0.55 * Math.sin(elapsedTime * 2.8 + blade.x * 1.1 - blade.z * 0.62)
+      const windYaw = gust * this.params.wind * 0.14
+      const windBend = (0.24 + Math.abs(gust) * 0.18) * this.params.wind
+      const trampleBend = localDisturbance * 1.15 * disturbanceLift
+
+      tmpPos.set(
+        blade.x + awayX * localDisturbance * 0.22,
+        blade.baseY + 0.16 + localDisturbance * 0.05,
+        blade.z + awayZ * localDisturbance * 0.22,
+      )
+      dummy.position.copy(tmpPos)
+      dummy.rotation.set(0, Math.atan2(awayX, awayZ) + blade.baseBendDirection + windYaw, 0)
+      dummy.rotateX(blade.baseRotateX)
+      dummy.rotateZ(((windBend + trampleBend) * Math.sign(awayX || 1) + stateLean) * stateBend)
+      dummy.scale.set(
+        blade.baseWidth * (1 - localDisturbance * 0.42),
+        Math.max(blade.baseHeight * (1 - localDisturbance * 0.88), 0.18),
+        1,
+      )
+      dummy.updateMatrix()
+      this.bladeMesh.setMatrixAt(instanceIndex, dummy.matrix)
+
+      if (hasDisturbances) {
+        tmpColor.setRGB(blade.baseColorR, blade.baseColorG, blade.baseColorB)
+        tmpColor.lerp(STATE_GROUND_BASE[stateIndex]!, localDisturbance * 0.06)
+        tmpColor.lerp(STATE_GROUND_DARK[stateIndex]!, localDisturbance * 0.28)
+        this.bladeMesh.setColorAt(instanceIndex, tmpColor)
+      }
+
+      instanceIndex++
+    }
+
+    this.bladeMesh.count = instanceIndex
+    this.bladeMesh.instanceMatrix.needsUpdate = true
+    if (hasDisturbances && this.bladeMesh.instanceColor) {
+      this.bladeMesh.instanceColor.needsUpdate = true
+      this.baseBladeColorsDirty = true
+    }
+  }
+
+  private rebuildBladeCache(): void {
+    this.cachedBlades.length = 0
     const rowStep = this.fieldDepth / (ROWS + 1.1)
     const backZ = this.fieldDepth * 0.48
-    let instanceIndex = 0
+    const stateIndex = this.stateIndex()
+    const statePresence = STATE_PRESENCE[stateIndex]!
+    const stateHeight = STATE_HEIGHT[stateIndex]!
+    const stateWidth = STATE_WIDTH[stateIndex]!
+    const stateBend = STATE_BEND[stateIndex]!
+    const bladeBaseColor = STATE_BLADE_BASE[stateIndex]!
+    const bladeTipColor = STATE_BLADE_TIP[stateIndex]!
 
     this.layoutDriver.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
@@ -579,128 +683,99 @@ export class GrassFieldEffect {
       lineCoordAtRow: (row) => backZ - row * rowStep,
       getMaxWidth: (slot) => this.getSlotMaxWidth(slot),
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
-        instanceIndex = this.projectLine(slot, resolvedGlyphs, tokenLineKey, rowStep, elapsedTime, instanceIndex)
+        const n = resolvedGlyphs.length
+        const lineSeed = lineSignature(tokenLineKey)
+        const lineLateralShift = (lineSeed - 0.5) * slot.sectorStep * 0.28
+        const lineDepthShift = (lineSeed - 0.5) * rowStep * 0.18
+        const lineClusterStrength = 0.035 + lineSeed * 0.05
+
+        for (let k = 0; k < n; k++) {
+          if (this.cachedBlades.length >= MAX_INSTANCES) break
+          const token = resolvedGlyphs[k]!
+          const identity = token.ordinal + 1
+          const { meta } = token
+          for (let blade = 0; blade < BLADES_PER_SLOT; blade++) {
+            if (this.cachedBlades.length >= MAX_INSTANCES) break
+
+            const weftScatter = glyphScatter(identity, lineSeed, k * BLADES_PER_SLOT + blade)
+            const hashLat = glyphHash(identity, slot.row, k, blade)
+            const hashDep = glyphHash(identity + 1, slot.sector, k, blade ^ 0xff)
+            const hashOrganic = glyphHash(identity + 2, slot.row ^ slot.sector, k + blade * 31)
+            const hashPresence = glyphHash(identity + 3, slot.row * 131 + slot.sector, k, blade * 17 + 7)
+
+            const t01 = THREE.MathUtils.clamp(
+              (k + hashLat * 0.9 + 0.05) / (n + 0.1) + weftScatter * lineClusterStrength,
+              0.02,
+              0.98,
+            )
+            const x =
+              slot.spanStart +
+              t01 * slot.spanSize +
+              lineLateralShift +
+              (hashLat - 0.5) * slot.sectorStep * 0.38 +
+              weftScatter * slot.sectorStep * 0.11
+            const localZ =
+              slot.lineCoord +
+              lineDepthShift +
+              (hashDep - 0.5) * rowStep * 0.52 +
+              weftScatter * rowStep * 0.12
+            if (this.placementMask.excludeAtXZ(x, localZ)) continue
+
+            const coverageMultiplier = this.placementMask.coverageMultiplierAtXZ(x, localZ)
+            if (hashPresence > statePresence * coverageMultiplier) continue
+
+            const organicNoise = organicField(x + hashOrganic * 0.4, localZ + hashOrganic * 0.3)
+            const tipFade = blade * 0.055
+            const stateBrightness = THREE.MathUtils.clamp(
+              0.18 + organicNoise * 0.64 + meta.lightShift + tipFade,
+              0,
+              1,
+            )
+            tmpColor.copy(bladeBaseColor)
+            tmpColor.lerp(bladeTipColor, stateBrightness)
+
+            this.cachedBlades.push({
+              x,
+              z: localZ,
+              baseY: this.baseGroundY(x, localZ),
+              baseWidth: (0.072 + meta.widthBias + (identity % 5) * 0.008 + organicNoise * 0.015 + blade * 0.006) * stateWidth,
+              baseHeight:
+                (0.88 + meta.heightBias + (identity % 7) * 0.08 + organicNoise * 0.14 + blade * 0.07) *
+                0.5 *
+                stateHeight,
+              baseRotateX: (organicNoise - 0.5) * 0.12 * stateBend,
+              baseBendDirection: (organicNoise - 0.5) * 0.35,
+              coverageMultiplier,
+              hashPresence,
+              baseColorR: tmpColor.r,
+              baseColorG: tmpColor.g,
+              baseColorB: tmpColor.b,
+            })
+          }
+        }
       },
     })
 
-    this.bladeMesh.count = instanceIndex
-    this.bladeMesh.instanceMatrix.needsUpdate = true
+    this.bladeCacheDirty = false
+    this.baseBladeColorsDirty = true
+  }
+
+  private applyBaseBladeColors(): void {
+    for (let i = 0; i < this.cachedBlades.length; i++) {
+      const blade = this.cachedBlades[i]!
+      tmpColor.setRGB(blade.baseColorR, blade.baseColorG, blade.baseColorB)
+      this.bladeMesh.setColorAt(i, tmpColor)
+    }
     if (this.bladeMesh.instanceColor) {
       this.bladeMesh.instanceColor.needsUpdate = true
     }
+    this.baseBladeColorsDirty = false
   }
 
   private getSlotMaxWidth(slot: SurfaceLayoutSlot): number {
     return slot.spanSize * LAYOUT_PX_PER_WORLD * this.params.layoutDensity * STATE_LAYOUT_DENSITY[this.stateIndex()]
   }
 
-  private projectLine(
-    slot: SurfaceLayoutSlot,
-    resolvedGlyphs: readonly ResolvedSurfaceGlyph<GrassTokenId, GrassTokenMeta>[],
-    tokenLineKey: string,
-    rowStep: number,
-    elapsedTime: number,
-    instanceIndex: number,
-  ): number {
-    const n = resolvedGlyphs.length
-    const lineSeed = lineSignature(tokenLineKey)
-    const lineLateralShift = (lineSeed - 0.5) * slot.sectorStep * 0.28
-    const lineDepthShift = (lineSeed - 0.5) * rowStep * 0.18
-    const lineClusterStrength = 0.035 + lineSeed * 0.05
-
-    for (let k = 0; k < n; k++) {
-      if (instanceIndex >= MAX_INSTANCES) break
-
-      const token = resolvedGlyphs[k]!
-      const identity = token.ordinal + 1
-      const { meta } = token
-      for (let blade = 0; blade < BLADES_PER_SLOT; blade++) {
-        if (instanceIndex >= MAX_INSTANCES) break
-
-        const weftScatter = glyphScatter(identity, lineSeed, k * BLADES_PER_SLOT + blade)
-        const hashLat = glyphHash(identity, slot.row, k, blade)
-        const hashDep = glyphHash(identity + 1, slot.sector, k, blade ^ 0xff)
-        const hashOrganic = glyphHash(identity + 2, slot.row ^ slot.sector, k + blade * 31)
-        const hashPresence = glyphHash(identity + 3, slot.row * 131 + slot.sector, k, blade * 17 + 7)
-
-        const t01 = THREE.MathUtils.clamp(
-          (k + hashLat * 0.9 + 0.05) / (n + 0.1) +
-            weftScatter * lineClusterStrength,
-          0.02, 0.98,
-        )
-        const x =
-          slot.spanStart +
-          t01 * slot.spanSize +
-          lineLateralShift +
-          (hashLat - 0.5) * slot.sectorStep * 0.38 +
-          weftScatter * slot.sectorStep * 0.11
-        const zJitter =
-          (hashDep - 0.5) * rowStep * 0.52 +
-          weftScatter * rowStep * 0.12
-        const localZ = slot.lineCoord + lineDepthShift + zJitter
-        if (this.placementMask.excludeAtXZ(x, localZ)) continue
-        const { disturbance: localDisturbance, awayX, awayZ } = this.disturbanceAndBend(x, localZ)
-        const stateIndex = this.stateIndex()
-        let localCoverage = THREE.MathUtils.lerp(
-          STATE_PRESENCE[stateIndex]!,
-          Math.max(0.02, STATE_PRESENCE[stateIndex]! * (1 - this.params.disturbanceStrength * 0.98)),
-          localDisturbance,
-        )
-        localCoverage *= this.placementMask.coverageMultiplierAtXZ(x, localZ)
-        if (hashPresence > localCoverage) continue
-        const baseY = this.baseGroundY(x, localZ)
-        const organicNoise = organicField(x + hashOrganic * 0.4, localZ + hashOrganic * 0.3)
-
-        const bendDirection = Math.atan2(awayX, awayZ) + (organicNoise - 0.5) * 0.35
-        const gust =
-          Math.sin(elapsedTime * 1.55 + x * 0.52 + localZ * 0.34) +
-          0.55 * Math.sin(elapsedTime * 2.8 + x * 1.1 - localZ * 0.62)
-        const windYaw = gust * this.params.wind * 0.14
-        const windBend = (0.24 + Math.abs(gust) * 0.18) * this.params.wind
-        const trampleBend = localDisturbance * 1.15 * STATE_DISTURBANCE_LIFT[stateIndex]!
-        const height =
-          (0.88 + meta.heightBias + (identity % 7) * 0.08 + organicNoise * 0.14 + blade * 0.07) *
-          0.5 *
-          STATE_HEIGHT[stateIndex]!
-        const width =
-          (0.072 + meta.widthBias + (identity % 5) * 0.008 + organicNoise * 0.015 + blade * 0.006) *
-          STATE_WIDTH[stateIndex]!
-
-        tmpPos.set(
-          x + awayX * localDisturbance * 0.22,
-          baseY + 0.16 + localDisturbance * 0.05,
-          localZ + awayZ * localDisturbance * 0.22,
-        )
-        dummy.position.copy(tmpPos)
-        dummy.rotation.set(0, bendDirection + windYaw, 0)
-        dummy.rotateX((organicNoise - 0.5) * 0.12 * STATE_BEND[stateIndex]!)
-        dummy.rotateZ(((windBend + trampleBend) * Math.sign(awayX || 1) + STATE_LEAN[stateIndex]!) * STATE_BEND[stateIndex]!)
-        dummy.scale.set(
-          width * (1 - localDisturbance * 0.42),
-          Math.max(height * (1 - localDisturbance * 0.88), 0.18),
-          1,
-        )
-        dummy.updateMatrix()
-        this.bladeMesh.setMatrixAt(instanceIndex, dummy.matrix)
-
-        const bladeBaseColor = STATE_BLADE_BASE[stateIndex]!
-        const bladeTipColor = STATE_BLADE_TIP[stateIndex]!
-        const groundBaseColor = STATE_GROUND_BASE[stateIndex]!
-        const groundDarkColor = STATE_GROUND_DARK[stateIndex]!
-        const tipFade = blade * 0.055
-        const stateBrightness = 0.18 + organicNoise * 0.64 + meta.lightShift + tipFade
-        tmpColor.copy(bladeBaseColor)
-        tmpColor.lerp(bladeTipColor, THREE.MathUtils.clamp(stateBrightness, 0, 1))
-        tmpColor.lerp(groundBaseColor, localDisturbance * 0.06)
-        tmpColor.lerp(groundDarkColor, localDisturbance * 0.28)
-        this.bladeMesh.setColorAt(instanceIndex, tmpColor)
-
-        instanceIndex++
-      }
-    }
-
-    return instanceIndex
-  }
 }
 
 export type CreateGrassEffectOptions = {

@@ -963,12 +963,17 @@ body,
   top: 12px;
   left: 12px;
   z-index: 2;
-  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 220px;
+  padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid rgba(126, 184, 255, 0.28);
   background: rgba(8, 12, 18, 0.78);
   backdrop-filter: blur(10px);
   font-size: 0.75rem;
+  line-height: 1.45;
   font-variant-numeric: tabular-nums;
   color: rgba(200, 230, 255, 0.92);
   pointer-events: none;

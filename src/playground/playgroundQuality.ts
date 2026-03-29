@@ -23,9 +23,9 @@ export function getQualityPixelRatioCap(quality: PlaygroundQuality): number {
 export function getQualityGrassLayoutScale(quality: PlaygroundQuality): number {
   switch (quality) {
     case 'low':
-      return 0.55
+      return 0.32
     case 'medium':
-      return 0.78
+      return 0.68
     case 'high':
       return 1
     default:
@@ -37,9 +37,9 @@ export function getQualityGrassLayoutScale(quality: PlaygroundQuality): number {
 export function getQualityStarLayoutScale(quality: PlaygroundQuality): number {
   switch (quality) {
     case 'low':
-      return 0.65
+      return 0.5
     case 'medium':
-      return 0.85
+      return 0.78
     case 'high':
       return 1
     default:
@@ -51,9 +51,9 @@ export function getQualityStarLayoutScale(quality: PlaygroundQuality): number {
 export function getQualityRockLayoutScale(quality: PlaygroundQuality): number {
   switch (quality) {
     case 'low':
-      return 0.7
+      return 0.6
     case 'medium':
-      return 0.88
+      return 0.82
     case 'high':
       return 1
     default:

@@ -85,6 +85,27 @@ type ReticleHit = THREE.Intersection & {
   targetKind: 'shutter' | 'ivy' | 'grass' | 'neon' | 'lamp' | 'glass'
 }
 
+export type PlaygroundPerfStats = {
+  fps: number
+  frameCpuMs: number
+  controllerCpuMs: number
+  effectsCpuMs: number
+  renderCpuMs: number
+  playerCpuMs: number
+  shutterCpuMs: number
+  ivyCpuMs: number
+  lampCpuMs: number
+  glassCpuMs: number
+  grassCpuMs: number
+  rockCpuMs: number
+  neonCpuMs: number
+  skyCpuMs: number
+  lightingCpuMs: number
+  viewportWidth: number
+  viewportHeight: number
+  pixelRatio: number
+}
+
 export class PlaygroundRuntime {
   private static readonly INDOOR_CAMERA_DISTANCE_MAX = 3.15
   private static readonly INDOOR_SHOULDER_OFFSET = 0.24
@@ -243,6 +264,29 @@ export class PlaygroundRuntime {
   effectUpdateMs = 0
   /** Smoothed presentation FPS for the current runtime. */
   fps = 0
+  perfStats: PlaygroundPerfStats = {
+    fps: 0,
+    frameCpuMs: 0,
+    controllerCpuMs: 0,
+    effectsCpuMs: 0,
+    renderCpuMs: 0,
+    playerCpuMs: 0,
+    shutterCpuMs: 0,
+    ivyCpuMs: 0,
+    lampCpuMs: 0,
+    glassCpuMs: 0,
+    grassCpuMs: 0,
+    rockCpuMs: 0,
+    neonCpuMs: 0,
+    skyCpuMs: 0,
+    lightingCpuMs: 0,
+    viewportWidth: 0,
+    viewportHeight: 0,
+    pixelRatio: 1,
+  }
+  private readonly perfLoggingEnabled =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('perf') === '1'
+  private lastPerfLogElapsed = 0
 
   constructor(host: HTMLElement) {
     this.host = host
@@ -584,8 +628,12 @@ export class PlaygroundRuntime {
     this.camera.aspect = width / height
     this.camera.updateProjectionMatrix()
     const cap = getQualityPixelRatioCap(this.quality)
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, cap))
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, cap)
+    this.renderer.setPixelRatio(pixelRatio)
     this.renderer.setSize(width, height, false)
+    this.perfStats.viewportWidth = width
+    this.perfStats.viewportHeight = height
+    this.perfStats.pixelRatio = pixelRatio
   }
 
   private resetPlayer(): void {
@@ -654,6 +702,26 @@ export class PlaygroundRuntime {
 
   private getPlayerCollisionProbeY(): number {
     return this.activeFrame?.playerPosition.y ?? this.controller.player.group.position.y
+  }
+
+  private cadenceFor(kind: 'grass' | 'fish' | 'neon' | 'sky' | 'glass'): number {
+    switch (this.quality) {
+      case 'low':
+        if (kind === 'grass') return 3
+        if (kind === 'glass') return 3
+        return 2
+      case 'medium':
+        if (kind === 'grass') return 2
+        if (kind === 'glass') return 3
+        return 2
+      case 'high':
+      default:
+        return 1
+    }
+  }
+
+  private shouldRunCadencedUpdate(interval: number, offset: number): boolean {
+    return interval <= 1 || this.frameTick % interval === offset % interval
   }
 
   private getRoofHeightAtWorld(x: number, z: number, referenceY: number): number | null {
@@ -1081,6 +1149,9 @@ export class PlaygroundRuntime {
 
   private frame = (time?: number): void => {
     if (this.disposed || !this.renderer) return
+    const perfAvailable = typeof performance !== 'undefined'
+    const now = () => (perfAvailable ? performance.now() : 0)
+    const tFrame0 = now()
 
     this.timer.update(time)
     const elapsed = this.timer.getElapsed()
@@ -1094,6 +1165,7 @@ export class PlaygroundRuntime {
     }
 
     this.updateCameraProfile(delta)
+    const tController0 = now()
     this.activeFrame = this.controller.update(
       this.camera,
       this.syncFrameInput(),
@@ -1103,6 +1175,7 @@ export class PlaygroundRuntime {
       delta,
       this.resolveHorizontalMove,
     )
+    const controllerCpuMs = now() - tController0
     if (this.activeFrame) {
       this.applyCameraObstruction(this.activeFrame)
     }
@@ -1134,39 +1207,103 @@ export class PlaygroundRuntime {
       }
     }
 
-    const tEffect0 = typeof performance !== 'undefined' ? performance.now() : 0
-
+    const tEffects0 = now()
+    const tPlayer0 = now()
     this.controller.player.update(delta, this.getPlayerAnimationState(this.activeFrame))
-    this.shutterEffect.update(elapsed)
-    this.ivyEffect.update(elapsed)
+    const playerCpuMs = now() - tPlayer0
+    const fishCadence = this.cadenceFor('fish')
+    let shutterCpuMs = 0
+    let ivyCpuMs = 0
+    if (this.shouldRunCadencedUpdate(fishCadence, 1)) {
+      const tShutter0 = now()
+      this.shutterEffect.update(elapsed)
+      shutterCpuMs = now() - tShutter0
+      const tIvy0 = now()
+      this.ivyEffect.update(elapsed)
+      ivyCpuMs = now() - tIvy0
+    }
+    const tLamp0 = now()
     for (const lamp of this.lampEffects) {
       if (lamp.hasWounds() || (this.frameTick & 1) === 0) {
         lamp.update(elapsed)
       }
     }
+    const lampCpuMs = now() - tLamp0
+    const tGlass0 = now()
+    const glassCadence = this.cadenceFor('glass')
     for (const glass of this.windowGlassEffects) {
-      if (glass.hasWounds() || (this.frameTick & 1) === 0) {
+      if (glass.hasWounds() || this.shouldRunCadencedUpdate(glassCadence, 1)) {
         glass.update(elapsed)
       }
     }
+    const glassCpuMs = now() - tGlass0
     // Grass update first so later samples read the current flattened field state.
-    this.grassEffect.update(elapsed)
+    let grassCpuMs = 0
+    if (this.shouldRunCadencedUpdate(this.cadenceFor('grass'), 0)) {
+      const tGrass0 = now()
+      this.grassEffect.update(elapsed)
+      grassCpuMs = now() - tGrass0
+    }
+    const tRock0 = now()
     this.rockFieldEffect.update(this.getGroundHeightAtWorld)
-    for (const effect of this.neonSignEffects) {
-      if (effect.hasWounds() || (this.frameTick & 1) === 0) {
+    const rockCpuMs = now() - tRock0
+    let neonCpuMs = 0
+    if (this.shouldRunCadencedUpdate(this.cadenceFor('neon'), 0)) {
+      const tNeon0 = now()
+      for (const effect of this.neonSignEffects) {
         effect.update(elapsed)
       }
+      neonCpuMs = now() - tNeon0
     }
-    this.starSkyEffect.update(elapsed)
+    let skyCpuMs = 0
+    if (this.shouldRunCadencedUpdate(this.cadenceFor('sky'), 1)) {
+      const tSky0 = now()
+      this.starSkyEffect.update(elapsed)
+      skyCpuMs = now() - tSky0
+    }
+    const tLighting0 = now()
     this.updateStreetLampLighting()
+    const lightingCpuMs = now() - tLighting0
     this.skybox.position.copy(this.camera.position)
     this.starSkyEffect.group.position.copy(this.camera.position)
+    const effectsCpuMs = now() - tEffects0
+    this.effectUpdateMs = effectsCpuMs
 
-    if (typeof performance !== 'undefined') {
-      this.effectUpdateMs = performance.now() - tEffect0
-    }
-
+    const tRender0 = now()
     this.renderer.render(this.scene, this.camera)
+    const renderCpuMs = now() - tRender0
+    const frameCpuMs = now() - tFrame0
+    this.perfStats = {
+      fps: this.fps,
+      frameCpuMs,
+      controllerCpuMs,
+      effectsCpuMs,
+      renderCpuMs,
+      playerCpuMs,
+      shutterCpuMs,
+      ivyCpuMs,
+      lampCpuMs,
+      glassCpuMs,
+      grassCpuMs,
+      rockCpuMs,
+      neonCpuMs,
+      skyCpuMs,
+      lightingCpuMs,
+      viewportWidth: this.perfStats.viewportWidth,
+      viewportHeight: this.perfStats.viewportHeight,
+      pixelRatio: this.perfStats.pixelRatio,
+    }
+    if (this.perfLoggingEnabled && elapsed - this.lastPerfLogElapsed >= 1) {
+      this.lastPerfLogElapsed = elapsed
+      console.info(
+        `[Weft perf] ${this.perfStats.fps.toFixed(1)} fps | frame ${this.perfStats.frameCpuMs.toFixed(2)} ms | ` +
+          `controller ${this.perfStats.controllerCpuMs.toFixed(2)} | effects ${this.perfStats.effectsCpuMs.toFixed(2)} | ` +
+          `render ${this.perfStats.renderCpuMs.toFixed(2)} | grass ${this.perfStats.grassCpuMs.toFixed(2)} | ` +
+          `rock ${this.perfStats.rockCpuMs.toFixed(2)} | neon ${this.perfStats.neonCpuMs.toFixed(2)} | ` +
+          `sky ${this.perfStats.skyCpuMs.toFixed(2)} | dpr ${this.perfStats.pixelRatio.toFixed(2)} | ` +
+          `${this.perfStats.viewportWidth}x${this.perfStats.viewportHeight}`,
+      )
+    }
     this.rafId = requestAnimationFrame(this.frame)
   }
 

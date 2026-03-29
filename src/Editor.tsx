@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { PlaygroundRuntime } from "./playground/PlaygroundRuntime";
+import {
+  PlaygroundRuntime,
+  type PlaygroundPerfStats,
+} from "./playground/PlaygroundRuntime";
 import {
   DEFAULT_FIRE_WALL_PARAMS,
   DEFAULT_FISH_SCALE_PARAMS,
@@ -107,9 +110,7 @@ export function Editor() {
   const [quality, setQuality] = useState<PlaygroundQuality>(
     PLAYGROUND_QUALITY_DEFAULT,
   );
-  /** Set when `?perf=1` — last effect-update block time (ms). */
-  const [perfEffectMs, setPerfEffectMs] = useState<number | null>(null);
-  const [perfFps, setPerfFps] = useState<number | null>(null);
+  const [perfStats, setPerfStats] = useState<PlaygroundPerfStats | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -181,8 +182,7 @@ export function Editor() {
   useEffect(() => {
     let id = 0;
     const tick = () => {
-      setPerfFps(runtimeRef.current?.fps ?? 0);
-      setPerfEffectMs(runtimeRef.current?.effectUpdateMs ?? 0);
+      setPerfStats(runtimeRef.current?.perfStats ?? null);
       id = requestAnimationFrame(tick);
     };
     id = requestAnimationFrame(tick);
@@ -674,9 +674,20 @@ export function Editor() {
 
       <main className="viewport">
         <div ref={hostRef} className="viewport-host" />
-        {perfFps !== null && perfEffectMs !== null && (
+        {perfStats !== null && (
           <div className="perf-hud" aria-hidden>
-            FPS: {perfFps.toFixed(1)} | Effects: {perfEffectMs.toFixed(2)} ms
+            <div>FPS: {perfStats.fps.toFixed(1)} | Frame: {perfStats.frameCpuMs.toFixed(2)} ms</div>
+            <div>Effects: {perfStats.effectsCpuMs.toFixed(2)} ms | Render: {perfStats.renderCpuMs.toFixed(2)} ms</div>
+            <div>Controller: {perfStats.controllerCpuMs.toFixed(2)} ms | DPR: {perfStats.pixelRatio.toFixed(2)}</div>
+            <div>
+              Grass: {perfStats.grassCpuMs.toFixed(2)} | Rock: {perfStats.rockCpuMs.toFixed(2)} | Neon:{" "}
+              {perfStats.neonCpuMs.toFixed(2)} | Sky: {perfStats.skyCpuMs.toFixed(2)}
+            </div>
+            <div>
+              Fish: {(perfStats.shutterCpuMs + perfStats.ivyCpuMs).toFixed(2)} | Glass:{" "}
+              {(perfStats.lampCpuMs + perfStats.glassCpuMs).toFixed(2)} | Size: {perfStats.viewportWidth}x
+              {perfStats.viewportHeight}
+            </div>
           </div>
         )}
         {runtimeState !== "ready" && (

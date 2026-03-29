@@ -211,6 +211,8 @@ export class FishScaleEffect {
   private lastElapsedTime = 0
   private patchUpdateAccumulator = 1
   private patchNormalAccumulator = 1
+  private needsGeometryRefresh = true
+  private frozenElapsedTime = 0
   private params: FishScaleParams
   private readonly appearance: FishScaleAppearance
 
@@ -248,10 +250,12 @@ export class FishScaleEffect {
 
   setParams(params: Partial<FishScaleParams>): void {
     this.params = { ...this.params, ...params }
+    this.needsGeometryRefresh = true
   }
 
   clearWounds(): void {
     this.wounds.length = 0
+    this.needsGeometryRefresh = true
   }
 
   /** True when there are active wounds (for runtime update throttling). */
@@ -337,21 +341,34 @@ export class FishScaleEffect {
     } else {
       this.wounds.unshift({ x, y, strength: 1, side })
     }
+    this.needsGeometryRefresh = true
   }
 
   update(elapsedTime: number): void {
     const delta = this.lastElapsedTime === 0 ? 0 : Math.max(0, elapsedTime - this.lastElapsedTime)
     this.lastElapsedTime = elapsedTime
+    const hadWounds = this.wounds.length > 0
     this.updateWounds(delta)
+    const hasWounds = this.wounds.length > 0
+    if (hadWounds || hasWounds) {
+      this.needsGeometryRefresh = true
+    }
+    const useIdleAnimation = !this.isStaticWhenIntact() || hasWounds
+    if (!useIdleAnimation && !this.needsGeometryRefresh) return
+    const sampleElapsed = useIdleAnimation ? elapsedTime : hadWounds ? elapsedTime : this.frozenElapsedTime
     this.patchUpdateAccumulator += delta
     this.patchNormalAccumulator += delta
-    if (this.patchUpdateAccumulator >= 1 / 30) {
-      this.updatePatch(elapsedTime, this.patchNormalAccumulator >= 1 / 12)
+    if (!useIdleAnimation || this.patchUpdateAccumulator >= 1 / 30) {
+      this.updatePatch(sampleElapsed, !useIdleAnimation || this.patchNormalAccumulator >= 1 / 12)
       this.patchUpdateAccumulator = 0
       if (this.patchNormalAccumulator >= 1 / 12) this.patchNormalAccumulator = 0
     }
-    this.updateScales(elapsedTime)
+    this.updateScales(sampleElapsed)
     this.updateBreachHoleUniforms()
+    if (!useIdleAnimation) {
+      this.frozenElapsedTime = sampleElapsed
+    }
+    this.needsGeometryRefresh = false
   }
 
   private applyAppearanceMaterials(): void {
@@ -400,6 +417,10 @@ export class FishScaleEffect {
       this.patchMaterial.depthWrite = false
       this.patchMaterial.opacity = this.appearance === 'glass' ? 0.34 : 0.42
     }
+  }
+
+  private isStaticWhenIntact(): boolean {
+    return this.appearance === 'glass' || this.appearance === 'glassBulb'
   }
 
   private applyBreachHoleShaders(): void {
