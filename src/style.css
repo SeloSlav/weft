@@ -322,6 +322,107 @@ body,
   border-radius: 4px;
 }
 
+.landing__state-showcase {
+  margin: 0 0 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.landing__state-hero {
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.landing__state-hero-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #05070c;
+}
+
+.landing__state-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px 18px;
+}
+
+.landing__state-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(126, 184, 255, 0.82);
+}
+
+.landing__state-title {
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: #f4f7fc;
+}
+
+.landing__state-description {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: rgba(232, 237, 244, 0.72);
+}
+
+.landing__state-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.landing__state-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    transform 0.12s;
+}
+
+.landing__state-card:hover {
+  border-color: rgba(126, 184, 255, 0.28);
+  background: rgba(126, 184, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+.landing__state-card--active {
+  border-color: rgba(126, 184, 255, 0.38);
+  background: rgba(126, 184, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.landing__state-card-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #05070c;
+}
+
+.landing__state-card-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(232, 237, 244, 0.88);
+}
+
 .landing__features {
   margin: 0;
   padding: 0;
@@ -364,6 +465,10 @@ body,
 @media (max-width: 560px) {
   .landing__compare {
     grid-template-columns: 1fr;
+  }
+
+  .landing__state-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

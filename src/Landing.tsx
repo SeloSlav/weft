@@ -1,27 +1,66 @@
+import { useState } from 'react'
+
 type LandingProps = {
   onEnterEditor: () => void
 }
 
+const SURFACE_STATES = [
+  {
+    id: 'healthy',
+    label: 'Healthy',
+    imageSrc: '/landing-state-healthy.png',
+    alt: 'Dense bright green field state in the playground.',
+    description: 'Dense cover, full color, and the same placement rules pushing the surface toward a healthy state.',
+  },
+  {
+    id: 'dry',
+    label: 'Dry',
+    imageSrc: '/landing-state-dry.png',
+    alt: 'Yellow dry field state in the playground.',
+    description: 'The field keeps the same projection and layout logic while the palette and source weights shift toward a dry look.',
+  },
+  {
+    id: 'corrupted',
+    label: 'Corrupted',
+    imageSrc: '/landing-state-corrupted.png',
+    alt: 'Purple corrupted field state in the playground.',
+    description: 'Corruption is just another semantic state: same terrain, same driver, visibly different output.',
+  },
+  {
+    id: 'dead',
+    label: 'Dead',
+    imageSrc: '/landing-state-dead.png',
+    alt: 'Sparse dead field state in the playground.',
+    description: 'When width and source weights collapse, the surface thins out instead of needing a separate destruction pipeline.',
+  },
+] as const
+
 export function Landing({ onEnterEditor }: LandingProps) {
+  const [selectedStateId, setSelectedStateId] = useState<(typeof SURFACE_STATES)[number]['id']>('healthy')
+  const selectedState =
+    SURFACE_STATES.find((state) => state.id === selectedStateId) ?? SURFACE_STATES[0]
+
   return (
     <div className="landing">
       <div className="landing__inner">
-        <p className="landing__eyebrow">Surface layout engine</p>
+        <p className="landing__eyebrow">Reactive surface layout</p>
         <h1 className="landing__title">
-          Typography as a{' '}
-          <span className="landing__title-accent">3D placement engine</span>
+          Build reactive surfaces{' '}
+          <span className="landing__title-accent">without custom scatter logic</span>
         </h1>
         <p className="landing__lead">
-          Traditional scatter fills a surface with random or noise-driven points, then places instances at
-          those points. Density, spacing, and variation are all hand-tuned constants with no semantic
-          meaning. Making them respond to gameplay requires a separate system entirely.
+          Most surface systems make you solve placement twice: once to scatter instances, then again to
+          make them react to damage, growth, weather, or state changes. Pretext turns that into one layout
+          problem, so the same surface can thin out, open up, heal, or change state without a second
+          bespoke runtime.
         </p>
         <p className="landing__lead">
           This engine runs a{' '}
           <strong style={{ color: '#c8d6e8' }}>typographic line-breaking algorithm</strong> across a grid
           of world slots. Start with a simple glyph array, or drop down to an explicit semantic palette
           when you need stable ids, weights, or metadata. Pretext measures the resolved glyph stream and
-          breaks lines to fit each slot's width. Density emerges from font metrics, not magic numbers.
+          breaks lines to fit each slot's width. Density emerges from font metrics, not hand-tuned scatter
+          constants.
         </p>
 
         <div className="landing__actions">
@@ -125,6 +164,40 @@ this.driver.forEachLaidOutLine({
           by changing the semantic source and re-running layout through the same projection callback.
         </p>
 
+        <section className="landing__state-showcase" aria-label="Surface state transitions">
+          <figure className="landing__state-hero">
+            <img
+              className="landing__state-hero-image"
+              src={selectedState.imageSrc}
+              alt={selectedState.alt}
+            />
+            <figcaption className="landing__state-hero-copy">
+              <span className="landing__state-kicker">Same surface, different world state</span>
+              <strong className="landing__state-title">{selectedState.label}</strong>
+              <span className="landing__state-description">{selectedState.description}</span>
+            </figcaption>
+          </figure>
+
+          <div className="landing__state-grid" role="list" aria-label="Choose a surface state preview">
+            {SURFACE_STATES.map((state) => {
+              const isSelected = state.id === selectedState.id
+
+              return (
+                <button
+                  key={state.id}
+                  type="button"
+                  className={`landing__state-card${isSelected ? ' landing__state-card--active' : ''}`}
+                  onClick={() => setSelectedStateId(state.id)}
+                  aria-pressed={isSelected}
+                >
+                  <img className="landing__state-card-image" src={state.imageSrc} alt="" />
+                  <span className="landing__state-card-label">{state.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
         <ul className="landing__features" aria-label="Engine properties">
           <li>
             <strong>One driver, every surface type</strong>
@@ -142,10 +215,11 @@ this.driver.forEachLaidOutLine({
             </span>
           </li>
           <li>
-            <strong>Plain TypeScript and Three.js WebGPU</strong>
+            <strong>WebGPU runtime for live surface updates</strong>
             <span>
-              No React Three Fiber in the render path. The core ideas are portable to tools, editors,
-              and non-React game runtimes.
+              The renderer is built on plain TypeScript and Three.js WebGPU, so large instanced surfaces
+              can be re-laid out, thinned, and recolored in response to gameplay without turning each
+              effect into its own special-case pipeline.
             </span>
           </li>
         </ul>

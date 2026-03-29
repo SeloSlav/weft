@@ -1,6 +1,6 @@
 # Pretext Weft
 
-Pretext Weft is a prototype surface-layout engine for interactive 3D. Instead of scattering meshes with noise and then layering separate gameplay logic on top, it treats a surface like a page: Pretext measures a glyph stream, breaks it into rows and sectors, and the renderer projects the result back into the world.
+Pretext Weft is a prototype surface-layout engine for interactive 3D built around one practical idea: reactive surfaces should not need one system for placement and another for gameplay response. Instead of scattering meshes with noise and then layering separate damage, growth, weather, or state logic on top, it treats a surface like a page: Pretext measures a glyph stream, breaks it into rows and sectors, and the renderer projects the result back into the world.
 
 ![Playground screenshot](public/readme-playground-screenshot.png)
 
@@ -11,16 +11,18 @@ The current site has two faces:
 
 ## Core idea
 
-The landing page is the current product thesis in one sentence:
+The pitch is simple:
 
-**typography as a 3D placement engine**
+**build reactive surfaces without custom scatter logic**
 
-Instead of hand-tuning density, spacing, and variation per effect, this project uses typographic line breaking as the common placement primitive. A surface only needs:
+Most surface systems make you solve placement twice: once to scatter instances, then again to make them react to gameplay. Pretext turns that into one layout problem, so the same surface can thin out, open up, heal, or change state without a second bespoke runtime.
+
+Under the hood, the project uses typographic line breaking as the common placement primitive. A surface only needs:
 
 - a glyph vocabulary, or a weighted semantic palette with ids and metadata
 - a projection that turns laid-out rows and sectors into world-space instances
 
-Gameplay response then becomes a width problem. Narrow a slot, and fewer glyphs fit. Return zero width, and that part of the surface disappears. Some samples use direct width changes; others keep layout stable and apply deterministic thinning on top.
+Gameplay response then becomes a width problem. Narrow a slot, and fewer glyphs fit. Return zero width, and that part of the surface disappears. Density comes from font metrics rather than hand-tuned scatter constants. Some samples use direct width changes; others keep layout stable and apply deterministic thinning on top.
 
 ## Current playground
 
@@ -59,7 +61,7 @@ The architecture is intentionally split so the engine idea is not coupled to Rea
 
 - React is only the site shell, landing page, and control UI
 - `Three.js` + `WebGPU` run the renderer
-- the render path is plain TypeScript, with no React Three Fiber
+- the runtime is plain TypeScript, which keeps the layout system portable and suited to live surface updates
 - Pretext provides measurement and deterministic line breaking
 
 At a high level the pipeline is:
