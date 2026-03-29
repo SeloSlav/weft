@@ -2,9 +2,9 @@
 
 Reactive surface-layout SDK for Three.js/WebGPU. Build gameplay-responsive grass, walls, doodads, and skyboxes without custom scatter logic.
 
-
 - Live site: [pretext-weft.vercel.app](https://pretext-weft.vercel.app)
 - Video demo: [x.com/SeloSlav/status/2038245103643333014](https://x.com/SeloSlav/status/2038245103643333014)
+- npm package: [`weft-sdk`](https://www.npmjs.com/package/weft-sdk)
 
 > Start here for SDK integration guidance and agent-ready context: [`weft.md`](./weft.md)
 
@@ -34,9 +34,17 @@ Gameplay response then becomes a width problem. Narrow a slot, and fewer glyphs 
 
 The repo includes these `Weft` layers:
 
-- `src/weft/core`: source preparation, deterministic seed cursors, and `SurfaceLayoutDriver`
-- `src/weft/runtime`: shared recovery/state primitives
-- `src/weft/three`: Three.js-first helpers plus shipped presets for `grass`, `fish scale`, `rock field`, `fire wall`, and `star sky`
+- `weft-sdk/core`: source preparation, deterministic seed cursors, and `SurfaceLayoutDriver`
+- `weft-sdk/runtime`: shared recovery/state primitives
+- `weft-sdk/three`: Three.js-first helpers plus shipped presets for `grass`, `fish scale`, `rock field`, `fire wall`, and `star sky`
+
+Install the package with Three.js:
+
+```bash
+npm install weft-sdk three
+```
+
+`three` is a peer dependency. `@chenglou/pretext` is bundled as a normal dependency of `weft-sdk`.
 
 The SDK already supports a direct authoring path for new effects through source creation, layout helpers, behaviors, and presets:
 
@@ -45,7 +53,8 @@ import {
   DEFAULT_GRASS_FIELD_PARAMS,
   createGrassEffect,
   createSurfaceSource,
-} from './src/weft/three'
+} from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
 
 const surface = createSurfaceSource({
   cacheKey: 'my-surface',
@@ -117,7 +126,7 @@ At a high level the pipeline is:
 4. Project laid-out glyphs into world-space instances.
 5. Re-run layout or thinning when gameplay changes the width field.
 
-## Quick start
+## Run the playground
 
 Node.js 20+ is recommended.
 

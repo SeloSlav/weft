@@ -226,15 +226,15 @@ When writing docs:
 
 ## Canonical Quick Start Pattern
 
-Use the same structure even if your project imports Weft from a package entrypoint instead of repo-local paths.
+Prefer package entrypoints in docs and integrations.
 
 ```ts
 import {
   DEFAULT_GRASS_FIELD_PARAMS,
   createGrassEffect,
   createSurfaceSource,
-} from './src/weft/three'
-import { seedCursor } from './src/weft/core'
+} from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
 
 const surface = createSurfaceSource({
   cacheKey: 'my-surface',
@@ -262,6 +262,6 @@ For this SDK, the most reliable references are:
 - the conceptual guide and examples in `src/Docs.tsx`
 - the project overview in `README.md`
 
-If you are integrating a packaged version of Weft, translate repo-local import paths like `./src/weft/three` and `./src/weft/core` to the package entrypoints exposed by that distribution.
+For package consumers, prefer imports like `weft-sdk/three` and `weft-sdk/core`.
 
 If this document and the code ever disagree, trust the code exports first and update the docs accordingly.

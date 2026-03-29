@@ -105,8 +105,8 @@ const EXAMPLES = [
   DEFAULT_GRASS_FIELD_PARAMS,
   createGrassEffect,
   createSurfaceSource,
-} from './src/weft/three'
-import { seedCursor } from './src/weft/core'
+} from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
 
 const surface = createSurfaceSource({
   cacheKey: 'field-shell',
@@ -127,7 +127,7 @@ scene.add(grass.group)`,
   },
   {
     title: 'Semantic palette source',
-    code: `import { createSurfaceSource } from './src/weft/three'
+    code: `import { createSurfaceSource } from 'weft-sdk/three'
 
 const coralSurface = createSurfaceSource({
   cacheKey: 'coral',
@@ -146,8 +146,8 @@ const coralSurface = createSurfaceSource({
   DEFAULT_FIRE_WALL_PARAMS,
   createFireWallEffect,
   getPreparedFireSurface,
-} from './src/weft/three'
-import { seedCursor } from './src/weft/core'
+} from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
 
 const fireWall = createFireWallEffect({
   seedCursor,
@@ -169,8 +169,8 @@ export function Docs({ onEnterEditor }: DocsProps) {
         <p className="docs__eyebrow">SDK docs</p>
         <h1 className="docs__title">Weft SDK guide and API reference</h1>
         <p className="docs__lead">
-          This page documents the current SDK surface that ships in this repo today. It is guide-first,
-          but every section maps back to the real exports from <code className="docs__code-inline">src/weft/three</code>.
+          This page documents the current SDK surface that ships in the package today. It is guide-first,
+          but every section maps back to the real exports from <code className="docs__code-inline">weft-sdk/three</code>.
         </p>
 
         <div className="docs__actions">
@@ -193,17 +193,21 @@ export function Docs({ onEnterEditor }: DocsProps) {
         <section id="quick-start" className="docs__section">
           <h2 className="docs__section-title">Quick start</h2>
           <p className="docs__text">
-            The current SDK entrypoint inside this repo is <code className="docs__code-inline">src/weft/three</code>.
-            Start by creating a measured source, then feed it into a preset factory.
+            Install <code className="docs__code-inline">weft-sdk</code> with <code className="docs__code-inline">three</code>,
+            then start by creating a measured source and feed it into a preset factory.
           </p>
+          <div className="docs__code-block">
+            <p className="docs__code-label">Install</p>
+            <pre className="docs__pre">{`npm install weft-sdk three`}</pre>
+          </div>
           <div className="docs__code-block">
             <p className="docs__code-label">First effect</p>
             <pre className="docs__pre">{`import {
   DEFAULT_GRASS_FIELD_PARAMS,
   createGrassEffect,
   createSurfaceSource,
-} from './src/weft/three'
-import { seedCursor } from './src/weft/core'
+} from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
 
 const surface = createSurfaceSource({
   cacheKey: 'my-surface',
@@ -258,7 +262,7 @@ scene.add(grass.group)`}</pre>
             <p className="docs__callout-text">
               The main primitives behind that model are <code className="docs__code-inline">createSurfaceSource()</code>,{' '}
               <code className="docs__code-inline">recoverableDamage()</code>, and the layout helpers in{' '}
-              <code className="docs__code-inline">src/weft/three/api.ts</code>.
+              <code className="docs__code-inline">weft-sdk/three</code>.
             </p>
           </div>
         </section>
@@ -298,7 +302,7 @@ scene.add(grass.group)`}</pre>
           <h2 className="docs__section-title">API reference</h2>
           <p className="docs__text">
             These groups mirror the public surface currently exported from{' '}
-            <code className="docs__code-inline">src/weft/three/index.ts</code>.
+            <code className="docs__code-inline">weft-sdk/three</code>.
           </p>
           <div className="docs__api-grid">
             {API_GROUPS.map((group) => (

@@ -1,25 +1,75 @@
 {
-  "name": "weft",
-  "private": true,
-  "version": "0.0.0",
+  "name": "weft-sdk",
+  "version": "0.1.0",
+  "description": "Reactive surface-layout SDK for Three.js/WebGPU.",
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./three": {
+      "types": "./dist/three/index.d.ts",
+      "import": "./dist/three/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "three",
+    "threejs",
+    "webgpu",
+    "surface-layout",
+    "instancing",
+    "procedural",
+    "gameplay",
+    "reactive-surfaces"
+  ],
+  "license": "MIT",
+  "homepage": "https://pretext-weft.vercel.app",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "npm run build:sdk && npm run build:demo",
+    "build:sdk": "tsup",
+    "build:demo": "tsc && vite build",
+    "preview": "vite preview",
+    "pack:check": "npm pack --dry-run",
+    "prepack": "npm run build:sdk"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.183.1",
-    "typescript": "~5.9.3",
-    "vite": "^8.0.1"
-  },
-  "dependencies": {
-    "@chenglou/pretext": "^0.0.2",
     "@vitejs/plugin-react": "^6.0.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "three": "^0.183.2"
+    "three": "^0.183.2",
+    "tsup": "^8.5.1",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.1"
+  },
+  "peerDependencies": {
+    "three": "^0.183.0"
+  },
+  "dependencies": {
+    "@chenglou/pretext": "^0.0.2"
   }
 }
