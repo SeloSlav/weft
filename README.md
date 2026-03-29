@@ -2,7 +2,7 @@
 
 **Layout on geometry.** Pretext Weft is a layout engine and experiment surface for packing visual units along bands and paths on 3D geometry—like line layout, but the “lines” are geodesics or contour strips on a mesh. Measurement is batched; the hot path stays arithmetic so surfaces can reflow when the shape, damage, or obstacles change.
 
-The long-term goal is a **toolkit and editor workflow**: authors define a stream of measured units (glyphs, icons, instanced mesh “tiles,” abstract ornaments), map surface bands or paths to one-dimensional layout widths, and drive placement in **Three.js / WebGL** (or export rules for game engines). This repository is the **reference implementation and playground** for that idea.
+The long-term goal is a **toolkit and editor workflow**: authors define a stream of measured units (glyphs, icons, instanced mesh “tiles,” abstract ornaments), map surface bands or paths to one-dimensional layout widths, and drive placement in **Three.js / WebGPU** (or export rules for game engines). This repository is the **reference implementation and playground** for that idea.
 
 ---
 
@@ -93,6 +93,8 @@ npm run dev
 ```
 
 Open the URL Vite prints (usually `http://localhost:5173`). Use the **left sidebar** to switch samples; each sample has its own parameter sliders. Orbit the camera with the mouse.
+
+**GPU:** The playground uses **WebGPU** only (Three.js `WebGPURenderer` with the WebGL2 fallback disabled). Use a [WebGPU-capable](https://caniuse.com/webgpu) browser (recent Chrome, Edge, or Safari Technology Preview). The Drei `Environment` HDR preset was dropped here because its implementation still pulls **WebGL-only** cube render targets; the scene uses **hemisphere + directional** lights instead until a WebGPU-native IBL path is wired up.
 
 **Production build:**
 
