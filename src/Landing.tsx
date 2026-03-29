@@ -6,20 +6,24 @@ export function Landing({ onEnterEditor }: LandingProps) {
   return (
     <div className="landing">
       <div className="landing__inner">
-        <p className="landing__eyebrow">Surface layout engine · WebGPU playground</p>
+        <p className="landing__eyebrow">Surface layout engine · Editor direction · Three.js WebGPU demos</p>
         <h1 className="landing__title">
-          Layout, not scatter, on <span className="landing__title-accent">geometry</span>
+          A new mental model for <span className="landing__title-accent">browser game surfaces</span>
         </h1>
         <p className="landing__lead">
-          Pretext Weft is a prototype for authored surface decoration in games. Instead of spraying meshes,
-          decals, or textures across a model, it turns bands and paths on a surface into changing line
-          widths, feeds those widths into Pretext, and places the chosen units back onto geometry with plain
-          TypeScript and Three.js WebGPU.
+          Pretext Weft is an engine/editor prototype for browser games built with Three.js and WebGPU. The idea
+          is to stop thinking about surface detail as scatter, decals, or noise and start thinking about it as
+          deterministic layout that runs on geometry.
         </p>
         <p className="landing__lead">
-          The bet is that text-layout ideas can become a new runtime primitive for web games: inscriptions,
-          ornament, scales, symbols, or modular skin that reflows deterministically when a creature deforms,
-          armor opens, or gameplay creates damage and obstacles.
+          Pretext provides the measurement and line-breaking core. This project turns geometry, wounds,
+          footsteps, seams, and obstacles into changing width fields, then uses those widths to lay out units
+          back onto the surface. The result is authored detail that can reflow when gameplay changes the world.
+        </p>
+        <p className="landing__lead">
+          The demos are examples of that engine direction: fish scales that reorganize around damage, grass
+          that collapses and repacks around a disturbance, and eventually other surface systems that share the
+          same layout model. The runtime is plain TypeScript and Three.js WebGPU.
         </p>
 
         <div className="landing__actions">
@@ -30,25 +34,24 @@ export function Landing({ onEnterEditor }: LandingProps) {
 
         <ul className="landing__features" aria-label="What you get">
           <li>
-            <strong>Pretext as the layout core</strong>
+            <strong>Pretext as an engine primitive</strong>
             <span>
-              Measure once, cache segment widths, then reuse deterministic line breaking against surface-derived
-              widths instead of rebuilding ad hoc packing logic for every effect.
+              Instead of inventing custom packing logic for every effect, the engine reuses Pretext for
+              measurement and deterministic layout, then maps that output onto 3D surfaces.
             </span>
           </li>
           <li>
-            <strong>Surface-aware width fields</strong>
+            <strong>Multiple demos, one layout model</strong>
             <span>
-              Geometry, wounds, vents, and obstacles become width constraints. The surface behaves like a page
-              whose available line width changes across space.
+              The goal is not a single flashy scene. It is a reusable editor/runtime idea that can drive skin,
+              vegetation, ornament, symbols, and other ordered surface systems in browser games.
             </span>
           </li>
           <li>
-            <strong>Plain TypeScript runtime</strong>
+            <strong>Plain TypeScript runtime for Three.js</strong>
             <span>
-              The playground UI uses React, but the actual demo renderer no longer depends on React Three
-              Fiber. The scene is plain Three.js, WebGPU, and imperative runtime code so the engine ideas can
-              travel beyond React.
+              The runtime is imperative Three.js WebGPU with no React Three Fiber in the render path, which
+              keeps the core ideas portable to tools, editors, and non-React game runtimes.
             </span>
           </li>
         </ul>

@@ -1,25 +1,33 @@
-export type SampleId = 'torus-wound' | 'plane-ribbon'
-
-export type TorusSampleParams = {
-  woundHalfAngle: number
+export type FishScaleParams = {
+  woundRadius: number
   woundNarrow: number
-  deform: number
+  woundDepth: number
+  scaleLift: number
+  surfaceFlex: number
+  recoveryRate: number
 }
 
-export type RibbonSampleParams = {
-  obstacleHalfWidth: number
-  obstacleNarrow: number
-  wave: number
+export const DEFAULT_FISH_SCALE_PARAMS: FishScaleParams = {
+  woundRadius: 0.68,
+  woundNarrow: 0.26,
+  woundDepth: 0.72,
+  scaleLift: 0.55,
+  surfaceFlex: 0.28,
+  recoveryRate: 0.16,
 }
 
-export const DEFAULT_TORUS_PARAMS: TorusSampleParams = {
-  woundHalfAngle: 0.55,
-  woundNarrow: 0.22,
-  deform: 1,
+export type GrassFieldParams = {
+  disturbanceRadius: number
+  disturbanceStrength: number
+  trampleDepth: number
+  wind: number
+  recoveryRate: number
 }
 
-export const DEFAULT_RIBBON_PARAMS: RibbonSampleParams = {
-  obstacleHalfWidth: 0.65,
-  obstacleNarrow: 0.2,
-  wave: 1,
+export const DEFAULT_GRASS_FIELD_PARAMS: GrassFieldParams = {
+  disturbanceRadius: 1.15,
+  disturbanceStrength: 0.78,
+  trampleDepth: 0.68,
+  wind: 0.62,
+  recoveryRate: 0.18,
 }

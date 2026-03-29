@@ -1,110 +1,106 @@
 # Pretext Weft
 
-Pretext Weft is a prototype **surface-layout engine** for games and interactive 3D. The core move is:
+Pretext Weft is a prototype **surface-layout engine** for games and interactive 3D. The flagship demo is a close-up fish-scale patch: click the skin, open a wound, and nearby scales **repack around the damage** instead of behaving like random scatter.
+
+That is the core claim of the project:
 
 - prepare a measured stream of units
-- derive changing widths from geometry
-- run deterministic layout
-- project the result back onto the surface as instanced geometry
+- derive changing available width from geometry and damage
+- run deterministic layout with Pretext
+- project the result back onto the surface as geometry
 
-This is not really a “text on a torus” demo. The larger claim is that **text-layout ideas can become a runtime primitive for authored surface decoration**: symbols, scales, paneling, inscriptions, ornament, or modular skin that reflows when a mesh deforms or gameplay changes the available space.
+This is not really about “text on a torus.” It is about using **layout as a runtime primitive for skin, ornament, and surface detail**.
 
-## Why Pretext
+## Why this matters
 
-Most procedural surface detail in games comes from one of these buckets:
+Most procedural surface detail in games comes from:
 
 - hand placement
 - baked textures
 - decals
-- random scatter / noise
-- custom one-off packing logic
+- noise / scatter
+- one-off custom packing logic
 
-Those approaches can look good, but they do not behave like authored layout. [Pretext](https://www.npmjs.com/package/@chenglou/pretext) already solves a hard part of the problem:
+Those can look good, but they do not behave like authored layout. They are often hard to reflow when the model bends, breaks, opens, or takes damage.
+
+Pretext Weft takes a different approach:
+
+- the surface is treated like a page
+- bands and rows become lines
+- wounds and obstacles become width constraints
+- Pretext decides what fits
+- the renderer places the chosen units back onto the model
+
+So instead of “sprinkle meshes on a surface,” the system becomes “run a deterministic layout pass on a surface.”
+
+## Why Pretext
+
+[Pretext](https://www.npmjs.com/package/@chenglou/pretext) already gives the engine the hard 1D layout pieces:
 
 - segmentation
 - measurement
 - deterministic line breaking
 - fast reflow against changing widths
 
-Pretext Weft uses that 1D layout machinery as the **core engine primitive**, then maps it onto 3D surfaces.
+Pretext Weft uses that machinery as the **layout core** and maps it onto 3D geometry.
 
-## Thesis
+## The flagship demo
 
-Treat the surface like a page.
+The current demo is a **fish-scale wound field**.
 
-- A band, contour, or path on a mesh becomes a line.
-- Arc length or authored masks become available width.
-- Wounds, vents, seams, and obstacles reduce that width.
-- Pretext decides what fits.
-- A renderer places the chosen units back onto the surface.
+What it demonstrates:
 
-That changes the problem from “scatter some meshes on a model” to “run a deterministic layout pass on a surface.”
+- the scales are **ordered**, not randomly scattered
+- clicking creates **persistent wounds**
+- the patch **deforms physically**
+- nearby scales **lift and repack**
+- local damage changes the **available width field** that Pretext lays out against
 
-## Why this could matter for web games
+This is meant to communicate the value proposition clearly:
 
-If this approach matures, web games get a new class of runtime-authored visuals:
+**damage changes structure, not just shading**
 
-- armor or creature skin that reflows instead of stretching a baked decal
-- magical inscriptions that route around damage or openings
-- ornamental surfaces that stay ordered, not noisy
-- diegetic symbols or UI embedded into geometry
-- authorable procedural detail with stable, reproducible behavior
+## Architecture
 
-The value is not just visual novelty. It is a better **authoring model**:
+The project is intentionally split so the engine idea does not depend on React:
 
-- less manual placement
-- more reactive content
-- deterministic results
-- reusable rules instead of one-off scatter systems and shaders
+- **React** is only used for the site shell and controls
+- **Three.js + WebGPU** run the actual demo renderer
+- **No React Three Fiber** is used in the runtime
+- **Plain TypeScript** owns the scene, layout pass, click interaction, and rendering updates
 
-## Current architecture
-
-This repo now treats the demo as a thin shell around a plain runtime:
-
-- **React** is only used for the app shell, controls, and landing page.
-- **Three.js + WebGPU** run the actual playground renderer.
-- **No React Three Fiber** is used in the demo runtime.
-- **Plain TypeScript** owns scene setup, layout passes, placement, and animation.
-
-That separation matters because the engine concept should be portable beyond React.
+That keeps the core direction portable to other runtimes and tools.
 
 ## Pipeline
 
 ```mermaid
 flowchart LR
-  A[Unit stream] --> B[Pretext prepare / measure]
-  B --> C[Cached segment widths]
-  D[Geometry bands or paths] --> E[Available width per sector]
-  C --> F[layoutNextLine]
-  E --> F
-  F --> G[Placements]
-  G --> H[Instanced mesh / renderer]
+  unitStream[UnitStream] --> prepare[PretextPrepare]
+  prepare --> cachedWidths[CachedWidths]
+  surfacePatch[SurfacePatch] --> widthField[WidthField]
+  wounds[Wounds] --> widthField
+  cachedWidths --> layout[layoutNextLine]
+  widthField --> layout
+  layout --> placements[ScalePlacements]
+  wounds --> deformation[PatchDeformation]
+  placements --> renderer[InstancedRenderer]
+  deformation --> renderer
 ```
 
 1. **Prepare**  
    Build a unit stream and let Pretext measure it once.
 
-2. **Sample geometry**  
-   Convert a band or path on the mesh into sectors with available width.
+2. **Sample the surface**  
+   Turn the fish skin patch into rows and sectors with available width.
 
-3. **Layout**  
-   Start from a stable seeded cursor for each band and run `layoutNextLine()` against each sector width.
+3. **Apply damage**  
+   Clicking creates wounds that reduce local width and deform the patch.
 
-4. **Project**  
-   Turn the chosen units into positions, orientations, and scales on the surface.
+4. **Layout**  
+   Use stable seeded cursors and `layoutNextLine()` to generate placements from the damaged width field.
 
-5. **Render**  
-   Feed those placements to a renderer, currently via Three.js `InstancedMesh`.
-
-## Playground samples
-
-- **Torus + wound**  
-  A contour-band layout field wrapped onto a torus. Width changes come from arc length and a wound region.
-
-- **Plane ribbons**  
-  A simpler reference case: flat bands with a width-cutting obstacle using the same Pretext-driven layout pass.
-
-These are intentionally simple. They exist to validate the engine idea, not to be the final art style.
+5. **Project and render**  
+   Convert the placements into instanced scales with position, orientation, color, and lift.
 
 ## Quick start
 
@@ -119,9 +115,9 @@ Open the Vite URL in a **WebGPU-capable** browser.
 
 Important:
 
-- The playground is **WebGPU only**.
-- Three.js WebGL fallback is disabled.
-- If WebGPU is unavailable, the playground should fail instead of silently switching APIs.
+- the playground is **WebGPU only**
+- Three.js WebGL fallback is disabled
+- if WebGPU is unavailable, the demo should fail instead of silently switching APIs
 
 Build for production:
 
@@ -135,34 +131,34 @@ npm run preview
 ```text
 src/
   App.tsx                     React shell
-  Landing.tsx                 Product framing / thesis
+  Landing.tsx                 Product framing
   Editor.tsx                  Controls + runtime host
   skinText.ts                 Pretext stream preparation and seeded cursors
+  createWebGPURenderer.ts     WebGPU-only renderer bootstrap
   playground/
     PlaygroundRuntime.ts      Plain Three.js/WebGPU runtime
-    torusSample.ts            Torus layout + placement logic
-    ribbonSample.ts           Ribbon layout + placement logic
-    types.ts                  Runtime-facing sample params
+    fishScaleSample.ts        Flagship demo logic
+    types.ts                  Runtime parameter types
   samples/
-    sampleMeta.ts             Sample copy for the UI
-    graphemes.ts              Shared grapheme splitting helper
+    sampleMeta.ts             UI copy for the flagship demo
+    graphemes.ts              Shared grapheme helper
 ```
 
 ## What this is not yet
 
 - not a packaged engine
-- not an editor workflow
-- not a general band-authoring tool
-- not a game-engine integration layer
+- not a full editor workflow
+- not a generalized authoring tool for all surface types
+- not yet integrated with external game engines
 
-Right now this repo is a **reference prototype**: enough to prove the layout model, runtime shape, and rendering direction.
+Right now this repo is a **reference prototype** designed to prove the idea in the clearest possible way.
 
 ## Next steps
 
-- extract a true `core` surface-layout package
-- define placement/output data structures independent of Three.js
-- support more surface parameterizations than the current two samples
-- add authoring tools for width masks, bands, paths, and streams
+- extract a renderer-agnostic `core` package
+- define generic placement/output data structures
+- support more surface parameterizations than the fish patch
+- add authoring tools for width masks, paths, and stream design
 - explore export/runtime stories for game engines
 
 ## Credits

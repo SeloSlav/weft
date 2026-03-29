@@ -7,7 +7,7 @@ export async function createWebGPURenderer(canvas: HTMLCanvasElement): Promise<W
     canvas,
     antialias: true,
     alpha: true,
-    powerPreference: 'high-performance',
+    // Omit powerPreference: on Windows Chromium currently ignores it and logs a warning (crbug.com/369219127).
     logarithmicDepthBuffer: true,
   })
 
