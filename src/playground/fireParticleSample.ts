@@ -66,16 +66,21 @@ function lineSignature(text: string): number {
 }
 
 // ─── fire color ───────────────────────────────────────────────────────────────
-// White-yellow core at base → orange mid → deep red at top tip.
+// White-yellow core at base → orange mid → deep red / transparent at tip.
+// With additive blending the per-particle colour acts as an emission tint —
+// overlapping particles sum to a bright core automatically.
 
 function fireColor(age01: number, rowNorm: number, identity: number, meta: FireTokenMeta): THREE.Color {
-  // Hot white core at base, transitioning to yellow, then orange, then deep red.
-  const baseHue = THREE.MathUtils.lerp(0.12, 0.02, rowNorm) + meta.heatBias * 0.06
-  const hue = THREE.MathUtils.lerp(baseHue, 0.0, age01 * 0.7)
+  // age01=0 → just born (base of flame, hottest); age01=1 → dying (tip, coolest)
+  // rowNorm=0 → bottom row; rowNorm=1 → top row
+  const heat = (1 - age01) * (1 - rowNorm * 0.55) + meta.heatBias * 0.08
+  // hue: 0.14 = yellow-orange, 0.04 = deep orange, 0.0 = red
+  const hue = THREE.MathUtils.lerp(0.0, 0.14, Math.pow(heat, 0.6))
   const sat = 1.0
-  // Brightness: base is very bright (white-ish), tip is dark.
-  const light = THREE.MathUtils.lerp(0.9, 0.15, age01 * 0.9 + rowNorm * 0.1)
-  const nudge = (uhash(identity * 2654435761) - 0.5) * 0.03
+  // Brightness drives perceived intensity under additive blending.
+  // Young particles at the base are near-white (high lightness); dying ones dim fast.
+  const light = THREE.MathUtils.clamp(0.12 + heat * 0.78, 0.08, 0.88)
+  const nudge = (uhash(identity * 2654435761) - 0.5) * 0.025
   return tmpColor.setHSL(hue + nudge, sat, light).clone()
 }
 
@@ -88,10 +93,34 @@ type FireWound = {
   strength: number
 }
 
-// ─── geometry ─────────────────────────────────────────────────────────────────
+// ─── geometry + texture ───────────────────────────────────────────────────────
 
 function makeParticleGeometry(): THREE.BufferGeometry {
-  return new THREE.CircleGeometry(1.0, 7)
+  return new THREE.PlaneGeometry(2, 2)
+}
+
+function makeParticleTexture(): THREE.CanvasTexture {
+  const size = 128
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  const cx = size * 0.5
+  const cy = size * 0.5
+
+  // Outer soft halo
+  const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, cx)
+  halo.addColorStop(0,    'rgba(255,255,255,1)')
+  halo.addColorStop(0.18, 'rgba(255,255,255,0.95)')
+  halo.addColorStop(0.42, 'rgba(255,200,80,0.55)')
+  halo.addColorStop(0.70, 'rgba(255,80,0,0.18)')
+  halo.addColorStop(1.0,  'rgba(0,0,0,0)')
+  ctx.fillStyle = halo
+  ctx.fillRect(0, 0, size, size)
+
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
 }
 
 function makeInteractionGeometry(): THREE.BufferGeometry {
@@ -106,12 +135,15 @@ export class FireParticleSample {
   readonly interactionMesh: THREE.Mesh
 
   private readonly particleGeometry = makeParticleGeometry()
+  private readonly particleTexture = makeParticleTexture()
   private readonly interactionGeometry = makeInteractionGeometry()
 
   private readonly particleMaterial = new THREE.MeshBasicMaterial({
+    map: this.particleTexture,
     side: THREE.DoubleSide,
     transparent: true,
     depthWrite: false,
+    blending: THREE.AdditiveBlending,
   })
   private readonly interactionMaterial = new THREE.MeshBasicMaterial({
     transparent: true,
@@ -211,6 +243,7 @@ export class FireParticleSample {
 
   dispose(): void {
     this.particleGeometry.dispose()
+    this.particleTexture.dispose()
     this.baseGeometry.dispose()
     this.interactionGeometry.dispose()
     this.particleMaterial.dispose()
@@ -282,17 +315,27 @@ export class FireParticleSample {
           const phase = this.particlePhase[ageIdx] ?? 0
 
           // Depth scatter — particles billow toward viewer as they age.
-          const pz = (hashR - 0.5) * WALL_DEPTH + age01 * WALL_DEPTH * 0.6
-          const wobbleX = Math.sin(elapsedTime * 2.8 + phase + lineSeed * 3.1) * 0.06
-          const wobbleY = Math.cos(elapsedTime * 2.1 + phase * 0.7) * 0.04
+          const pz = (hashR - 0.5) * WALL_DEPTH + age01 * WALL_DEPTH * 0.55
+
+          // Multi-frequency turbulence so each particle weaves independently.
+          const wobbleX =
+            Math.sin(elapsedTime * 3.4 + phase + lineSeed * 5.7) * 0.10 +
+            Math.sin(elapsedTime * 7.1 + phase * 1.3 + identity * 0.4) * 0.04
+          const wobbleY =
+            Math.cos(elapsedTime * 2.6 + phase * 0.8) * 0.05 +
+            Math.cos(elapsedTime * 5.3 + phase * 1.7 + identity * 0.3) * 0.02
 
           const baseSize = PARTICLE_BASE_SIZE + token.meta.sizeBias + uhash(identity * 987654) * PARTICLE_SIZE_VARIANCE
-          const rowShrink = 1.0 - rowNorm * 0.5
-          const ageFade = Math.max(0, 1 - age01 * age01)
-          const size = baseSize * ageFade * rowShrink * (0.85 + Math.sin(phase + elapsedTime * 4.5) * 0.15)
+          const rowShrink = 1.0 - rowNorm * 0.45
+          // Cubic fade: particles grow briefly then shrink sharply at the tip.
+          const ageFade = Math.max(0, 1 - age01 * age01 * age01)
+          // Flicker: fast sine on each particle's own phase.
+          const flicker = 0.82 + Math.sin(phase + elapsedTime * 9.0 + identity * 0.7) * 0.18
+          const size = baseSize * ageFade * rowShrink * flicker
 
           dummy.position.set(px + wobbleX, py + wobbleY, pz)
-          dummy.rotation.set(0, 0, age01 * Math.PI * (hashR > 0.5 ? 1 : -1))
+          // No Z rotation — billboard faces camera, spinning looks unnatural.
+          dummy.rotation.set(0, 0, 0)
           dummy.scale.setScalar(size)
           dummy.updateMatrix()
           this.particleMesh.setMatrixAt(instanceIndex, dummy.matrix)

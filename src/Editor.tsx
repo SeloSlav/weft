@@ -435,7 +435,7 @@ export function Editor() {
                 </ControlSection>
 
                 <ControlSection title="Fire Wall Controls" summary="Shoot the wall to punch holes">
-                  <label className="control-row">
+                  <label className="control">
                     <span>
                       Recovery rate ({fireRecoveryRate.toFixed(3)}) — how fast holes close
                     </span>
@@ -448,7 +448,7 @@ export function Editor() {
                       onChange={(e) => setFireRecoveryRate(Number(e.target.value))}
                     />
                   </label>
-                  <label className="control-row">
+                  <label className="control">
                     <span>
                       Hole size ({fireHoleSize.toFixed(2)}x) — radius of each bullet hole
                     </span>
@@ -464,7 +464,7 @@ export function Editor() {
                 </ControlSection>
 
                 <ControlSection title="Star Sky Controls" summary="Wound density and recovery">
-                  <label className="control-row">
+                  <label className="control">
                     <span>
                       Layout density ({starLayoutDensity.toFixed(2)}x) — how many stars fit in each sky slot
                     </span>
@@ -477,7 +477,7 @@ export function Editor() {
                       onChange={(e) => setStarLayoutDensity(Number(e.target.value))}
                     />
                   </label>
-                  <label className="control-row">
+                  <label className="control">
                     <span>
                       Recovery rate ({starRecoveryRate.toFixed(2)}) — how fast sky wounds settle
                     </span>
