@@ -1852,13 +1852,14 @@ export class PlaygroundRuntime {
       mergeRadius: 0.7,
     })
     this.stampStickFieldDisturbance(this.footstepPoint, {
-      radiusScale: 0.95,
-      strength: 0.7,
-      displacementScale: 1.2,
+      radiusScale: 1.15,
+      strength: 1.15,
+      displacementScale: 1.5,
       mergeRadius: 0.65,
       directionX: this.playerForward.x,
       directionZ: this.playerForward.z,
-      tangentialStrength: 0.12,
+      tangentialStrength: 0.2,
+      spin: 0.16,
     })
     this.stampLogFieldReaction(this.footstepPoint, {
       radiusScale: 0.65,
@@ -2129,14 +2130,14 @@ export class PlaygroundRuntime {
         mergeRadius: 0.35,
       })
       this.stampStickFieldDisturbance(grassHit.point, {
-        radiusScale: 1.25,
-        strength: 2.3,
-        displacementScale: 1.4,
+        radiusScale: 1.55,
+        strength: 4.2,
+        displacementScale: 2.1,
         mergeRadius: 0.45,
         directionX: this.raycaster.ray.direction.x,
         directionZ: this.raycaster.ray.direction.z,
-        tangentialStrength: 0.18,
-        spin: 0.18,
+        tangentialStrength: 0.24,
+        spin: 0.34,
       })
       this.stampLogFieldReaction(grassHit.point, {
         radiusScale: 0.8,
@@ -2167,14 +2168,14 @@ export class PlaygroundRuntime {
       mergeRadius: 0.35,
     })
     this.stampStickFieldDisturbance(hit.point, {
-      radiusScale: 1.25,
-      strength: 2.3,
-      displacementScale: 1.4,
+      radiusScale: 1.55,
+      strength: 4.2,
+      displacementScale: 2.1,
       mergeRadius: 0.45,
       directionX: this.raycaster.ray.direction.x,
       directionZ: this.raycaster.ray.direction.z,
-      tangentialStrength: 0.18,
-      spin: 0.18,
+      tangentialStrength: 0.24,
+      spin: 0.34,
     })
     this.stampLogFieldReaction(hit.point, {
       radiusScale: 0.8,
@@ -2366,11 +2367,11 @@ export class PlaygroundRuntime {
       this.vergeBandDirty = false
       ranBand = true
     }
-    if (this.leafPileDirty || this.leafPileEffect.hasBurns()) {
+    if (this.leafPileDirty || this.leafPileEffect.hasBurns() || this.leafPileEffect.hasDisturbances()) {
       const tLeaf0 = now()
       this.leafPileEffect.update(elapsed, this.getGroundHeightAtWorld)
       leafCpuMs = now() - tLeaf0
-      this.leafPileDirty = this.leafPileEffect.hasBurns()
+      this.leafPileDirty = this.leafPileEffect.hasBurns() || this.leafPileEffect.hasDisturbances()
       ranBand = true
     }
     if (!this.sceneryMode && (this.fungusBandDirty || this.fungusBandEffect.hasBurns())) {

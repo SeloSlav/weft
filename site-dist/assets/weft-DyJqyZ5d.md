@@ -43,6 +43,20 @@ Prefer the highest-level abstraction that solves the problem cleanly.
 
 Do not skip straight to bespoke runtime code unless the existing source/layout/effect model is genuinely insufficient.
 
+## Physics And Motion Layering
+
+When a Weft surface needs "physics", prefer authored motion layered on top of authored layout rather than detached rigid bodies.
+
+- keep Weft-authored layout as the source of truth
+- store persistent motion state per authored slot or authored bundle
+- let gameplay write impulses into that state
+- resolve the final pose as `authored anchor + transient motion state`
+- keep the result grounded to the surface instead of treating clutter like airborne debris by default
+
+For grounded clutter such as logs or stick bundles, this usually means planar offset plus a small amount of persistent rotation state. In the current playground model, logs rotate around their own grounded horizontal axis rather than tumbling in air, while stick bundles slide and twist around their authored bundle center.
+
+Impulse radius is part of the authored read. Keep interaction radii tight enough that nearby clutter does not all "swim" together as one broad synchronized field.
+
 ## Fast Decision Table
 
 Use this section to route common requests to the right Weft layer quickly.
@@ -59,6 +73,7 @@ Use this section to route common requests to the right Weft layer quickly.
 | stable semantic ids, weights, and metadata | `createSurfaceSource({ semantic: true, palette: [...] })` | use semantic palettes instead of plain repeated units |
 | a custom effect that still follows Weft’s model | `createSurfaceEffect()` with `fieldLayout()`, `wallLayout()`, or `skyLayout()` | keeps authoring inside the official source-layout-effect pipeline |
 | custom state transitions across a surface | `semanticStates()` and runtime state helpers | use built-in state vocabulary before inventing a separate state machine |
+| grounded reactive clutter that should stay anchored to authored placement | Weft-authored layout plus persistent per-slot motion state | preserves authored placement while still allowing gameplay impulses and recovery |
 | healing, decay, or recoverable impacts | `recoverableDamage()`, `decayRecoveringStrength()`, `updateRecoveringImpacts()` | matches the intended recovery model |
 | low-level text or source preparation | `src/weft/core` exports | only drop lower when `src/weft/three` is not enough |
 | docs or examples | real exports from `src/weft/three/index.ts` and the patterns in `src/Docs.tsx` | prevents speculative or stale guidance |
@@ -163,6 +178,7 @@ Reusable state and recovery primitives:
 
 - `createSemanticStateSet`
 - `createSurfaceStateField`
+- `createSurfaceMotionField`
 - `decayRecoveringStrength`
 - `updateRecoveringImpacts`
 
@@ -173,6 +189,11 @@ Useful exported types:
 - `SurfacePreset`
 - `SurfaceRendererAdapter`
 - `SurfaceStateField`
+- `SurfaceMotionField`
+- `SurfaceMotionFieldBounds`
+- `SurfaceMotionFieldOptions`
+- `SurfaceMotionFieldSample`
+- `SurfaceMotionImpulseOptions`
 - `RecoveringImpact`
 
 ## Best Practices
@@ -183,6 +204,7 @@ Useful exported types:
 - Use simple repeated units when the surface only needs visual density and does not need semantic identity.
 - Keep integrations deterministic by using stable seeds or `seedCursor` rather than ad hoc random placement.
 - Model interaction through params and behavior fields first, especially for damage, thinning, healing, or state changes.
+- For clutter-style motion, keep authored slots as anchors and store persistent per-slot offsets/rotation state instead of replacing the surface with a separate physics scatter pass.
 - Keep UI/framework code separate from Weft logic. App code should orchestrate controls; Weft modules should encapsulate source/layout/effect setup.
 - Keep examples aligned with actual exports and parameter names.
 
@@ -192,6 +214,7 @@ Useful exported types:
 - Do not introduce one-off placement code if width, layout, palette weighting, or recovery primitives already express the behavior.
 - Do not invent top-level APIs, presets, params, or behaviors that are not part of the real SDK.
 - Do not jump to lower-level `core` APIs when a preset or `src/weft/three` helper is enough.
+- Do not use broad impulse radii that make authored clutter move in lockstep and read like a swimming blob.
 - Do not mix app event wiring, gameplay state, and low-level Weft authoring into one giant component or class if it can be modularized.
 
 ## Preset Selection Guidance

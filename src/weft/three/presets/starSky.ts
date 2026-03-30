@@ -8,11 +8,13 @@ import { getPreparedStarSurface } from './starSkySource'
 export type StarSkyParams = {
   layoutDensity: number
   recoveryRate: number
+  reactive: boolean
 }
 
 export const DEFAULT_STAR_SKY_PARAMS: StarSkyParams = {
   layoutDensity: 1,
   recoveryRate: 0.38,
+  reactive: true,
 }
 
 const SKY_RADIUS = 180
@@ -112,9 +114,13 @@ export class StarSkyEffect {
 
   setParams(params: Partial<StarSkyParams>): void {
     this.params = { ...this.params, ...params }
+    if (!this.params.reactive) {
+      this.clearWounds()
+    }
   }
 
   addWoundFromWorldDirection(worldDirection: THREE.Vector3): void {
+    if (!this.params.reactive) return
     tmpLocal.copy(worldDirection).normalize()
     for (const wound of this.wounds) {
       const dot = wound.x * tmpLocal.x + wound.y * tmpLocal.y + wound.z * tmpLocal.z

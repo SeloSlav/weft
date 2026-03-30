@@ -101,7 +101,7 @@ export function SceneryDemo() {
   const [stickLayoutDensity, setStickLayoutDensity] = useState(0.92);
   const [stickSizeScale, setStickSizeScale] = useState(2);
   const [stickLengthScale, setStickLengthScale] = useState(2.2);
-  const [stickPushScale, setStickPushScale] = useState(1);
+  const [stickPushScale, setStickPushScale] = useState(1.4);
   const [showSticks, setShowSticks] = useState(true);
   const [needleLayoutDensity, setNeedleLayoutDensity] = useState(0.84);
   const [needleSizeScale, setNeedleSizeScale] = useState(1.3);
@@ -231,6 +231,7 @@ export function SceneryDemo() {
         runtime.setStarSkyParams({
           layoutDensity: starLayoutDensity,
           recoveryRate: starRecoveryRate,
+          reactive: false,
         });
         runtime.setQuality(quality);
         setRuntimeState("ready");
@@ -387,6 +388,7 @@ export function SceneryDemo() {
     runtimeRef.current?.setStarSkyParams({
       layoutDensity: starLayoutDensity,
       recoveryRate: starRecoveryRate,
+      reactive: false,
     });
   }, [starLayoutDensity, starRecoveryRate]);
 
@@ -950,15 +952,15 @@ export function SceneryDemo() {
                     />
                   </label>
                   <p className="control-hint">
-                    Logs now sample a persistent motion field, so shoves and
-                    shots keep their displaced positions instead of snapping
-                    back after a brief reaction.
+                    Logs keep persistent per-log motion state, so shoves and
+                    shots move individual trunks across the ground instead of
+                    behaving like a shared wobble field.
                   </p>
                 </ControlSection>
 
                 <ControlSection
                   title="Sticks"
-                  summary="Bundle-style debris that scatters around litter and nearby logs"
+                  summary="Twig clusters that spawn in clumps but react as many individual sticks"
                 >
                   <label className="control">
                     <span>Show sticks</span>
@@ -1017,9 +1019,9 @@ export function SceneryDemo() {
                     />
                   </label>
                   <p className="control-hint">
-                    These bundles also sample the persistent motion field, so
-                    they keep spreading and dragging into new settled shapes
-                    rather than only fluttering for a moment.
+                    Sticks still spawn as clustered debris, but each twig now
+                    keeps its own persistent motion state so repeated hits break
+                    the cluster apart instead of moving one rigid bundle.
                   </p>
                 </ControlSection>
 

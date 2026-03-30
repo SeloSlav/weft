@@ -65,15 +65,15 @@ const ROWS = 17
 const SECTORS = 19
 const MAX_INSTANCES = 5_600
 const BASE_LAYOUT_PX_PER_WORLD = 7
-const STICK_DRAG = 5
-const STICK_TWIST_DRAG = 6
-const STICK_MAX_SPEED = 3.2
+const STICK_DRAG = 3.4
+const STICK_TWIST_DRAG = 4.4
+const STICK_MAX_SPEED = 5.4
 const tmpLocalPoint = new THREE.Vector3()
 
 const tmpColor = new THREE.Color()
 const dummy = new THREE.Object3D()
 
-type StickBundleState = {
+type StickTwigState = {
   offsetX: number
   offsetZ: number
   velocityX: number
@@ -152,7 +152,7 @@ export class StickFieldEffect {
   private readonly fieldCenterX: number
   private readonly fieldCenterZ: number
   private readonly layoutDriver: SurfaceLayoutDriver<StickTokenId, StickTokenMeta>
-  private readonly bundleStates = new Map<string, StickBundleState>()
+  private readonly twigStates = new Map<string, StickTwigState>()
   private readonly pendingImpulses: PendingStickImpulse[] = []
   private params: StickFieldParams
   private lastElapsed = 0
@@ -193,12 +193,12 @@ export class StickFieldEffect {
   }
 
   clearMotion(): void {
-    this.bundleStates.clear()
+    this.twigStates.clear()
     this.pendingImpulses.length = 0
   }
 
   hasMotion(): boolean {
-    return this.pendingImpulses.length > 0 || this.bundleStates.size > 0
+    return this.pendingImpulses.length > 0 || this.twigStates.size > 0
   }
 
   clearDisturbances(): void {
@@ -270,9 +270,9 @@ export class StickFieldEffect {
       },
     })
 
-    for (const key of this.bundleStates.keys()) {
+    for (const key of this.twigStates.keys()) {
       if (!visitedKeys.has(key)) {
-        this.bundleStates.delete(key)
+        this.twigStates.delete(key)
       }
     }
     this.pendingImpulses.length = 0
@@ -293,18 +293,32 @@ export class StickFieldEffect {
     return slot.spanSize * BASE_LAYOUT_PX_PER_WORLD * this.params.layoutDensity
   }
 
-  private getBundleState(key: string): StickBundleState {
-    let state = this.bundleStates.get(key)
+  private getTwigState(key: string): StickTwigState {
+    let state = this.twigStates.get(key)
     if (!state) {
-      state = { offsetX: 0, offsetZ: 0, velocityX: 0, velocityZ: 0, twist: 0, twistVelocity: 0 }
-      this.bundleStates.set(key, state)
+      state = {
+        offsetX: 0,
+        offsetZ: 0,
+        velocityX: 0,
+        velocityZ: 0,
+        twist: 0,
+        twistVelocity: 0,
+      }
+      this.twigStates.set(key, state)
     }
     return state
   }
 
-  private applyBundleState(state: StickBundleState, baseX: number, baseZ: number, delta: number): void {
+  private applyTwigState(
+    state: StickTwigState,
+    baseX: number,
+    baseZ: number,
+    delta: number,
+    pieceBias: number,
+  ): void {
     const currentX = baseX + state.offsetX
     const currentZ = baseZ + state.offsetZ
+    const pieceSign = pieceBias >= 0 ? 1 : -1
     for (const impulse of this.pendingImpulses) {
       const dx = currentX - impulse.x
       const dz = currentZ - impulse.z
@@ -314,9 +328,11 @@ export class StickFieldEffect {
       const push = impulse.strength * falloff * falloff
       const tangentX = -impulse.directionZ
       const tangentZ = impulse.directionX
-      state.velocityX += impulse.directionX * push * 0.65 + tangentX * push * impulse.tangentialStrength * 0.45
-      state.velocityZ += impulse.directionZ * push * 0.65 + tangentZ * push * impulse.tangentialStrength * 0.45
-      state.twistVelocity += push * (impulse.spin * 0.28 + impulse.tangentialStrength * 0.14)
+      const forwardScale = 0.72 + Math.abs(pieceBias) * 0.38
+      const tangentScale = impulse.tangentialStrength * (0.24 + Math.abs(pieceBias) * 0.72) * pieceSign
+      state.velocityX += impulse.directionX * push * forwardScale + tangentX * push * tangentScale
+      state.velocityZ += impulse.directionZ * push * forwardScale + tangentZ * push * tangentScale
+      state.twistVelocity += push * pieceSign * (impulse.spin * 0.24 + impulse.tangentialStrength * 0.18)
     }
 
     if (delta <= 0) return
@@ -336,7 +352,7 @@ export class StickFieldEffect {
     state.twist += state.twistVelocity * delta
   }
 
-  private bundleInactive(state: StickBundleState): boolean {
+  private twigInactive(state: StickTwigState): boolean {
     return (
       Math.abs(state.offsetX) < 0.01 &&
       Math.abs(state.offsetZ) < 0.01 &&
@@ -389,19 +405,8 @@ export class StickFieldEffect {
       if (hashKeep > keepChance) continue
 
       const bundleAngle = lineSeed * Math.PI * 2 + k * 0.92 + noise * 2.1
-      const bundleKey = `${tokenLineKey}:${k}`
-      const state = this.getBundleState(bundleKey)
-      this.applyBundleState(state, baseX, baseZ, delta)
-      visitedKeys.add(bundleKey)
-      if (this.bundleInactive(state)) {
-        this.bundleStates.delete(bundleKey)
-      }
-
-      const centerX = baseX + state.offsetX
-      const centerZ = baseZ + state.offsetZ
-      const speed = Math.hypot(state.velocityX, state.velocityZ)
       const bundleRadius =
-        (0.18 + noise * 0.12 + Math.max(0, meta.spreadBias) * 0.14 + speed * 0.08) *
+        (0.18 + noise * 0.12 + Math.max(0, meta.spreadBias) * 0.14) *
         this.params.sizeScale
       const bundleCount = THREE.MathUtils.clamp(3 + Math.round(noise * 3 + meta.spreadBias * 4), 3, 7)
 
@@ -411,8 +416,18 @@ export class StickFieldEffect {
         const pieceHash = glyphHash(identity + j * 13, slot.row ^ j, slot.sector, k)
         const pieceAngle = bundleAngle + j * (Math.PI * 2 / bundleCount) + (pieceHash - 0.5) * 0.7
         const pieceDistance = bundleRadius * (0.15 + pieceHash * 0.95)
-        const x = centerX + Math.cos(pieceAngle) * pieceDistance
-        const z = centerZ + Math.sin(pieceAngle) * pieceDistance
+        const basePieceX = baseX + Math.cos(pieceAngle) * pieceDistance
+        const basePieceZ = baseZ + Math.sin(pieceAngle) * pieceDistance
+        const twigKey = `${tokenLineKey}:${k}:${j}`
+        const state = this.getTwigState(twigKey)
+        this.applyTwigState(state, basePieceX, basePieceZ, delta, pieceHash - 0.5)
+        visitedKeys.add(twigKey)
+        if (this.twigInactive(state)) {
+          this.twigStates.delete(twigKey)
+        }
+
+        const x = basePieceX + state.offsetX
+        const z = basePieceZ + state.offsetZ
         if (!this.placementMask.includeAtXZ(x, z)) continue
 
         const groundY = getGroundHeight(x, z)
@@ -426,9 +441,10 @@ export class StickFieldEffect {
             this.params.sizeScale *
             this.params.lengthScale,
         )
-        const yaw = pieceAngle + state.twist * 0.55
-        const pitch = Math.PI * 0.5 + (noise - 0.5) * 0.18 + speed * 0.08
-        const roll = (pieceHash - 0.5) * 0.24 + state.twist * 0.18
+        const speed = Math.hypot(state.velocityX, state.velocityZ)
+        const yaw = pieceAngle + state.twist * (0.18 + pieceHash * 0.36)
+        const pitch = Math.PI * 0.5 + (noise - 0.5) * 0.18 + speed * (0.04 + pieceHash * 0.06)
+        const roll = (pieceHash - 0.5) * 0.24 + state.twist * (0.08 + pieceHash * 0.16)
 
         dummy.position.set(x, groundY + radius * 0.2, z)
         dummy.rotation.set(pitch, yaw, roll)

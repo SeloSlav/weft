@@ -71,11 +71,18 @@ const MAX_INSTANCES = 8_000
 const BASE_LAYOUT_PX_PER_WORLD = 9
 const MAX_ACTIVE_DISTURBANCES = 40
 const MAX_BURNS = 18
+const LEAF_DRAG = 4.4
+const LEAF_TWIST_DRAG = 5.1
+const LEAF_STRETCH_DRAG = 3.8
+const LEAF_MAX_SPEED = 4.2
+const LEAF_STATE_KEY_GLYPH_CAP = 2048
 const tmpLocalPoint = new THREE.Vector3()
 
 const tmpColor = new THREE.Color()
 const tmpAshColor = new THREE.Color()
 const tmpEmberColor = new THREE.Color()
+const tmpBurnFieldA = { burn: 0, front: 0 }
+const tmpBurnFieldB = { burn: 0, front: 0 }
 const dummy = new THREE.Object3D()
 
 const SEASON_STYLE: Record<
@@ -149,6 +156,18 @@ type Disturbance = {
   radius: number
   strength: number
   displacement: number
+}
+
+type LeafState = {
+  offsetX: number
+  offsetZ: number
+  velocityX: number
+  velocityZ: number
+  twist: number
+  twistVelocity: number
+  stretch: number
+  stretchVelocity: number
+  generation: number
 }
 
 type LeafPileBurn = {
@@ -262,8 +281,10 @@ export class LeafPileBandEffect {
   private params: LeafPileBandParams
   private usesCustomSurface: boolean
   private readonly disturbances: Disturbance[] = []
+  private readonly leafStates = new Map<number, LeafState>()
   private readonly burns: LeafPileBurn[] = []
   private lastElapsed = 0
+  private updateGeneration = 0
 
   constructor(
     surface: PreparedSurfaceSource<LeafPileTokenId, LeafPileTokenMeta>,
@@ -310,6 +331,7 @@ export class LeafPileBandEffect {
 
   clearDisturbances(): void {
     this.disturbances.length = 0
+    this.leafStates.clear()
   }
 
   clearBurns(): void {
@@ -318,6 +340,10 @@ export class LeafPileBandEffect {
 
   hasBurns(): boolean {
     return this.burns.length > 0
+  }
+
+  hasDisturbances(): boolean {
+    return this.disturbances.length > 0 || this.leafStates.size > 0
   }
 
   addDisturbanceFromWorldPoint(
@@ -408,6 +434,7 @@ export class LeafPileBandEffect {
     const rowStep = this.fieldDepth / (ROWS + 1)
     const backZ = this.fieldDepth * 0.48
     let instanceIndex = 0
+    const generation = ++this.updateGeneration
 
     this.layoutDriver.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
@@ -422,9 +449,18 @@ export class LeafPileBandEffect {
           rowStep,
           getGroundHeight,
           instanceIndex,
+          delta,
+          generation,
         )
       },
     })
+
+    for (const [key, state] of this.leafStates.entries()) {
+      if (state.generation !== generation || this.leafInactive(state)) {
+        this.leafStates.delete(key)
+      }
+    }
+    this.disturbances.length = 0
 
     this.leafMesh.count = instanceIndex
     this.leafMesh.instanceMatrix.needsUpdate = true
@@ -438,8 +474,12 @@ export class LeafPileBandEffect {
     this.leafMaterial.dispose()
   }
 
-  private burnFieldAt(x: number, z: number): { burn: number; front: number } {
-    if (this.burns.length === 0) return { burn: 0, front: 0 }
+  private burnFieldAt(x: number, z: number, target: { burn: number; front: number }) {
+    if (this.burns.length === 0) {
+      target.burn = 0
+      target.front = 0
+      return target
+    }
 
     let burn = 0
     let front = 0
@@ -459,10 +499,9 @@ export class LeafPileBandEffect {
       front = Math.max(front, localFront)
     }
 
-    return {
-      burn: THREE.MathUtils.clamp(burn, 0, 1),
-      front: THREE.MathUtils.clamp(front, 0, 1),
-    }
+    target.burn = THREE.MathUtils.clamp(burn, 0, 1)
+    target.front = THREE.MathUtils.clamp(front, 0, 1)
+    return target
   }
 
   private createLayoutDriver(surface: PreparedSurfaceSource<LeafPileTokenId, LeafPileTokenMeta>) {
@@ -486,25 +525,54 @@ export class LeafPileBandEffect {
     )
   }
 
-  private getLeafDisplacement(
+  private getLeafState(key: number): LeafState {
+    let state = this.leafStates.get(key)
+    if (!state) {
+      state = {
+        offsetX: 0,
+        offsetZ: 0,
+        velocityX: 0,
+        velocityZ: 0,
+        twist: 0,
+        twistVelocity: 0,
+        stretch: 0,
+        stretchVelocity: 0,
+        generation: 0,
+      }
+      this.leafStates.set(key, state)
+    }
+    return state
+  }
+
+  private makeLeafStateKey(row: number, sector: number, glyphIndex: number, leafIndex: number): number {
+    return ((((row * SECTORS + sector) * LEAF_STATE_KEY_GLYPH_CAP + glyphIndex) * 16) | leafIndex) >>> 0
+  }
+
+  private isInsideAnyDisturbance(x: number, z: number): boolean {
+    for (const disturbance of this.disturbances) {
+      const dx = x - disturbance.x
+      const dz = z - disturbance.z
+      if (dx * dx + dz * dz <= disturbance.radius * disturbance.radius) {
+        return true
+      }
+    }
+    return false
+  }
+
+  private applyLeafState(
+    state: LeafState,
     x: number,
     z: number,
+    delta: number,
     fallbackAngle: number,
     breakupA: number,
     breakupB: number,
   ) {
-    if (this.disturbances.length === 0) {
-      return { offsetX: 0, offsetZ: 0, push: 0, twist: 0, stretch: 0 }
-    }
-
-    let offsetX = 0
-    let offsetZ = 0
-    let strongestPush = 0
-    let twist = 0
-    let stretch = 0
+    const currentX = x + state.offsetX
+    const currentZ = z + state.offsetZ
     for (const disturbance of this.disturbances) {
-      const dx = x - disturbance.x
-      const dz = z - disturbance.z
+      const dx = currentX - disturbance.x
+      const dz = currentZ - disturbance.z
       const radius = Math.max(0.001, disturbance.radius)
       const distanceSq = dx * dx + dz * dz
       if (distanceSq > radius * radius) continue
@@ -542,21 +610,45 @@ export class LeafPileBandEffect {
         scatterZ = dirZ
       }
       const leafScatter = disturbance.displacement * push * (0.55 + breakupB * 0.9)
-      offsetX += scatterX * leafScatter
-      offsetZ += scatterZ * leafScatter
-      strongestPush = Math.max(strongestPush, push)
-      twist += (breakupA - 0.5) * push * 0.9
-      stretch = Math.max(stretch, push * (0.18 + breakupB * 0.24))
+      state.velocityX += scatterX * leafScatter * 2.2
+      state.velocityZ += scatterZ * leafScatter * 2.2
+      state.twistVelocity += (breakupA - 0.5) * push * 1.2
+      state.stretchVelocity += push * (0.18 + breakupB * 0.24) * 0.8
     }
 
-    const maxOffset = this.params.displacementDistance * 2.15
-    const offsetLength = Math.hypot(offsetX, offsetZ)
-    if (offsetLength > maxOffset) {
-      const s = maxOffset / offsetLength
-      offsetX *= s
-      offsetZ *= s
+    if (delta <= 0) {
+      return
     }
-    return { offsetX, offsetZ, push: strongestPush, twist, stretch }
+    const drag = Math.exp(-LEAF_DRAG * delta)
+    const twistDrag = Math.exp(-LEAF_TWIST_DRAG * delta)
+    const stretchDrag = Math.exp(-LEAF_STRETCH_DRAG * delta)
+    const speed = Math.hypot(state.velocityX, state.velocityZ)
+    if (speed > LEAF_MAX_SPEED) {
+      const s = LEAF_MAX_SPEED / speed
+      state.velocityX *= s
+      state.velocityZ *= s
+    }
+    state.velocityX *= drag
+    state.velocityZ *= drag
+    state.offsetX += state.velocityX * delta
+    state.offsetZ += state.velocityZ * delta
+    state.twistVelocity *= twistDrag
+    state.twist += state.twistVelocity * delta
+    state.stretchVelocity *= stretchDrag
+    state.stretch = Math.max(0, state.stretch * Math.exp(-1.2 * delta) + state.stretchVelocity * delta)
+  }
+
+  private leafInactive(state: LeafState): boolean {
+    return (
+      Math.abs(state.offsetX) < 0.01 &&
+      Math.abs(state.offsetZ) < 0.01 &&
+      Math.abs(state.velocityX) < 0.01 &&
+      Math.abs(state.velocityZ) < 0.01 &&
+      Math.abs(state.twist) < 0.01 &&
+      Math.abs(state.twistVelocity) < 0.01 &&
+      Math.abs(state.stretch) < 0.01 &&
+      Math.abs(state.stretchVelocity) < 0.01
+    )
   }
 
   private projectLine(
@@ -566,6 +658,8 @@ export class LeafPileBandEffect {
     rowStep: number,
     getGroundHeight: (x: number, z: number) => number,
     instanceIndex: number,
+    delta: number,
+    generation: number,
   ): number {
     const n = resolvedGlyphs.length
     const lineSeed = lineSignature(tokenLineKey)
@@ -574,6 +668,9 @@ export class LeafPileBandEffect {
     const halfWidth = this.params.bandWidth * 0.5
     const edgeSoftness = Math.max(0.02, this.params.edgeSoftness)
     const seasonStyle = SEASON_STYLE[this.params.season]
+    const hasBurns = this.burns.length > 0
+    const hasDisturbances = this.disturbances.length > 0
+    const hasActiveLeafStates = this.leafStates.size > 0
 
     for (let k = 0; k < n; k++) {
       if (instanceIndex >= MAX_INSTANCES) break
@@ -608,7 +705,7 @@ export class LeafPileBandEffect {
         halfWidth,
         edgeSoftness,
       )
-      const burnField = this.burnFieldAt(clumpX, clumpZ)
+      const burnField = hasBurns ? this.burnFieldAt(clumpX, clumpZ, tmpBurnFieldA) : tmpBurnFieldA
       const coverage = THREE.MathUtils.clamp(
         baseCoverage * THREE.MathUtils.lerp(0.56, 1.22, organicNoise),
         0,
@@ -643,26 +740,37 @@ export class LeafPileBandEffect {
         const angle = leafHashA * Math.PI * 2
         const baseLeafX = clumpX + Math.cos(angle) * radius
         const baseLeafZ = clumpZ + Math.sin(angle) * radius
-        const displacement = this.getLeafDisplacement(
-          baseLeafX,
-          baseLeafZ,
-          angle,
-          leafHashC,
-          leafHashD,
-        )
-        const leafX = baseLeafX + displacement.offsetX
-        const leafZ = baseLeafZ + displacement.offsetZ
+        let state: LeafState | undefined
+        if (hasDisturbances || hasActiveLeafStates) {
+          const shouldCheckMotion =
+            hasActiveLeafStates || (hasDisturbances && this.isInsideAnyDisturbance(baseLeafX, baseLeafZ))
+          if (shouldCheckMotion) {
+            const leafKey = this.makeLeafStateKey(slot.row, slot.sector, k, leafIndex)
+            state = this.leafStates.get(leafKey)
+            if (state || hasDisturbances) {
+              state = state ?? this.getLeafState(leafKey)
+              state.generation = generation
+              this.applyLeafState(state, baseLeafX, baseLeafZ, delta, angle, leafHashC, leafHashD)
+            }
+          }
+        }
+        const leafX = baseLeafX + (state?.offsetX ?? 0)
+        const leafZ = baseLeafZ + (state?.offsetZ ?? 0)
         const groundY = getGroundHeight(leafX, leafZ)
-        const leafBurnField = this.burnFieldAt(leafX, leafZ)
-        const pushAngle =
-          displacement.push > 0.001 ? Math.atan2(displacement.offsetZ, displacement.offsetX) : angle
+        const leafBurnField = hasBurns ? this.burnFieldAt(leafX, leafZ, tmpBurnFieldB) : tmpBurnFieldB
+        const velocityX = state?.velocityX ?? 0
+        const velocityZ = state?.velocityZ ?? 0
+        const stretch = state?.stretch ?? 0
+        const twist = state?.twist ?? 0
+        const leafSpeed = Math.hypot(velocityX, velocityZ)
+        const pushAngle = leafSpeed > 0.001 ? Math.atan2(velocityZ, velocityX) : angle
         const width = Math.max(
           0.06,
           (0.11 + remainingCoverage * 0.1 + meta.widthBias * 0.35 + organicNoise * 0.03) *
             this.params.sizeScale *
             seasonStyle.widthScale *
             (0.72 + leafHashC * 0.6) *
-            (1 - displacement.stretch * 0.18) *
+            (1 - stretch * 0.18) *
             (1 - leafBurnField.burn * 0.58 + leafBurnField.front * 0.08),
         )
         const length = Math.max(
@@ -671,7 +779,7 @@ export class LeafPileBandEffect {
             this.params.sizeScale *
             seasonStyle.lengthScale *
             (0.84 + leafHashD * 0.44) *
-            (1 + displacement.stretch * 0.28) *
+            (1 + stretch * 0.28) *
             (1 - leafBurnField.burn * 0.72 + leafBurnField.front * 0.12),
         )
         const stackLift =
@@ -682,18 +790,18 @@ export class LeafPileBandEffect {
           -Math.PI / 2 +
           (leafHashB - 0.5) * 0.28 +
           meta.curlBias * 0.22 +
-          displacement.push * 0.32 +
-          displacement.stretch * 0.26
+          leafSpeed * 0.12 +
+          stretch * 0.26
         const yaw =
           leafHashC * Math.PI * 2 +
-          displacement.push * 0.28 +
+          leafSpeed * 0.08 +
           pushAngle * 0.22 +
-          displacement.twist * 0.34
+          twist * 0.34
         const roll =
           (leafHashD - 0.5) * 1.35 +
           meta.curlBias * 0.4 +
-          displacement.push * 0.38 +
-          displacement.twist * 0.48
+          leafSpeed * 0.14 +
+          twist * 0.48
         dummy.position.set(leafX, groundY + stackLift, leafZ)
         dummy.rotation.set(pitch, yaw, roll)
         dummy.scale.set(width, length, 1)
