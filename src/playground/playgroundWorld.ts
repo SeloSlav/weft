@@ -100,7 +100,7 @@ export const ROOF_WALKABLE_SURFACES: RoofWalkableSurface[] = [
 export const PLAYER_COLLISION_RADIUS = 0.34
 
 /** Minimum fish-scale damage (0–1) at a point to pass through shutter/ivy breach zones. */
-export const FACADE_BREACH_DAMAGE_THRESHOLD = 0.32
+export const FACADE_BREACH_DAMAGE_THRESHOLD = 0.24
 
 /** Lateral offset (m) for multi-sample breach checks; ~player radius for fair hole width. */
 export const FACADE_BREACH_SAMPLE_OFFSET = 0.22
@@ -147,6 +147,10 @@ export type BreachZone = {
   passageBounds?: SolidAabb
   /** Index into `NEON_BARRIERS` / `neonSignEffects` when `kind === 'neon'`. */
   neonIndex?: number
+  /** Lateral sample spacing used when checking whether this breach is open enough to pass through. */
+  sampleOffset?: number
+  /** Number of open samples required for the player to pass through this breach. */
+  requiredOpenSamples?: number
 }
 
 /**
@@ -155,18 +159,24 @@ export type BreachZone = {
 export const BREACHABLE_FACADE_ZONES: BreachZone[] = [
   {
     kind: 'shutter',
-    bounds: { minX: -4.55, maxX: 4.55, minZ: -15.72, maxZ: -14.95, maxY: 8.7 },
+    bounds: { minX: -4.55, maxX: 4.55, minZ: -15.62, maxZ: -15.02, maxY: 8.7 },
     passageBounds: { minX: -5.15, maxX: 5.15, minZ: -16.18, maxZ: -14.55, maxY: 8.7 },
+    sampleOffset: 0.18,
+    requiredOpenSamples: 5,
   },
   {
     kind: 'ivy',
-    bounds: { minX: -13.24, maxX: -11.56, minZ: -2.72, maxZ: 6.72, maxY: 6.9 },
+    bounds: { minX: -13.18, maxX: -11.62, minZ: -2.72, maxZ: 6.72, maxY: 6.9 },
     passageBounds: { minX: -13.62, maxX: -11.18, minZ: -3.18, maxZ: 7.18, maxY: 6.9 },
+    sampleOffset: 0.18,
+    requiredOpenSamples: 5,
   },
   {
     kind: 'neon',
     neonIndex: 0,
-    bounds: { minX: -9.1, maxX: 9.1, minZ: 8.65, maxZ: 9.35, maxY: 6.7 },
+    bounds: { minX: -9.1, maxX: 9.1, minZ: 8.74, maxZ: 9.26, maxY: 6.7 },
+    sampleOffset: 0.18,
+    requiredOpenSamples: 5,
   },
 ]
 

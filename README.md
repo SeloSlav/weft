@@ -140,6 +140,99 @@ The main authoring path is:
 2. choose a preset or build a custom surface effect
 3. drive change through width, recovery, and semantic state instead of separate scatter rebuilds
 
+## Customization paths
+
+Presets are the fastest way to get something running, but they are not the end of the SDK.
+
+The usual paths are:
+
+- customize a shipped preset by changing its source, semantic palette, placement mask, and default params
+- define your own effect config with `createSurfaceEffect()` and pair it with a custom renderer or runtime wrapper
+
+Use the first path when the surface is still grass-like, wall-like, rock-like, fire-like, or sky-like and you mainly want a different authored look or behavior. Use the second path when you want a new projection model, shader system, or update flow while keeping Weft's source/layout/behavior model.
+
+### Customize a preset
+
+```ts
+import {
+  DEFAULT_FISH_SCALE_PARAMS,
+  createFishScaleEffect,
+  createSurfaceSource,
+} from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
+
+const ivySurface = createSurfaceSource({
+  cacheKey: 'ivy-shell',
+  semantic: true,
+  repeat: 22,
+  palette: [
+    { id: 'leaf', glyph: '◓', weight: 5, meta: { hueBias: 0.03 } },
+    { id: 'bud', glyph: '•', weight: 2, meta: { hueBias: 0.08 } },
+  ],
+})
+
+const ivyWall = createFishScaleEffect({
+  seedCursor,
+  surface: ivySurface,
+  appearance: 'ivy',
+  initialParams: {
+    ...DEFAULT_FISH_SCALE_PARAMS,
+    woundNarrow: 0.12,
+    recoveryRate: 0.2,
+    surfaceFlex: 0.18,
+  },
+})
+
+scene.add(ivyWall.group)
+```
+
+### Define your own effect config
+
+```ts
+import * as THREE from 'three'
+import {
+  createSurfaceEffect,
+  createSurfaceSource,
+  fieldLayout,
+  recoverableDamage,
+  threeInstancedMeshRenderer,
+} from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
+
+const emberSurface = createSurfaceSource({
+  cacheKey: 'ember-band',
+  units: ['.', '*', '•'],
+  repeat: 20,
+})
+
+const emberEffect = createSurfaceEffect({
+  id: 'ember-band',
+  source: emberSurface,
+  seedCursor,
+  layout: fieldLayout({
+    rows: 20,
+    sectors: 32,
+    advanceForRow: (row) => row * 11 + 3,
+    staggerFactor: 0.4,
+    minSpanFactor: 0.3,
+  }),
+  renderer: threeInstancedMeshRenderer({
+    geometry: new THREE.PlaneGeometry(0.16, 0.16),
+    material: new THREE.MeshBasicMaterial({ color: '#ff8a44' }),
+    maxInstances: 2400,
+  }),
+  behaviors: [
+    recoverableDamage({
+      radius: 1.2,
+      recoveryRate: 0.35,
+    }),
+  ],
+})
+
+// Your own module can project/update this config
+// with a custom shader, material system, or runtime wrapper.
+```
+
 ## Current playground
 
 The `Editor` hosts a **town-edge intersection** built from static meshes plus multiple reactive surfaces sharing one runtime:

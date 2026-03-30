@@ -111,6 +111,7 @@ export function Editor() {
     PLAYGROUND_QUALITY_DEFAULT,
   );
   const [perfStats, setPerfStats] = useState<PlaygroundPerfStats | null>(null);
+  const [showCollisionDebug, setShowCollisionDebug] = useState(false);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -155,6 +156,7 @@ export function Editor() {
           layoutDensity: starLayoutDensity,
           recoveryRate: starRecoveryRate,
         });
+        runtime.setCollisionDebugVisible(showCollisionDebug);
         setRuntimeState("ready");
       })
       .catch((error: unknown) => {
@@ -252,6 +254,10 @@ export function Editor() {
     });
   }, [starLayoutDensity, starRecoveryRate]);
 
+  useEffect(() => {
+    runtimeRef.current?.setCollisionDebugVisible(showCollisionDebug);
+  }, [showCollisionDebug]);
+
   return (
     <div className="app-shell">
       <aside
@@ -309,9 +315,25 @@ export function Editor() {
                       <option value="high">High (showcase)</option>
                     </select>
                   </label>
+                  <label className="control">
+                    <span>Collision overlay</span>
+                    <input
+                      type="checkbox"
+                      checked={showCollisionDebug}
+                      onChange={(e) =>
+                        setShowCollisionDebug(e.target.checked)
+                      }
+                    />
+                  </label>
                   <p className="control-hint">
                     Add <code>?perf=1</code> to the URL to show effect-update
                     time (ms) on the canvas.
+                  </p>
+                  <p className="control-hint">
+                    The overlay now shows the sampled body-clearance points on
+                    the shutter, ivy, and neon walls. Movement checks a
+                    player-sized 3x3 area, so you only need a large-enough hole
+                    for the body, not a perfectly cleared full-height slice.
                   </p>
                 </ControlSection>
                 <ControlSection

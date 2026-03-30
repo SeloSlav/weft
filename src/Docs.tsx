@@ -183,6 +183,84 @@ const fireWall = createFireWallEffect({
 
 scene.add(fireWall.group)`,
   },
+  {
+    title: 'Customize a shipped preset',
+    code: `import {
+  DEFAULT_FISH_SCALE_PARAMS,
+  createFishScaleEffect,
+  createSurfaceSource,
+} from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
+
+const ivySurface = createSurfaceSource({
+  cacheKey: 'ivy-shell',
+  semantic: true,
+  repeat: 22,
+  palette: [
+    { id: 'leaf', glyph: '◓', weight: 5, meta: { hueBias: 0.03 } },
+    { id: 'bud', glyph: '•', weight: 2, meta: { hueBias: 0.08 } },
+  ],
+})
+
+const ivyWall = createFishScaleEffect({
+  seedCursor,
+  surface: ivySurface,
+  appearance: 'ivy',
+  initialParams: {
+    ...DEFAULT_FISH_SCALE_PARAMS,
+    woundNarrow: 0.12,
+    recoveryRate: 0.2,
+    surfaceFlex: 0.18,
+  },
+})
+
+scene.add(ivyWall.group)`,
+  },
+  {
+    title: 'Define a custom effect config',
+    code: `import * as THREE from 'three'
+import {
+  createSurfaceEffect,
+  createSurfaceSource,
+  fieldLayout,
+  recoverableDamage,
+  threeInstancedMeshRenderer,
+} from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
+
+const emberSurface = createSurfaceSource({
+  cacheKey: 'ember-band',
+  units: ['.', '*', '•'],
+  repeat: 20,
+})
+
+const emberEffect = createSurfaceEffect({
+  id: 'ember-band',
+  source: emberSurface,
+  seedCursor,
+  layout: fieldLayout({
+    rows: 20,
+    sectors: 32,
+    advanceForRow: (row) => row * 11 + 3,
+    staggerFactor: 0.4,
+    minSpanFactor: 0.3,
+  }),
+  renderer: threeInstancedMeshRenderer({
+    geometry: new THREE.PlaneGeometry(0.16, 0.16),
+    material: new THREE.MeshBasicMaterial({ color: '#ff8a44' }),
+    maxInstances: 2400,
+  }),
+  behaviors: [
+    recoverableDamage({
+      radius: 1.2,
+      recoveryRate: 0.35,
+    }),
+  ],
+})
+
+// From here, your own module can project/update this config
+// with a custom shader, material system, or runtime wrapper.`,
+  },
 ] as const
 
 export function Docs({ onEnterEditor }: DocsProps) {
@@ -228,6 +306,7 @@ export function Docs({ onEnterEditor }: DocsProps) {
           <a className="docs__toc-link" href="#quick-start">Quick start</a>
           <a className="docs__toc-link" href="#where-it-fits">Where it fits</a>
           <a className="docs__toc-link" href="#concepts">Concepts</a>
+          <a className="docs__toc-link" href="#customization">Customization</a>
           <a className="docs__toc-link" href="#presets">Preset guides</a>
           <a className="docs__toc-link" href="#api-reference">API reference</a>
           <a className="docs__toc-link" href="#examples">Examples</a>
@@ -353,6 +432,40 @@ scene.add(grass.group)`}</pre>
             </p>
             <p className="docs__callout-text">
               If you are evaluating fit, a good rule of thumb is this: Weft is strongest when world scatter can be treated as a deterministic reactive surface: ground cover, facade layers, rubble bands, crops, shell-like clutter, and other distributions that benefit from shared placement, thinning, recovery, and state change.
+            </p>
+          </div>
+        </section>
+
+        <section id="customization" className="docs__section">
+          <h2 className="docs__section-title">Customization paths</h2>
+          <p className="docs__text">
+            Presets are the fastest way in, but they are not the end of the SDK. There are two common ways
+            to go further.
+          </p>
+          <div className="docs__concept-grid">
+            <article className="docs__concept-card">
+              <h3 className="docs__card-title">1. Push a preset further</h3>
+              <p className="docs__card-text">
+                Keep the preset projection and behavior model, but swap in your own source, semantic palette,
+                placement mask, and param overrides. This is the right path when your surface is still "grass-like",
+                "wall-like", "rock-like", or "fire-like" but needs a different authored look or response.
+              </p>
+            </article>
+            <article className="docs__concept-card">
+              <h3 className="docs__card-title">2. Build your own effect</h3>
+              <p className="docs__card-text">
+                Use <code className="docs__code-inline">createSurfaceSource()</code>, a layout helper, and{' '}
+                <code className="docs__code-inline">createSurfaceEffect()</code> when you want a new projection,
+                material setup, or shader system on top of the same source -&gt; layout -&gt; effect model.
+              </p>
+            </article>
+          </div>
+          <div className="docs__callout">
+            <strong className="docs__callout-title">Simple rule of thumb</strong>
+            <p className="docs__callout-text">
+              If the shipped preset already matches the surface topology, customize the preset first. If the
+              topology or projection is new, keep Weft for source/layout/behavior and write a new renderer or
+              runtime wrapper around those helpers.
             </p>
           </div>
         </section>

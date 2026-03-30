@@ -106,6 +106,21 @@ export type PlaygroundPerfStats = {
   pixelRatio: number
 }
 
+type BreachZoneOpenState = {
+  isOpen: boolean
+  openSamples: number
+  requiredOpenSamples: number
+  totalSamples: number
+}
+
+type CollisionDebugTile = {
+  zone: BreachZone
+  mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
+  sampleX: number
+  sampleY: number
+  sampleZ: number
+}
+
 export class PlaygroundRuntime {
   private static readonly INDOOR_CAMERA_DISTANCE_MAX = 3.15
   private static readonly INDOOR_SHOULDER_OFFSET = 0.24
@@ -117,6 +132,12 @@ export class PlaygroundRuntime {
   private static readonly INDOOR_FOV = 37
   private static readonly CAMERA_OBSTRUCTION_PADDING = 0.22
   private static readonly CAMERA_GROUND_CLEARANCE = 0.22
+  private static readonly COLLISION_DEBUG_TILE_SIZE = 0.56
+  private static readonly COLLISION_DEBUG_TILE_HEIGHT = 0.42
+  private static readonly COLLISION_DEBUG_SURFACE_OFFSET = 0.05
+  private static readonly BREACH_SAMPLE_HEIGHT_OFFSETS = [0.38, 0.98, 1.52] as const
+  private static readonly COLLISION_DEBUG_OPEN_COLOR = new THREE.Color('#58ff93')
+  private static readonly COLLISION_DEBUG_BLOCKED_COLOR = new THREE.Color('#ff4fb4')
 
   private readonly host: HTMLElement
   private readonly canvas = document.createElement('canvas')
@@ -222,6 +243,9 @@ export class PlaygroundRuntime {
   private readonly laserAxisY = new THREE.Vector3(0, 1, 0)
   private laserLifeRemaining = 0
   private readonly laserDurationSec = 0.11
+  private readonly collisionDebugGroup = new THREE.Group()
+  private readonly collisionDebugTiles: CollisionDebugTile[]
+  private collisionDebugVisible = false
 
   private fishScaleParams: FishScaleParams = {
     ...DEFAULT_FISH_SCALE_PARAMS,
@@ -386,11 +410,15 @@ export class PlaygroundRuntime {
     }
     this.raycastTargets = raycastList
 
+    this.collisionDebugTiles = this.createCollisionDebugTiles()
+    this.collisionDebugGroup.visible = false
+
     this.scene.add(this.grassEffect.group)
     this.scene.add(this.shutterEffect.group)
     this.scene.add(this.ivyEffect.group)
     this.scene.add(this.rockFieldEffect.group)
     this.scene.add(this.starSkyEffect.group)
+    this.scene.add(this.collisionDebugGroup)
     for (const effect of this.neonSignEffects) {
       this.scene.add(effect.group)
     }
@@ -510,6 +538,14 @@ export class PlaygroundRuntime {
     this.starSkyEffect.setParams(this.starSkyParams)
   }
 
+  setCollisionDebugVisible(visible: boolean): void {
+    this.collisionDebugVisible = visible
+    this.collisionDebugGroup.visible = visible
+    if (visible) {
+      this.updateCollisionDebugOverlay()
+    }
+  }
+
   /** Low/Medium/High: DPR cap + scaled grass/star/rock layout density (editor values preserved). */
   setQuality(quality: PlaygroundQuality): void {
     this.quality = quality
@@ -600,10 +636,15 @@ export class PlaygroundRuntime {
     this.scene.remove(this.controller.player.group)
     this.camera.remove(this.controller.player.reticle)
     this.scene.remove(this.laserBeamGroup)
+    this.scene.remove(this.collisionDebugGroup)
     this.laserBeamOuter.geometry.dispose()
     this.laserBeamCore.geometry.dispose()
     ;(this.laserBeamOuter.material as THREE.MeshBasicMaterial).dispose()
     ;(this.laserBeamCore.material as THREE.MeshBasicMaterial).dispose()
+    for (const tile of this.collisionDebugTiles) {
+      tile.mesh.geometry.dispose()
+      tile.mesh.material.dispose()
+    }
     this.shutterEffect.dispose()
     this.ivyEffect.dispose()
     this.grassEffect.dispose()
@@ -749,6 +790,34 @@ export class PlaygroundRuntime {
     return a.minX <= b.maxX && a.maxX >= b.minX && a.minZ <= b.maxZ && a.maxZ >= b.minZ
   }
 
+  private getBreachOffsets(zone: BreachZone): readonly number[] {
+    const sampleOffset = zone.sampleOffset ?? FACADE_BREACH_SAMPLE_OFFSET
+    return sampleOffset <= 1e-6 ? [0] : [0, sampleOffset, -sampleOffset]
+  }
+
+  private isBreachSampleOpen(zone: BreachZone, sampleX: number, sampleY: number, sampleZ: number): boolean {
+    if (zone.kind === 'shutter') {
+      this.collisionSample.set(sampleX, sampleY, SHUTTER_WALL_LAYOUT.z)
+      return this.shutterEffect.getSurfaceDamage01AtWorldPoint(this.collisionSample) >= FACADE_BREACH_DAMAGE_THRESHOLD
+    }
+
+    if (zone.kind === 'ivy') {
+      this.collisionSample.set(IVY_WALL_LAYOUT.x, sampleY, sampleZ)
+      return this.ivyEffect.getSurfaceDamage01AtWorldPoint(this.collisionSample) >= FACADE_BREACH_DAMAGE_THRESHOLD
+    }
+
+    if (zone.kind === 'neon') {
+      const idx = zone.neonIndex ?? 0
+      const neon = this.neonSignEffects[idx]
+      const barrier = NEON_BARRIERS[idx]
+      if (!neon || !barrier) return false
+      this.collisionSample.set(sampleX, sampleY, barrier.z)
+      return neon.isHoleOpenAtWorldPoint(this.collisionSample)
+    }
+
+    return false
+  }
+
   /** Solid building AABBs plus breach zones: pass only through Weft holes when sampled points are open enough. */
   private readonly resolveHorizontalMove: ResolveHorizontalMove = (prevX, prevZ, nextX, nextZ) => {
     const r = PLAYER_COLLISION_RADIUS
@@ -762,14 +831,12 @@ export class PlaygroundRuntime {
     const perpX = mlen > 1e-6 ? -mdz / mlen : 1
     const perpZ = mlen > 1e-6 ? mdx / mlen : 0
 
-    const o = FACADE_BREACH_SAMPLE_OFFSET
-    const breachOffsets = [0, o, -o] as const
     const openPassages = BREACHABLE_FACADE_ZONES.filter((zone) => {
       const passage = zone.passageBounds ?? zone.bounds
       return (
         this.blocksAtProbeHeight(passage.maxY, probeY) &&
         circleOverlapsAabb(x, z, r, passage) &&
-        this.isBreachZoneOpen(zone, x, z, perpX, perpZ, breachOffsets)
+        this.isBreachZoneOpen(zone, x, z, perpX, perpZ, this.getBreachOffsets(zone))
       )
     }).map((zone) => zone.passageBounds ?? zone.bounds)
 
@@ -788,7 +855,7 @@ export class PlaygroundRuntime {
       for (const zone of BREACHABLE_FACADE_ZONES) {
         if (!this.blocksAtProbeHeight(zone.bounds.maxY, probeY)) continue
         if (!circleOverlapsAabb(x, z, r, zone.bounds)) continue
-        if (this.isBreachZoneOpen(zone, x, z, perpX, perpZ, breachOffsets)) continue
+        if (this.isBreachZoneOpen(zone, x, z, perpX, perpZ, this.getBreachOffsets(zone))) continue
         const p = pushCircleOutOfAabb(x, z, r, zone.bounds)
         if (p.x !== x || p.z !== z) changed = true
         x = p.x
@@ -809,58 +876,154 @@ export class PlaygroundRuntime {
     perpZ: number,
     breachOffsets: readonly number[],
   ): boolean {
+    return this.getBreachZoneOpenState(zone, x, z, perpX, perpZ, breachOffsets).isOpen
+  }
+
+  private getBreachZoneOpenState(
+    zone: BreachZone,
+    x: number,
+    z: number,
+    perpX: number,
+    perpZ: number,
+    breachOffsets: readonly number[],
+  ): BreachZoneOpenState {
     const gy = this.getGroundHeightAtWorld(x, z)
-    const sampleY = gy + 1.55
-    const minOpenSamples = Math.max(1, Math.ceil(breachOffsets.length * 0.5))
+    const heightOffsets = PlaygroundRuntime.BREACH_SAMPLE_HEIGHT_OFFSETS
+    const totalSamples = breachOffsets.length * heightOffsets.length
+    const requiredOpenSamples = zone.requiredOpenSamples ?? Math.max(1, Math.ceil(totalSamples * 0.55))
+    let openSamples = 0
 
-    if (zone.kind === 'shutter') {
-      // Project onto the shopfront plane so damage matches from either side of the wall (world Z is the façade anchor).
-      const wallZ = SHUTTER_WALL_LAYOUT.z
-      let openSamples = 0
+    for (const h of heightOffsets) {
+      const sampleY = gy + h
       for (const off of breachOffsets) {
-        const sx = x + perpX * off
-        this.collisionSample.set(sx, sampleY, wallZ)
-        if (this.shutterEffect.getSurfaceDamage01AtWorldPoint(this.collisionSample) >= FACADE_BREACH_DAMAGE_THRESHOLD) {
+        const sampleX = x + perpX * off
+        const sampleZ = z + perpZ * off
+        if (this.isBreachSampleOpen(zone, sampleX, sampleY, sampleZ)) {
           openSamples++
         }
       }
-      return openSamples >= minOpenSamples
     }
 
-    if (zone.kind === 'ivy') {
-      // Ivy faces ±X; project onto the wall plane so interior-side samples use the same patch coords as outside.
-      const wallX = IVY_WALL_LAYOUT.x
-      let openSamples = 0
-      for (const off of breachOffsets) {
-        const sz = z + perpZ * off
-        this.collisionSample.set(wallX, sampleY, sz)
-        if (this.ivyEffect.getSurfaceDamage01AtWorldPoint(this.collisionSample) >= FACADE_BREACH_DAMAGE_THRESHOLD) {
-          openSamples++
-        }
+    return {
+      isOpen: openSamples >= requiredOpenSamples,
+      openSamples,
+      requiredOpenSamples,
+      totalSamples,
+    }
+  }
+
+  private createCollisionDebugTiles(): CollisionDebugTile[] {
+    const tiles: CollisionDebugTile[] = []
+    this.collisionDebugGroup.name = 'collision-debug-overlay'
+
+    for (const zone of BREACHABLE_FACADE_ZONES) {
+      const centerX = (zone.bounds.minX + zone.bounds.maxX) * 0.5
+      const centerZ = (zone.bounds.minZ + zone.bounds.maxZ) * 0.5
+      const groundY = this.getGroundHeightAtWorld(centerX, centerZ)
+      const heightOffsets = PlaygroundRuntime.BREACH_SAMPLE_HEIGHT_OFFSETS
+
+      if (zone.kind === 'ivy') {
+        this.addCollisionDebugStripTiles(tiles, zone, {
+          axisStart: zone.bounds.minZ,
+          axisEnd: zone.bounds.maxZ,
+          sampleYs: heightOffsets.map((offset) => groundY + offset),
+          rotationY: Math.PI / 2,
+          makePosition: (axisCenter, sampleY) =>
+            new THREE.Vector3(
+              IVY_WALL_LAYOUT.x + PlaygroundRuntime.COLLISION_DEBUG_SURFACE_OFFSET,
+              sampleY,
+              axisCenter,
+            ),
+          getSamplePoint: (axisCenter, sampleY) => ({ x: centerX, y: sampleY, z: axisCenter }),
+        })
+        continue
       }
-      return openSamples >= minOpenSamples
+
+      const surfaceZ =
+        zone.kind === 'shutter'
+          ? SHUTTER_WALL_LAYOUT.z + PlaygroundRuntime.COLLISION_DEBUG_SURFACE_OFFSET
+          : NEON_BARRIERS[zone.neonIndex ?? 0]?.z ?? centerZ
+
+      this.addCollisionDebugStripTiles(tiles, zone, {
+        axisStart: zone.bounds.minX,
+        axisEnd: zone.bounds.maxX,
+        sampleYs: heightOffsets.map((offset) => groundY + offset),
+        rotationY: 0,
+        makePosition: (axisCenter, sampleY) =>
+          new THREE.Vector3(
+            axisCenter,
+            sampleY,
+            surfaceZ + (zone.kind === 'neon' ? PlaygroundRuntime.COLLISION_DEBUG_SURFACE_OFFSET : 0),
+          ),
+        getSamplePoint: (axisCenter, sampleY) => ({ x: axisCenter, y: sampleY, z: centerZ }),
+      })
     }
 
-    if (zone.kind === 'neon') {
-      const idx = zone.neonIndex ?? 0
-      const neon = this.neonSignEffects[idx]
-      const barrier = NEON_BARRIERS[idx]
-      if (!neon || !barrier) return false
-      const neonGroundY = this.grassEffect.getGroundHeightAtWorld(barrier.x, barrier.z)
-      const wallCenterY = neonGroundY + 0.06 + barrier.wallHeight * 0.5
-      const wallZ = barrier.z
+    return tiles
+  }
 
-      for (const off of breachOffsets) {
-        const sx = x + perpX * off
-        this.collisionSample.set(sx, wallCenterY, wallZ)
-        if (!neon.isHoleOpenAtWorldPoint(this.collisionSample)) {
-          return false
-        }
+  private addCollisionDebugStripTiles(
+    tiles: CollisionDebugTile[],
+    zone: BreachZone,
+    config: {
+      axisStart: number
+      axisEnd: number
+      sampleYs: number[]
+      rotationY: number
+      makePosition: (axisCenter: number, sampleY: number) => THREE.Vector3
+      getSamplePoint: (axisCenter: number, sampleY: number) => { x: number; y: number; z: number }
+    },
+  ): void {
+    for (
+      let cursor = config.axisStart;
+      cursor < config.axisEnd - 1e-6;
+      cursor += PlaygroundRuntime.COLLISION_DEBUG_TILE_SIZE
+    ) {
+      const next = Math.min(config.axisEnd, cursor + PlaygroundRuntime.COLLISION_DEBUG_TILE_SIZE)
+      const tileWidth = Math.max(0.08, next - cursor)
+      const axisCenter = cursor + tileWidth * 0.5
+      for (const sampleY of config.sampleYs) {
+        const geometry = new THREE.PlaneGeometry(tileWidth, PlaygroundRuntime.COLLISION_DEBUG_TILE_HEIGHT)
+        const material = new THREE.MeshBasicMaterial({
+          color: PlaygroundRuntime.COLLISION_DEBUG_BLOCKED_COLOR,
+          transparent: true,
+          opacity: 0.24,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          depthTest: false,
+          toneMapped: false,
+        })
+        const mesh = new THREE.Mesh(geometry, material)
+        mesh.position.copy(config.makePosition(axisCenter, sampleY))
+        mesh.rotation.y = config.rotationY
+        mesh.renderOrder = 24
+        this.collisionDebugGroup.add(mesh)
+
+        const samplePoint = config.getSamplePoint(axisCenter, sampleY)
+        tiles.push({
+          zone,
+          mesh,
+          sampleX: samplePoint.x,
+          sampleY: samplePoint.y,
+          sampleZ: samplePoint.z,
+        })
       }
-      return true
     }
+  }
 
-    return false
+  private updateCollisionDebugOverlay(): void {
+    const probeY = this.getPlayerCollisionProbeY()
+    for (const tile of this.collisionDebugTiles) {
+      const material = tile.mesh.material
+      const passesOverTop = !this.blocksAtProbeHeight(tile.zone.bounds.maxY, probeY)
+      const isOpen = passesOverTop || this.isBreachSampleOpen(tile.zone, tile.sampleX, tile.sampleY, tile.sampleZ)
+      material.color.copy(
+        isOpen
+          ? PlaygroundRuntime.COLLISION_DEBUG_OPEN_COLOR
+          : PlaygroundRuntime.COLLISION_DEBUG_BLOCKED_COLOR,
+      )
+      material.opacity = isOpen ? 0.2 : 0.34
+    }
   }
 
   /**
@@ -1284,6 +1447,9 @@ export class PlaygroundRuntime {
     const tLighting0 = now()
     this.updateStreetLampLighting()
     const lightingCpuMs = now() - tLighting0
+    if (this.collisionDebugVisible) {
+      this.updateCollisionDebugOverlay()
+    }
     this.skybox.position.copy(this.camera.position)
     this.starSkyEffect.group.position.copy(this.camera.position)
     const effectsCpuMs = now() - tEffects0
