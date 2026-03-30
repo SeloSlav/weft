@@ -345,6 +345,7 @@ export function Docs({ onEnterEditor }: DocsProps) {
           surface can handle placement, damage, thinning, recovery, and state change under one deterministic
           model.
         </p>
+        <p className="docs__eyebrow">Current release: 0.1.6 as of March 30, 2026</p>
         <div className="docs__callout docs__callout--agent">
           <strong className="docs__callout-title">AI agent guide</strong>
           <p className="docs__callout-text">
