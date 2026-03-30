@@ -318,7 +318,14 @@ export class LeafPileBandEffect {
       lineCoordAtRow: (row) => backZ - row * rowStep,
       getMaxWidth: (slot) => this.getSlotMaxWidth(slot),
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
-        instanceIndex = this.projectLine(slot, resolvedGlyphs, tokenLineKey, rowStep, getGroundHeight, instanceIndex)
+        instanceIndex = this.projectLine(
+          slot,
+          resolvedGlyphs,
+          tokenLineKey,
+          rowStep,
+          getGroundHeight,
+          instanceIndex,
+        )
       },
     })
 
@@ -355,14 +362,22 @@ export class LeafPileBandEffect {
     )
   }
 
-  private getLeafDisplacement(x: number, z: number, fallbackAngle: number) {
+  private getLeafDisplacement(
+    x: number,
+    z: number,
+    fallbackAngle: number,
+    breakupA: number,
+    breakupB: number,
+  ) {
     if (this.disturbances.length === 0) {
-      return { offsetX: 0, offsetZ: 0, push: 0 }
+      return { offsetX: 0, offsetZ: 0, push: 0, twist: 0, stretch: 0 }
     }
 
     let offsetX = 0
     let offsetZ = 0
     let strongestPush = 0
+    let twist = 0
+    let stretch = 0
     for (const disturbance of this.disturbances) {
       const dx = x - disturbance.x
       const dz = z - disturbance.z
@@ -382,9 +397,32 @@ export class LeafPileBandEffect {
         dirX = Math.cos(fallbackAngle)
         dirZ = Math.sin(fallbackAngle)
       }
-      offsetX += dirX * disturbance.displacement * push
-      offsetZ += dirZ * disturbance.displacement * push
+      const tangentX = -dirZ
+      const tangentZ = dirX
+      const breakupAngle = fallbackAngle + (breakupA - 0.5) * 1.7
+      const breakupDirX = Math.cos(breakupAngle)
+      const breakupDirZ = Math.sin(breakupAngle)
+      const outwardWeight = 0.5 + breakupA * 0.7
+      const tangentWeight = (breakupA - 0.5) * 0.95
+      const breakupWeight = (breakupB - 0.5) * 1.1
+      let scatterX =
+        dirX * outwardWeight + tangentX * tangentWeight + breakupDirX * breakupWeight
+      let scatterZ =
+        dirZ * outwardWeight + tangentZ * tangentWeight + breakupDirZ * breakupWeight
+      const scatterLength = Math.hypot(scatterX, scatterZ)
+      if (scatterLength > 1e-5) {
+        scatterX /= scatterLength
+        scatterZ /= scatterLength
+      } else {
+        scatterX = dirX
+        scatterZ = dirZ
+      }
+      const leafScatter = disturbance.displacement * push * (0.55 + breakupB * 0.9)
+      offsetX += scatterX * leafScatter
+      offsetZ += scatterZ * leafScatter
       strongestPush = Math.max(strongestPush, push)
+      twist += (breakupA - 0.5) * push * 0.9
+      stretch = Math.max(stretch, push * (0.18 + breakupB * 0.24))
     }
 
     const maxOffset = this.params.displacementDistance * 2.15
@@ -394,7 +432,7 @@ export class LeafPileBandEffect {
       offsetX *= s
       offsetZ *= s
     }
-    return { offsetX, offsetZ, push: strongestPush }
+    return { offsetX, offsetZ, push: strongestPush, twist, stretch }
   }
 
   private projectLine(
@@ -465,7 +503,13 @@ export class LeafPileBandEffect {
         const angle = leafHashA * Math.PI * 2
         const baseLeafX = clumpX + Math.cos(angle) * radius
         const baseLeafZ = clumpZ + Math.sin(angle) * radius
-        const displacement = this.getLeafDisplacement(baseLeafX, baseLeafZ, angle)
+        const displacement = this.getLeafDisplacement(
+          baseLeafX,
+          baseLeafZ,
+          angle,
+          leafHashC,
+          leafHashD,
+        )
         const leafX = baseLeafX + displacement.offsetX
         const leafZ = baseLeafZ + displacement.offsetZ
         const groundY = getGroundHeight(leafX, leafZ)
@@ -476,24 +520,37 @@ export class LeafPileBandEffect {
           (0.11 + coverage * 0.1 + meta.widthBias * 0.35) *
             this.params.sizeScale *
             seasonStyle.widthScale *
-            (0.72 + leafHashC * 0.6),
+            (0.72 + leafHashC * 0.6) *
+            (1 - displacement.stretch * 0.18),
         )
         const length = Math.max(
           0.08,
           (0.13 + coverage * 0.12 + meta.heightBias * 0.26) *
             this.params.sizeScale *
             seasonStyle.lengthScale *
-            (0.84 + leafHashD * 0.44),
+            (0.84 + leafHashD * 0.44) *
+            (1 + displacement.stretch * 0.28),
         )
         const stackLift =
           Math.max(0.004, 0.007 + coverage * 0.01 + meta.liftBias * 0.018) *
           seasonStyle.lift *
           (1 + leafIndex * 0.05)
         const pitch =
-          -Math.PI / 2 + (leafHashB - 0.5) * 0.28 + meta.curlBias * 0.22 + displacement.push * 0.32
-        const yaw = leafHashC * Math.PI * 2 + displacement.push * 0.28 + pushAngle * 0.22
-        const roll = (leafHashD - 0.5) * 1.35 + meta.curlBias * 0.4 + displacement.push * 0.38
-
+          -Math.PI / 2 +
+          (leafHashB - 0.5) * 0.28 +
+          meta.curlBias * 0.22 +
+          displacement.push * 0.32 +
+          displacement.stretch * 0.26
+        const yaw =
+          leafHashC * Math.PI * 2 +
+          displacement.push * 0.28 +
+          pushAngle * 0.22 +
+          displacement.twist * 0.34
+        const roll =
+          (leafHashD - 0.5) * 1.35 +
+          meta.curlBias * 0.4 +
+          displacement.push * 0.38 +
+          displacement.twist * 0.48
         dummy.position.set(leafX, groundY + stackLift, leafZ)
         dummy.rotation.set(pitch, yaw, roll)
         dummy.scale.set(width, length, 1)

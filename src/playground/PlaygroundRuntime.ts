@@ -1,6 +1,7 @@
 import { seedCursor } from '../weft/core'
 import {
   createBandFieldEffect,
+  createFungusSeamEffect,
   createLeafPileBandEffect,
   buildGrassStateSurface,
   createFireWallEffect,
@@ -10,6 +11,7 @@ import {
   createStarSkyEffect,
   DEFAULT_BAND_FIELD_PARAMS,
   DEFAULT_FIRE_WALL_PARAMS,
+  DEFAULT_FUNGUS_SEAM_PARAMS,
   DEFAULT_SHELL_SURFACE_PARAMS,
   DEFAULT_GRASS_FIELD_PARAMS,
   DEFAULT_LEAF_PILE_BAND_PARAMS,
@@ -26,6 +28,7 @@ import {
   type BandFieldParams,
   type FireWallEffect,
   type FireWallParams,
+  type FungusSeamParams,
   type ShellSurfaceEffect,
   type ShellSurfaceParams,
   type GrassFieldParams,
@@ -129,6 +132,30 @@ export type PlaygroundPerfStats = {
   pixelRatio: number
 }
 
+const INTERSECTION_LEAF_PILES = [
+  { x: -2.15, z: -1.55, radius: 0.34 },
+  { x: 2.05, z: -1.35, radius: 0.32 },
+  { x: -1.55, z: 2.05, radius: 0.33 },
+  { x: 1.8, z: 1.75, radius: 0.28 },
+] as const
+
+function isInsideIntersectionLeafPile(x: number, z: number): boolean {
+  return INTERSECTION_LEAF_PILES.some((pile) => {
+    const dx = x - pile.x
+    const dz = z - pile.z
+    return dx * dx + dz * dz <= pile.radius * pile.radius
+  })
+}
+
+function distanceToIntersectionLeafPileAtXZ(x: number, z: number): number {
+  let best = Number.POSITIVE_INFINITY
+  for (const pile of INTERSECTION_LEAF_PILES) {
+    const distance = Math.hypot(x - pile.x, z - pile.z) - pile.radius
+    if (distance < best) best = distance
+  }
+  return best
+}
+
 type BreachZoneOpenState = {
   isOpen: boolean
   openSamples: number
@@ -224,27 +251,25 @@ export class PlaygroundRuntime {
     seedCursor,
     initialParams: {
       ...DEFAULT_LEAF_PILE_BAND_PARAMS,
-      layoutDensity: PLAYGROUND_BAND_LAYOUT_DENSITY * 1.02,
-      sizeScale: PLAYGROUND_BAND_SIZE_SCALE * 1.22,
-      bandWidth: 3.85,
+      layoutDensity: PLAYGROUND_BAND_LAYOUT_DENSITY * 1.3,
+      sizeScale: PLAYGROUND_BAND_SIZE_SCALE * 1.08,
+      bandWidth: 1.15,
       edgeSoftness: PLAYGROUND_BAND_EDGE_SOFTNESS * 0.9,
       season: 'autumn',
     },
     placementMask: {
-      bounds: PLAYGROUND_BOUNDS,
+      bounds: { minX: -4.2, maxX: 4.2, minZ: -4.2, maxZ: 4.2 },
       includeAtXZ: (x, z) =>
         isCrossRoadAsphalt(x, z) &&
-        Math.abs(x) <= 3.2 &&
-        Math.abs(z) <= 3.2,
-      distanceToBandAtXZ: (x, z) => z - Math.sin(x * 0.55) * 0.4,
+        isInsideIntersectionLeafPile(x, z),
+      distanceToBandAtXZ: distanceToIntersectionLeafPileAtXZ,
     },
   })
-  private readonly fungusBandEffect = createBandFieldEffect({
+  private readonly fungusBandEffect = createFungusSeamEffect({
     surface: getPreparedFungusBandSurface(),
     seedCursor,
-    appearance: 'fungus',
     initialParams: {
-      ...DEFAULT_BAND_FIELD_PARAMS,
+      ...DEFAULT_FUNGUS_SEAM_PARAMS,
       layoutDensity: PLAYGROUND_BAND_LAYOUT_DENSITY,
       sizeScale: PLAYGROUND_BAND_SIZE_SCALE * 0.92,
       bandWidth: PLAYGROUND_FUNGUS_SEAM_WIDTH,
@@ -338,14 +363,14 @@ export class PlaygroundRuntime {
   }
   private leafPileParams: LeafPileBandParams = {
     ...DEFAULT_LEAF_PILE_BAND_PARAMS,
-    layoutDensity: PLAYGROUND_BAND_LAYOUT_DENSITY * 1.02,
-    sizeScale: PLAYGROUND_BAND_SIZE_SCALE * 1.22,
-    bandWidth: 3.85,
+    layoutDensity: PLAYGROUND_BAND_LAYOUT_DENSITY * 1.3,
+    sizeScale: PLAYGROUND_BAND_SIZE_SCALE * 1.08,
+    bandWidth: 1.15,
     edgeSoftness: PLAYGROUND_BAND_EDGE_SOFTNESS * 0.9,
     season: 'autumn',
   }
-  private fungusBandParams: BandFieldParams = {
-    ...DEFAULT_BAND_FIELD_PARAMS,
+  private fungusBandParams: FungusSeamParams = {
+    ...DEFAULT_FUNGUS_SEAM_PARAMS,
     layoutDensity: PLAYGROUND_BAND_LAYOUT_DENSITY,
     sizeScale: PLAYGROUND_BAND_SIZE_SCALE * 0.92,
     bandWidth: PLAYGROUND_FUNGUS_SEAM_WIDTH,
@@ -620,6 +645,9 @@ export class PlaygroundRuntime {
     vergeSizeScale?: number
     leafPileSizeScale?: number
     fungusSizeScale?: number
+    fungusBurnRecoveryRate?: number
+    fungusBurnSpreadSpeed?: number
+    fungusBurnBlastSize?: number
     edgeSoftness?: number
     vergeBandWidth?: number
     leafPileBandWidth?: number
@@ -640,6 +668,17 @@ export class PlaygroundRuntime {
     }
     if (params.fungusSizeScale !== undefined) {
       this.fungusBandParams.sizeScale = params.fungusSizeScale
+    }
+    if (params.fungusBurnRecoveryRate !== undefined) {
+      this.fungusBandParams.recoveryRate = params.fungusBurnRecoveryRate
+    }
+    if (params.fungusBurnSpreadSpeed !== undefined) {
+      this.fungusBandParams.burnSpreadSpeed = params.fungusBurnSpreadSpeed
+    }
+    if (params.fungusBurnBlastSize !== undefined) {
+      this.fungusBandParams.burnRadius = DEFAULT_FUNGUS_SEAM_PARAMS.burnRadius * params.fungusBurnBlastSize
+      this.fungusBandParams.burnMaxRadius =
+        DEFAULT_FUNGUS_SEAM_PARAMS.burnMaxRadius * params.fungusBurnBlastSize
     }
     if (params.edgeSoftness !== undefined) {
       this.vergeBandParams.edgeSoftness = params.edgeSoftness
@@ -892,7 +931,7 @@ export class PlaygroundRuntime {
     this.grassEffect.update(elapsed)
     this.vergeBandEffect.update(this.getGroundHeightAtWorld)
     this.leafPileEffect.update(elapsed, this.getGroundHeightAtWorld)
-    this.fungusBandEffect.update(this.getGroundHeightAtWorld)
+    this.fungusBandEffect.update(elapsed, this.getGroundHeightAtWorld)
     this.controller.player.update(0, 'idle')
   }
 
@@ -1333,14 +1372,12 @@ export class PlaygroundRuntime {
 
     this.footstepPoint.copy(frame.playerPosition).addScaledVector(this.playerForward, -0.18)
     this.footstepPoint.y = this.grassEffect.getGroundHeightAtWorld(this.footstepPoint.x, this.footstepPoint.z)
-    if (!isInsideBuildingInterior(this.footstepPoint.x, this.footstepPoint.z)) {
-      this.leafPileEffect.addDisturbanceFromWorldPoint(this.footstepPoint, {
-        radiusScale: 1.35,
-        strength: 1.75,
-        displacementScale: 1.55,
-        mergeRadius: 0.7,
-      })
-    }
+    this.stampLeafPileDisturbance(this.footstepPoint, {
+      radiusScale: 1.35,
+      strength: 1.75,
+      displacementScale: 1.55,
+      mergeRadius: 0.7,
+    })
     if (
       isCrossRoadAsphalt(this.footstepPoint.x, this.footstepPoint.z) ||
       isInsideBuildingInterior(this.footstepPoint.x, this.footstepPoint.z)
@@ -1352,6 +1389,32 @@ export class PlaygroundRuntime {
       strength: 1.0,
       recoveryRate: 0.001,  // effectively persistent footprints
       mergeRadius: 0.95,
+    })
+  }
+
+  private stampLeafPileDisturbance(
+    point: THREE.Vector3,
+    options: {
+      radiusScale?: number
+      strength?: number
+      displacementScale?: number
+      mergeRadius?: number
+    } = {},
+  ): void {
+    if (isInsideBuildingInterior(point.x, point.z)) return
+    this.leafPileEffect.addDisturbanceFromWorldPoint(point, options)
+  }
+
+  private stampFungusBurn(point: THREE.Vector3): void {
+    if (!isInsideFungusSeamZone(point.x, point.z)) return
+    const seamDistance = Math.abs(distanceToFungusSeamAtXZ(point.x, point.z))
+    const burnReach = this.fungusBandParams.bandWidth * 0.7 + 0.45
+    if (seamDistance > burnReach) return
+    this.fungusBandEffect.addBurnFromWorldPoint(point, {
+      radiusScale: 1.45,
+      maxRadiusScale: 1.55,
+      strength: 1.22,
+      mergeRadius: 0.9,
     })
   }
 
@@ -1490,6 +1553,13 @@ export class PlaygroundRuntime {
     if (!hit) {
       const grassHit = this.getGrassFallbackHit()
       if (!grassHit) return
+      this.stampFungusBurn(grassHit.point)
+      this.stampLeafPileDisturbance(grassHit.point, {
+        radiusScale: 1.2,
+        strength: 1.7,
+        displacementScale: 1.85,
+        mergeRadius: 0.35,
+      })
       this.grassEffect.addDisturbanceFromWorldPoint(grassHit.point, {
         radiusScale: 1.15,
         strength: 1.45,
@@ -1498,6 +1568,13 @@ export class PlaygroundRuntime {
       return
     }
 
+    this.stampFungusBurn(hit.point)
+    this.stampLeafPileDisturbance(hit.point, {
+      radiusScale: 1.2,
+      strength: 1.7,
+      displacementScale: 1.85,
+      mergeRadius: 0.35,
+    })
     this.grassEffect.addDisturbanceFromWorldPoint(hit.point, { radiusScale: 1.15, strength: 1.45, deformGround: false })
   }
 
@@ -1623,7 +1700,7 @@ export class PlaygroundRuntime {
     const tBand0 = now()
     this.vergeBandEffect.update(this.getGroundHeightAtWorld)
     this.leafPileEffect.update(elapsed, this.getGroundHeightAtWorld)
-    this.fungusBandEffect.update(this.getGroundHeightAtWorld)
+    this.fungusBandEffect.update(elapsed, this.getGroundHeightAtWorld)
     const bandCpuMs = now() - tBand0
     const tRock0 = now()
     this.rockFieldEffect.update(this.getGroundHeightAtWorld)

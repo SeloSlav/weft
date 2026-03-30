@@ -77,6 +77,19 @@ export {
 export type { LeafPileSeason, LeafPileTokenId, LeafPileTokenMeta } from './presets/leafPileBandSource.ts'
 
 export {
+  createFungusSeamEffect,
+  DEFAULT_FUNGUS_SEAM_PARAMS,
+  FungusSeamEffect,
+} from './presets/fungusSeam.ts'
+export type {
+  CreateFungusSeamEffectOptions,
+  FungusBurnOptions,
+  FungusSeamBounds,
+  FungusSeamPlacementMask,
+  FungusSeamParams,
+} from './presets/fungusSeam.ts'
+
+export {
   createGrassEffect,
   DEFAULT_GRASS_FIELD_PARAMS,
   GrassFieldEffect,

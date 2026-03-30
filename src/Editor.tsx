@@ -5,6 +5,7 @@ import {
 } from "./playground/PlaygroundRuntime";
 import {
   DEFAULT_FIRE_WALL_PARAMS,
+  DEFAULT_FUNGUS_SEAM_PARAMS,
   DEFAULT_SHELL_SURFACE_PARAMS,
   DEFAULT_GRASS_FIELD_PARAMS,
   DEFAULT_LEAF_PILE_BAND_PARAMS,
@@ -102,6 +103,12 @@ export function Editor() {
   const [grassLayoutDensity, setGrassLayoutDensity] = useState(
     DEFAULT_GRASS_FIELD_PARAMS.layoutDensity,
   );
+  const [grassBladeWidthScale, setGrassBladeWidthScale] = useState(
+    DEFAULT_GRASS_FIELD_PARAMS.bladeWidthScale,
+  );
+  const [grassBladeHeightScale, setGrassBladeHeightScale] = useState(
+    DEFAULT_GRASS_FIELD_PARAMS.bladeHeightScale,
+  );
   const [rockLayoutDensity, setRockLayoutDensity] = useState(
     DEFAULT_ROCK_FIELD_PARAMS.layoutDensity,
   );
@@ -115,18 +122,25 @@ export function Editor() {
     PLAYGROUND_BAND_SIZE_SCALE,
   );
   const [leafPileGlyphSize, setLeafPileGlyphSize] = useState(
-    PLAYGROUND_BAND_SIZE_SCALE * 1.22,
+    PLAYGROUND_BAND_SIZE_SCALE * 1.08,
   );
   const [fungusGlyphSize, setFungusGlyphSize] = useState(
     PLAYGROUND_BAND_SIZE_SCALE * 0.92,
   );
+  const [fungusBurnRecoveryRate, setFungusBurnRecoveryRate] = useState(
+    DEFAULT_FUNGUS_SEAM_PARAMS.recoveryRate,
+  );
+  const [fungusBurnSpreadSpeed, setFungusBurnSpreadSpeed] = useState(
+    DEFAULT_FUNGUS_SEAM_PARAMS.burnSpreadSpeed,
+  );
+  const [fungusBurnBlastSize, setFungusBurnBlastSize] = useState(1);
   const [leafPileSeason, setLeafPileSeason] = useState(
     DEFAULT_LEAF_PILE_BAND_PARAMS.season,
   );
   const [vergeBandWidth, setVergeBandWidth] = useState(
     PLAYGROUND_VERGE_BAND_WIDTH,
   );
-  const [leafPileBandWidth, setLeafPileBandWidth] = useState(3.25);
+  const [leafPileBandWidth, setLeafPileBandWidth] = useState(1.15);
   const [fungusBandWidth, setFungusBandWidth] = useState(
     PLAYGROUND_FUNGUS_SEAM_WIDTH,
   );
@@ -190,6 +204,8 @@ export function Editor() {
           recoveryRate,
           state: grassState,
           layoutDensity: grassLayoutDensity,
+          bladeWidthScale: grassBladeWidthScale,
+          bladeHeightScale: grassBladeHeightScale,
         });
         runtime.setRockFieldParams({ layoutDensity: rockLayoutDensity, sizeScale: rockSizeScale });
         runtime.setBandFieldParams({
@@ -197,6 +213,9 @@ export function Editor() {
           vergeSizeScale: vergeGlyphSize,
           leafPileSizeScale: leafPileGlyphSize,
           fungusSizeScale: fungusGlyphSize,
+          fungusBurnRecoveryRate,
+          fungusBurnSpreadSpeed,
+          fungusBurnBlastSize,
           vergeBandWidth,
           leafPileBandWidth,
           leafPileSeason,
@@ -280,8 +299,12 @@ export function Editor() {
       recoveryRate,
       state: grassState,
       layoutDensity: grassLayoutDensity,
+      bladeWidthScale: grassBladeWidthScale,
+      bladeHeightScale: grassBladeHeightScale,
     });
   }, [
+    grassBladeHeightScale,
+    grassBladeWidthScale,
     disturbanceRadius,
     disturbanceStrength,
     grassLayoutDensity,
@@ -304,6 +327,9 @@ export function Editor() {
       vergeSizeScale: vergeGlyphSize,
       leafPileSizeScale: leafPileGlyphSize,
       fungusSizeScale: fungusGlyphSize,
+      fungusBurnRecoveryRate,
+      fungusBurnSpreadSpeed,
+      fungusBurnBlastSize,
       vergeBandWidth,
       leafPileBandWidth,
       leafPileSeason,
@@ -316,6 +342,9 @@ export function Editor() {
   }, [
     bandEdgeSoftness,
     bandLayoutDensity,
+    fungusBurnBlastSize,
+    fungusBurnRecoveryRate,
+    fungusBurnSpreadSpeed,
     fungusGlyphSize,
     fungusBandWidth,
     leafPileGlyphSize,
@@ -422,7 +451,7 @@ export function Editor() {
                   </p>
                 </ControlSection>
                 <ControlSection
-                  title="Roadside grass"
+                  title="Grass"
                   summary="Ground response and world-state swap"
                 >
                   <label className="control">
@@ -491,6 +520,36 @@ export function Editor() {
                       value={grassLayoutDensity}
                       onChange={(e) =>
                         setGrassLayoutDensity(Number(e.target.value))
+                      }
+                    />
+                  </label>
+                  <label className="control">
+                    <span>
+                      Grass blade width ({grassBladeWidthScale.toFixed(2)}x)
+                    </span>
+                    <input
+                      type="range"
+                      min={0.25}
+                      max={2.5}
+                      step={0.05}
+                      value={grassBladeWidthScale}
+                      onChange={(e) =>
+                        setGrassBladeWidthScale(Number(e.target.value))
+                      }
+                    />
+                  </label>
+                  <label className="control">
+                    <span>
+                      Grass blade height ({grassBladeHeightScale.toFixed(2)}x)
+                    </span>
+                    <input
+                      type="range"
+                      min={0.25}
+                      max={2.5}
+                      step={0.05}
+                      value={grassBladeHeightScale}
+                      onChange={(e) =>
+                        setGrassBladeHeightScale(Number(e.target.value))
                       }
                     />
                   </label>
@@ -767,6 +826,51 @@ export function Editor() {
                       step={0.05}
                       value={fungusGlyphSize}
                       onChange={(e) => setFungusGlyphSize(Number(e.target.value))}
+                    />
+                  </label>
+                  <label className="control">
+                    <span>
+                      Fungus burn recovery ({fungusBurnRecoveryRate.toFixed(2)})
+                    </span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={0.5}
+                      step={0.01}
+                      value={fungusBurnRecoveryRate}
+                      onChange={(e) =>
+                        setFungusBurnRecoveryRate(Number(e.target.value))
+                      }
+                    />
+                  </label>
+                  <label className="control">
+                    <span>
+                      Fungus burn spread ({fungusBurnSpreadSpeed.toFixed(2)})
+                    </span>
+                    <input
+                      type="range"
+                      min={0.2}
+                      max={6}
+                      step={0.05}
+                      value={fungusBurnSpreadSpeed}
+                      onChange={(e) =>
+                        setFungusBurnSpreadSpeed(Number(e.target.value))
+                      }
+                    />
+                  </label>
+                  <label className="control">
+                    <span>
+                      Fungus burn blast size ({fungusBurnBlastSize.toFixed(2)}x)
+                    </span>
+                    <input
+                      type="range"
+                      min={0.35}
+                      max={2.5}
+                      step={0.05}
+                      value={fungusBurnBlastSize}
+                      onChange={(e) =>
+                        setFungusBurnBlastSize(Number(e.target.value))
+                      }
                     />
                   </label>
                   <label className="control">

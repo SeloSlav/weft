@@ -26,6 +26,8 @@ export type GrassFieldParams = {
   recoveryRate: number
   state: number
   layoutDensity: number
+  bladeWidthScale: number
+  bladeHeightScale: number
 }
 
 export const DEFAULT_GRASS_FIELD_PARAMS: GrassFieldParams = {
@@ -36,6 +38,8 @@ export const DEFAULT_GRASS_FIELD_PARAMS: GrassFieldParams = {
   recoveryRate: 0.8,
   state: 0,
   layoutDensity: 8,
+  bladeWidthScale: 1,
+  bladeHeightScale: 1,
 }
 
 export type GrassFieldBounds = {
@@ -604,6 +608,8 @@ export class GrassFieldEffect {
     const stateBend = STATE_BEND[stateIndex]!
     const stateLean = STATE_LEAN[stateIndex]!
     const disturbanceLift = STATE_DISTURBANCE_LIFT[stateIndex]!
+    const bladeWidthScale = Math.max(0.01, this.params.bladeWidthScale)
+    const bladeHeightScale = Math.max(0.01, this.params.bladeHeightScale)
     if (!hasDisturbances && this.baseBladeColorsDirty) {
       this.applyBaseBladeColors()
     }
@@ -640,8 +646,8 @@ export class GrassFieldEffect {
       dummy.rotateX(blade.baseRotateX)
       dummy.rotateZ(((windBend + trampleBend) * Math.sign(awayX || 1) + stateLean) * stateBend)
       dummy.scale.set(
-        blade.baseWidth * (1 - localDisturbance * 0.42),
-        Math.max(blade.baseHeight * (1 - localDisturbance * 0.88), 0.18),
+        blade.baseWidth * bladeWidthScale * (1 - localDisturbance * 0.42),
+        Math.max(blade.baseHeight * bladeHeightScale * (1 - localDisturbance * 0.88), 0.18 * bladeHeightScale),
         1,
       )
       dummy.updateMatrix()
