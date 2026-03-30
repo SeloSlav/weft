@@ -40,13 +40,6 @@ export default function App() {
           >
             Playground
           </button>
-          <button
-            type="button"
-            className={`site-nav__link${page === 'demo' ? ' site-nav__link--active' : ''}`}
-            onClick={() => setPage('demo')}
-          >
-            Demo
-          </button>
         </nav>
 
         <div className="site-nav__meta">

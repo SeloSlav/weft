@@ -1070,8 +1070,11 @@ export function Editor() {
             </div>
             <div>
               Fish: {(perfStats.shutterCpuMs + perfStats.ivyCpuMs).toFixed(2)} / {perfStats.fishCpuMsAvg.toFixed(2)} |
-              Glass: {(perfStats.lampCpuMs + perfStats.glassCpuMs).toFixed(2)} / {perfStats.glassCpuMsAvg.toFixed(2)} |
-              Ran: {perfStats.ranSystems.length > 0 ? perfStats.ranSystems.join(", ") : "none"} | Size:{" "}
+              Lamp: {perfStats.lampCpuMs.toFixed(2)} / {perfStats.lampCpuMsAvg.toFixed(2)} |
+              Window: {perfStats.glassCpuMs.toFixed(2)} / {perfStats.glassCpuMsAvg.toFixed(2)} |
+              Glass total: {(perfStats.lampCpuMs + perfStats.glassCpuMs).toFixed(2)} /{" "}
+              {(perfStats.lampCpuMsAvg + perfStats.glassCpuMsAvg).toFixed(2)} | Ran:{" "}
+              {perfStats.ranSystems.length > 0 ? perfStats.ranSystems.join(", ") : "none"} | Size:{" "}
               {perfStats.viewportWidth}x{perfStats.viewportHeight}
             </div>
           </div>

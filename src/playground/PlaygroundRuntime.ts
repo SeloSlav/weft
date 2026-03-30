@@ -124,6 +124,7 @@ export type PlaygroundPerfStats = {
   shutterCpuMs: number
   ivyCpuMs: number
   lampCpuMs: number
+  lampCpuMsAvg: number
   glassCpuMs: number
   glassCpuMsAvg: number
   grassCpuMs: number
@@ -155,6 +156,7 @@ type PerfWindowSample = {
   frameCpuMs: number
   effectsCpuMs: number
   renderCpuMs: number
+  lampCpuMs: number
   glassCpuMs: number
   grassCpuMs: number
   vergeCpuMs: number
@@ -465,6 +467,7 @@ export class PlaygroundRuntime {
     shutterCpuMs: 0,
     ivyCpuMs: 0,
     lampCpuMs: 0,
+    lampCpuMsAvg: 0,
     glassCpuMs: 0,
     glassCpuMsAvg: 0,
     grassCpuMs: 0,
@@ -499,6 +502,7 @@ export class PlaygroundRuntime {
     frameCpuMs: 0,
     effectsCpuMs: 0,
     renderCpuMs: 0,
+    lampCpuMs: 0,
     glassCpuMs: 0,
     grassCpuMs: 0,
     vergeCpuMs: 0,
@@ -1089,6 +1093,7 @@ export class PlaygroundRuntime {
     this.perfWindowSums.frameCpuMs += sample.frameCpuMs
     this.perfWindowSums.effectsCpuMs += sample.effectsCpuMs
     this.perfWindowSums.renderCpuMs += sample.renderCpuMs
+    this.perfWindowSums.lampCpuMs += sample.lampCpuMs
     this.perfWindowSums.glassCpuMs += sample.glassCpuMs
     this.perfWindowSums.grassCpuMs += sample.grassCpuMs
     this.perfWindowSums.vergeCpuMs += sample.vergeCpuMs
@@ -1106,6 +1111,7 @@ export class PlaygroundRuntime {
       this.perfWindowSums.frameCpuMs -= removed.frameCpuMs
       this.perfWindowSums.effectsCpuMs -= removed.effectsCpuMs
       this.perfWindowSums.renderCpuMs -= removed.renderCpuMs
+      this.perfWindowSums.lampCpuMs -= removed.lampCpuMs
       this.perfWindowSums.glassCpuMs -= removed.glassCpuMs
       this.perfWindowSums.grassCpuMs -= removed.grassCpuMs
       this.perfWindowSums.vergeCpuMs -= removed.vergeCpuMs
@@ -1932,7 +1938,6 @@ export class PlaygroundRuntime {
     const renderCpuMs = now() - tRender0
     const frameCpuMs = now() - tFrame0
     const fishCpuMs = shutterCpuMs + ivyCpuMs
-    const totalGlassCpuMs = lampCpuMs + glassCpuMs
     const ranSystems = [
       ...(ranGrass ? ['grass'] : []),
       ...(ranBand ? ['band'] : []),
@@ -1947,7 +1952,8 @@ export class PlaygroundRuntime {
       frameCpuMs,
       effectsCpuMs,
       renderCpuMs,
-      glassCpuMs: totalGlassCpuMs,
+      lampCpuMs,
+      glassCpuMs,
       grassCpuMs,
       vergeCpuMs,
       leafCpuMs,
@@ -1972,6 +1978,7 @@ export class PlaygroundRuntime {
       shutterCpuMs,
       ivyCpuMs,
       lampCpuMs,
+      lampCpuMsAvg: this.perfWindowAverage('lampCpuMs'),
       glassCpuMs,
       glassCpuMsAvg: this.perfWindowAverage('glassCpuMs'),
       grassCpuMs,

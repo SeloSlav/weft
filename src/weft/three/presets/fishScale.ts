@@ -199,6 +199,16 @@ function createPatchMaterial(): THREE.MeshStandardMaterial {
   })
 }
 
+function createPatchGeometry(appearance: ShellSurfaceAppearance): THREE.PlaneGeometry {
+  if (appearance === 'glass') {
+    return new THREE.PlaneGeometry(PATCH_WIDTH, PATCH_HEIGHT, 20, 14)
+  }
+  if (appearance === 'glassBulb') {
+    return new THREE.PlaneGeometry(PATCH_WIDTH, PATCH_HEIGHT, 22, 16)
+  }
+  return new THREE.PlaneGeometry(PATCH_WIDTH, PATCH_HEIGHT, 44, 32)
+}
+
 export class ShellSurfaceEffect {
   readonly group = new THREE.Group()
   readonly interactionMesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>
@@ -206,7 +216,7 @@ export class ShellSurfaceEffect {
   private readonly scaleMesh: THREE.InstancedMesh
   private readonly scaleGeometry: THREE.ExtrudeGeometry
   private readonly scaleMaterial = createScaleMaterial()
-  private readonly patchGeometry = new THREE.PlaneGeometry(PATCH_WIDTH, PATCH_HEIGHT, 44, 32)
+  private readonly patchGeometry: THREE.PlaneGeometry
   private readonly patchMaterial = createPatchMaterial()
   private readonly breachHoleUniforms: BreachHoleUniforms = {
     uFishInvWorldMatrix: { value: new THREE.Matrix4() },
@@ -218,16 +228,18 @@ export class ShellSurfaceEffect {
     uPatchHalfH: { value: PATCH_HEIGHT * 0.5 },
     uHoleThreshold: { value: FACADE_VISUAL_HOLE_THRESHOLD },
   }
-  private readonly basePatchPositions = Float32Array.from(this.patchGeometry.attributes.position.array as ArrayLike<number>)
+  private readonly basePatchPositions: Float32Array
   private readonly layoutDriver: SurfaceLayoutDriver<FishTokenId, FishTokenMeta>
   private readonly wounds: Wound[] = []
   private readonly cachedWounds: CachedWoundSample[] = []
   private lastElapsedTime = 0
   private patchUpdateAccumulator = 1
+  private scaleUpdateAccumulator = 1
   private patchNormalAccumulator = 1
   private needsGeometryRefresh = true
   private frozenElapsedTime = 0
   private params: ShellSurfaceParams
+  private glassDamageOptimization01 = 0
   private readonly appearance: ShellSurfaceAppearance
 
   constructor(
@@ -238,6 +250,10 @@ export class ShellSurfaceEffect {
   ) {
     this.params = { ...initialParams }
     this.appearance = appearance
+    this.patchGeometry = createPatchGeometry(appearance)
+    this.basePatchPositions = Float32Array.from(
+      this.patchGeometry.attributes.position.array as ArrayLike<number>,
+    )
     this.scaleGeometry = createGlyphGeometry(appearance)
     this.layoutDriver = new SurfaceLayoutDriver({
       surface,
@@ -264,11 +280,13 @@ export class ShellSurfaceEffect {
 
   setParams(params: Partial<ShellSurfaceParams>): void {
     this.params = { ...this.params, ...params }
+    this.rebuildCachedWounds()
     this.needsGeometryRefresh = true
   }
 
   clearWounds(): void {
     this.wounds.length = 0
+    this.cachedWounds.length = 0
     this.needsGeometryRefresh = true
   }
 
@@ -367,20 +385,41 @@ export class ShellSurfaceEffect {
     this.updateWounds(delta)
     this.rebuildCachedWounds()
     const hasWounds = this.wounds.length > 0
+    this.glassDamageOptimization01 = this.computeGlassDamageOptimization01()
     if (hadWounds || hasWounds) {
       this.needsGeometryRefresh = true
     }
     const useIdleAnimation = !this.isStaticWhenIntact() || hasWounds
-    if (!useIdleAnimation && !this.needsGeometryRefresh) return
+    const intactRefreshInterval = 1 / 30
+    const woundedGlassRefreshInterval = THREE.MathUtils.lerp(1 / 24, 1 / 10, this.glassDamageOptimization01)
+    const woundedWindowScaleRefreshInterval = THREE.MathUtils.lerp(1 / 18, 1 / 7, this.glassDamageOptimization01)
     const sampleElapsed = useIdleAnimation ? elapsedTime : hadWounds ? elapsedTime : this.frozenElapsedTime
     this.patchUpdateAccumulator += delta
+    this.scaleUpdateAccumulator += delta
     this.patchNormalAccumulator += delta
-    if (!useIdleAnimation || this.patchUpdateAccumulator >= 1 / 30) {
-      this.updatePatch(sampleElapsed, !useIdleAnimation || this.patchNormalAccumulator >= 1 / 12)
+    const needsTimedRefresh = useIdleAnimation
+      ? this.patchUpdateAccumulator >= woundedGlassRefreshInterval
+      : this.patchUpdateAccumulator >= intactRefreshInterval
+    if (!useIdleAnimation && !this.needsGeometryRefresh && !needsTimedRefresh) return
+    let patchUpdated = false
+    if (this.needsGeometryRefresh || needsTimedRefresh) {
+      const shouldRecomputeNormals =
+        !useIdleAnimation || this.patchNormalAccumulator >= THREE.MathUtils.lerp(1 / 12, 1 / 6, this.glassDamageOptimization01)
+      this.updatePatch(sampleElapsed, shouldRecomputeNormals)
       this.patchUpdateAccumulator = 0
-      if (this.patchNormalAccumulator >= 1 / 12) this.patchNormalAccumulator = 0
+      if (shouldRecomputeNormals) this.patchNormalAccumulator = 0
+      patchUpdated = true
     }
-    this.updateScales(sampleElapsed)
+    const isDamagedWindow = this.appearance === 'glass' && hasWounds
+    const shouldRefreshScales =
+      !isDamagedWindow ||
+      patchUpdated ||
+      this.needsGeometryRefresh ||
+      this.scaleUpdateAccumulator >= woundedWindowScaleRefreshInterval
+    if (shouldRefreshScales) {
+      this.updateScales(sampleElapsed)
+      this.scaleUpdateAccumulator = 0
+    }
     this.updateBreachHoleUniforms()
     if (!useIdleAnimation) {
       this.frozenElapsedTime = sampleElapsed
@@ -599,6 +638,25 @@ export class ShellSurfaceEffect {
     return -1
   }
 
+  private trackedWoundBudget(): number {
+    return this.isSphericalGlassSurface() || this.appearance === 'glass'
+      ? MAX_TRACKED_GLASS_WOUNDS
+      : MAX_TRACKED_FACADE_WOUNDS
+  }
+
+  private trimWoundsToBudget(): void {
+    const budget = this.trackedWoundBudget()
+    while (this.wounds.length > budget) {
+      let weakestIndex = budget
+      for (let i = budget + 1; i < this.wounds.length; i++) {
+        if ((this.wounds[i]?.strength ?? Infinity) < (this.wounds[weakestIndex]?.strength ?? Infinity)) {
+          weakestIndex = i
+        }
+      }
+      this.wounds.splice(weakestIndex, 1)
+    }
+  }
+
   private woundIntensity01(wound: Wound): number {
     return THREE.MathUtils.clamp((wound.strength - 1) / (WOUND_MAX_STRENGTH - 1), 0, 1)
   }
@@ -615,6 +673,26 @@ export class ShellSurfaceEffect {
     )
   }
 
+  private rebuildCachedWounds(): void {
+    this.cachedWounds.length = 0
+    for (const wound of this.wounds) {
+      const presence = this.woundPresence01(wound)
+      const intensity = this.woundIntensity01(wound)
+      this.cachedWounds.push({
+        x: wound.x,
+        y: wound.y,
+        strength: wound.strength,
+        side: wound.side,
+        presence,
+        intensity,
+        radius:
+          this.params.woundRadius *
+          THREE.MathUtils.lerp(0.72, 1, presence) *
+          THREE.MathUtils.lerp(1, 1.18, intensity),
+      })
+    }
+  }
+
   private updateWounds(delta: number): void {
     updateRecoveringImpacts(this.wounds, this.params.recoveryRate, delta)
     this.trimWoundsToBudget()
@@ -622,6 +700,11 @@ export class ShellSurfaceEffect {
 
   private isSphericalGlassSurface(): boolean {
     return this.appearance === 'glassBulb'
+  }
+
+  private computeGlassDamageOptimization01(): number {
+    if (this.appearance !== 'glass' && this.appearance !== 'glassBulb') return 0
+    return THREE.MathUtils.clamp((this.getWoundLoad01(this.isSphericalGlassSurface() ? 2.6 : 3.4) - 0.28) / 0.72, 0, 1)
   }
 
   private paramDeltaX(a: number, b: number): number {
@@ -795,45 +878,6 @@ export class ShellSurfaceEffect {
     )
   }
 
-  private trackedWoundBudget(): number {
-    return this.isSphericalGlassSurface() || this.appearance === 'glass'
-      ? MAX_TRACKED_GLASS_WOUNDS
-      : MAX_TRACKED_FACADE_WOUNDS
-  }
-
-  private trimWoundsToBudget(): void {
-    const budget = this.trackedWoundBudget()
-    while (this.wounds.length > budget) {
-      let weakestIndex = budget
-      for (let i = budget + 1; i < this.wounds.length; i++) {
-        if ((this.wounds[i]?.strength ?? Infinity) < (this.wounds[weakestIndex]?.strength ?? Infinity)) {
-          weakestIndex = i
-        }
-      }
-      this.wounds.splice(weakestIndex, 1)
-    }
-  }
-
-  private rebuildCachedWounds(): void {
-    this.cachedWounds.length = 0
-    for (const wound of this.wounds) {
-      const presence = this.woundPresence01(wound)
-      const intensity = this.woundIntensity01(wound)
-      this.cachedWounds.push({
-        x: wound.x,
-        y: wound.y,
-        strength: wound.strength,
-        side: wound.side,
-        presence,
-        intensity,
-        radius:
-          this.params.woundRadius *
-          THREE.MathUtils.lerp(0.72, 1, presence) *
-          THREE.MathUtils.lerp(1, 1.18, intensity),
-      })
-    }
-  }
-
   private sampleSurface(x: number, y: number, elapsedTime: number): SurfaceFrame {
     const eps = 0.02
 
@@ -905,6 +949,9 @@ export class ShellSurfaceEffect {
       const arcWorld = slot.spanSize * ((Math.PI * 2 * radius * Math.max(0.12, Math.sin(phi))) / PATCH_WIDTH)
       return arcWorld * LAYOUT_PX_PER_WORLD
     }
+    if (this.appearance === 'glass' && this.glassDamageOptimization01 > 0.35) {
+      return slot.spanSize * LAYOUT_PX_PER_WORLD * THREE.MathUtils.lerp(1, 0.92, this.glassDamageOptimization01)
+    }
     const surface = this.sampleSurface(slot.spanCenter, slot.lineCoord, elapsedTime)
     const arcWorld = slot.spanSize * Math.max(1, surface.tangentX.length())
     return arcWorld * LAYOUT_PX_PER_WORLD
@@ -926,6 +973,14 @@ export class ShellSurfaceEffect {
       const t01 = (k + 0.5) / n
       const x = slot.spanStart + t01 * slot.spanSize
       const y = slot.lineCoord
+      const isGlassLike = this.appearance === 'glass' || this.appearance === 'glassBulb'
+      if (isGlassLike && this.glassDamageOptimization01 > 0) {
+        const skipChance =
+          this.appearance === 'glass'
+            ? this.glassDamageOptimization01 * 0.62
+            : this.glassDamageOptimization01 * 0.42
+        if (glyphHash(identity + 41, slot.row * 131 + slot.sector, k) < skipChance) continue
+      }
       const localDamage = this.damageAt(x, y)
       const localHole = this.visualHole01At(x, y)
       const literalBreachHole = localHole >= FACADE_VISUAL_HOLE_THRESHOLD
@@ -937,9 +992,8 @@ export class ShellSurfaceEffect {
       )
       const hashPresence = glyphHash(identity, slot.row * 131 + slot.sector, k)
       if (hashPresence > localCoverage) continue
-      const frame = this.sampleSurface(x, y, elapsedTime)
-      const isGlassLike = this.appearance === 'glass' || this.appearance === 'glassBulb'
       const isPaneGlass = this.appearance === 'glass'
+      const useCheapBrokenPaneFrame = isPaneGlass && this.glassDamageOptimization01 > 0.45
       const scaleWidth = isGlassLike
         ? isPaneGlass
           ? 0.078 + meta.widthBias * 0.35 + (identity % 5) * 0.012
@@ -961,22 +1015,32 @@ export class ShellSurfaceEffect {
           : 0.02 + localDamage * this.params.scaleLift * 0.06
         : BASE_SCALE_LIFT + localDamage * this.params.scaleLift * 0.18
 
-      dummy.position.copy(frame.position).addScaledVector(frame.normal, lift)
+      if (useCheapBrokenPaneFrame) {
+        dummy.position.set(x, y, this.glassPaneZ(x, y, elapsedTime) + lift)
+        dummy.rotation.set(
+          0.012 + localDamage * 0.035,
+          (((identity % 23) / 23) - 0.5) * 0.16,
+          (((identity % 17) / 17) - 0.5) * 0.52,
+        )
+      } else {
+        const frame = this.sampleSurface(x, y, elapsedTime)
+        dummy.position.copy(frame.position).addScaledVector(frame.normal, lift)
 
-      tmpMatrix.makeBasis(frame.tangentX, frame.tangentY, frame.normal)
-      dummy.quaternion.setFromRotationMatrix(tmpMatrix)
-      dummy.rotateX(
-        this.isSphericalGlassSurface()
-          ? 0.08 + localDamage * 0.2
-          : isPaneGlass
-            ? 0.01 + localDamage * 0.06
-            : 0.28 + localDamage * 0.5,
-      )
-      dummy.rotateZ(
-        (((identity % 17) / 17) - 0.5) * (this.isSphericalGlassSurface() ? 0.14 : isPaneGlass ? 0.52 : 0.24),
-      )
-      if (isPaneGlass) {
-        dummy.rotateY((((identity % 23) / 23) - 0.5) * 0.16)
+        tmpMatrix.makeBasis(frame.tangentX, frame.tangentY, frame.normal)
+        dummy.quaternion.setFromRotationMatrix(tmpMatrix)
+        dummy.rotateX(
+          this.isSphericalGlassSurface()
+            ? 0.08 + localDamage * 0.2
+            : isPaneGlass
+              ? 0.01 + localDamage * 0.06
+              : 0.28 + localDamage * 0.5,
+        )
+        dummy.rotateZ(
+          (((identity % 17) / 17) - 0.5) * (this.isSphericalGlassSurface() ? 0.14 : isPaneGlass ? 0.52 : 0.24),
+        )
+        if (isPaneGlass) {
+          dummy.rotateY((((identity % 23) / 23) - 0.5) * 0.16)
+        }
       }
       dummy.scale.set(
         scaleWidth * (1 - localDamage * (isGlassLike ? 0.04 : 0.08)),
