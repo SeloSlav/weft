@@ -408,6 +408,10 @@ export class PlaygroundRuntime {
   private userRockLayoutDensity = DEFAULT_ROCK_FIELD_PARAMS.layoutDensity
   private indoorCameraBlend = 0
   private frameTick = 0
+  private vergeBandDirty = true
+  private leafPileDirty = true
+  private fungusBandDirty = true
+  private rockFieldDirty = true
   /** Last frame CPU time spent in effect updates (ms), for debugging. */
   effectUpdateMs = 0
   /** Smoothed presentation FPS for the current runtime. */
@@ -713,6 +717,9 @@ export class PlaygroundRuntime {
     if (params.showFungusBand !== undefined) {
       this.fungusBandEffect.group.visible = params.showFungusBand
     }
+    this.vergeBandDirty = true
+    this.leafPileDirty = true
+    this.fungusBandDirty = true
   }
 
   setRockFieldParams(params: Partial<RockFieldParams>): void {
@@ -723,6 +730,7 @@ export class PlaygroundRuntime {
     this.rockFieldParams.layoutDensity =
       this.userRockLayoutDensity * getQualityRockLayoutScale(this.quality)
     this.rockFieldEffect.setParams(this.rockFieldParams)
+    this.rockFieldDirty = true
   }
 
   setFireWallParams(params: Partial<FireWallParams>): void {
@@ -768,6 +776,10 @@ export class PlaygroundRuntime {
     this.rockFieldParams.layoutDensity =
       this.userRockLayoutDensity * getQualityRockLayoutScale(this.quality)
     this.rockFieldEffect.setParams(this.rockFieldParams)
+    this.vergeBandDirty = true
+    this.leafPileDirty = true
+    this.fungusBandDirty = true
+    this.rockFieldDirty = true
     this.resize()
   }
 
@@ -795,6 +807,7 @@ export class PlaygroundRuntime {
 
   clearLeafPileDisturbances(): void {
     this.leafPileEffect.clearDisturbances()
+    this.leafPileDirty = true
   }
 
   clearFireWounds(): void {
@@ -1403,6 +1416,7 @@ export class PlaygroundRuntime {
   ): void {
     if (isInsideBuildingInterior(point.x, point.z)) return
     this.leafPileEffect.addDisturbanceFromWorldPoint(point, options)
+    this.leafPileDirty = true
   }
 
   private stampFungusBurn(point: THREE.Vector3): void {
@@ -1416,6 +1430,7 @@ export class PlaygroundRuntime {
       strength: 1.22,
       mergeRadius: 0.9,
     })
+    this.fungusBandDirty = true
   }
 
   private getCenterRayHit(): ReticleHit | null {
@@ -1698,12 +1713,24 @@ export class PlaygroundRuntime {
       grassCpuMs = now() - tGrass0
     }
     const tBand0 = now()
-    this.vergeBandEffect.update(this.getGroundHeightAtWorld)
-    this.leafPileEffect.update(elapsed, this.getGroundHeightAtWorld)
-    this.fungusBandEffect.update(elapsed, this.getGroundHeightAtWorld)
+    if (this.vergeBandDirty) {
+      this.vergeBandEffect.update(this.getGroundHeightAtWorld)
+      this.vergeBandDirty = false
+    }
+    if (this.leafPileDirty) {
+      this.leafPileEffect.update(elapsed, this.getGroundHeightAtWorld)
+      this.leafPileDirty = false
+    }
+    if (this.fungusBandDirty || this.fungusBandEffect.hasBurns()) {
+      this.fungusBandEffect.update(elapsed, this.getGroundHeightAtWorld)
+      this.fungusBandDirty = this.fungusBandEffect.hasBurns()
+    }
     const bandCpuMs = now() - tBand0
     const tRock0 = now()
-    this.rockFieldEffect.update(this.getGroundHeightAtWorld)
+    if (this.rockFieldDirty) {
+      this.rockFieldEffect.update(this.getGroundHeightAtWorld)
+      this.rockFieldDirty = false
+    }
     const rockCpuMs = now() - tRock0
     let neonCpuMs = 0
     if (this.shouldRunCadencedUpdate(this.cadenceFor('neon'), 0)) {

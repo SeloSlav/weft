@@ -246,6 +246,10 @@ export class FungusSeamEffect {
     this.burns.length = 0
   }
 
+  hasBurns(): boolean {
+    return this.burns.length > 0
+  }
+
   update(elapsedTime: number, getGroundHeight: (x: number, z: number) => number): void {
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
