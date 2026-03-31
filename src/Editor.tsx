@@ -30,6 +30,7 @@ import {
   formatPlaygroundPerfClipboardText,
   PERF_HUD_POLL_INTERVAL_MS,
 } from "./playground/playgroundPerfHud";
+import { type SkyMode } from "./playground/playgroundEnvironment";
 
 type ControlSectionProps = {
   title: string;
@@ -162,6 +163,7 @@ export function Editor() {
   const [starRecoveryRate, setStarRecoveryRate] = useState(
     DEFAULT_STAR_SKY_PARAMS.recoveryRate,
   );
+  const [skyMode, setSkyMode] = useState<SkyMode>("day");
   const [perfStats, setPerfStats] = useState<PlaygroundPerfStats | null>(null);
   const [perfHudMinimized, setPerfHudMinimized] = useState(true);
   const [showCollisionDebug, setShowCollisionDebug] = useState(false);
@@ -228,6 +230,7 @@ export function Editor() {
           layoutDensity: starLayoutDensity,
           recoveryRate: starRecoveryRate,
         });
+        runtime.setSkyMode(skyMode);
         runtime.setCollisionDebugVisible(showCollisionDebug);
         setRuntimeState("ready");
       })
@@ -359,6 +362,10 @@ export function Editor() {
   }, [starLayoutDensity, starRecoveryRate]);
 
   useEffect(() => {
+    runtimeRef.current?.setSkyMode(skyMode);
+  }, [skyMode]);
+
+  useEffect(() => {
     runtimeRef.current?.setCollisionDebugVisible(showCollisionDebug);
   }, [showCollisionDebug]);
 
@@ -403,10 +410,46 @@ export function Editor() {
             <section className="sample-detail">
               <div className="sample-controls">
                 <ControlSection
+                  title="World"
+                  summary="Time of day and seasonal dressing"
+                >
+                  <label className="control">
+                    <span>Time of day</span>
+                    <select
+                      value={skyMode}
+                      onChange={(e) =>
+                        setSkyMode(e.target.value as SkyMode)
+                      }
+                    >
+                      <option value="day">Day</option>
+                      <option value="night">Night</option>
+                    </select>
+                  </label>
+                  <label className="control">
+                    <span>
+                      Leaf season ({LEAF_PILE_SEASON_LABELS[leafPileSeason] ?? "Autumn"})
+                    </span>
+                    <select
+                      value={leafPileSeason}
+                      onChange={(e) =>
+                        setLeafPileSeason(
+                          e.target.value as (typeof LEAF_PILE_SEASONS)[number],
+                        )
+                      }
+                    >
+                      {LEAF_PILE_SEASONS.map((season) => (
+                        <option key={season} value={season}>
+                          {LEAF_PILE_SEASON_LABELS[season]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </ControlSection>
+                <ControlSection
                   title="Performance"
                   summary="DPR cap 1×; layout density scaled for smooth play"
                 >
-                  <label className="control">
+                  <label className="control control--toggle">
                     <span>Collision overlay</span>
                     <input
                       type="checkbox"
@@ -694,25 +737,6 @@ export function Editor() {
                       checked={showFungusBand}
                       onChange={(e) => setShowFungusBand(e.target.checked)}
                     />
-                  </label>
-                  <label className="control">
-                    <span>
-                      Leaf season ({LEAF_PILE_SEASON_LABELS[leafPileSeason] ?? "Autumn"})
-                    </span>
-                    <select
-                      value={leafPileSeason}
-                      onChange={(e) =>
-                        setLeafPileSeason(
-                          e.target.value as (typeof LEAF_PILE_SEASONS)[number],
-                        )
-                      }
-                    >
-                      {LEAF_PILE_SEASONS.map((season) => (
-                        <option key={season} value={season}>
-                          {LEAF_PILE_SEASON_LABELS[season]}
-                        </option>
-                      ))}
-                    </select>
                   </label>
                   <label className="control">
                     <span>

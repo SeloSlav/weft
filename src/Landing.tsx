@@ -3,6 +3,7 @@ import weftGuideUrl from '../weft.md?url'
 
 type LandingProps = {
   onEnterEditor: () => void
+  onEnterScenery: () => void
 }
 
 const SURFACE_STATES = [
@@ -36,7 +37,34 @@ const SURFACE_STATES = [
   },
 ] as const
 
-export function Landing({ onEnterEditor }: LandingProps) {
+const SURFACE_FAMILIES = [
+  {
+    title: 'Ground cover',
+    description: 'Grass thins, heals, and changes world state through the same layout-width contract.',
+  },
+  {
+    title: 'Facade wounds',
+    description: 'Shutter, ivy, and glass surfaces open up and recover without a second wall-damage runtime.',
+  },
+  {
+    title: 'Band surfaces',
+    description: 'Verges, leaf piles, and fungus seams reuse the same narrow-strip layout model.',
+  },
+  {
+    title: 'Grounded clutter',
+    description: 'Rocks, logs, sticks, and needles stay authored and deterministic instead of becoming loose scatter.',
+  },
+  {
+    title: 'Puncturable glow',
+    description: 'Fire and neon walls use the same surface logic for holes, retained width, and recovery.',
+  },
+  {
+    title: 'Reactive sky',
+    description: 'The sky preset keeps the same source -> layout -> effect pattern instead of a separate star system.',
+  },
+] as const
+
+export function Landing({ onEnterEditor, onEnterScenery }: LandingProps) {
   const [selectedStateId, setSelectedStateId] = useState<(typeof SURFACE_STATES)[number]['id']>('healthy')
   const selectedState =
     SURFACE_STATES.find((state) => state.id === selectedStateId) ?? SURFACE_STATES[0]
@@ -56,12 +84,18 @@ export function Landing({ onEnterEditor }: LandingProps) {
           the same layout problem, so a surface can thin out, open up, heal, or shift state without a
           second bespoke runtime.
         </p>
-        <p className="landing__lead">
-          Weft is for authored reactive surfaces: grass, facades, rubble bands, fire walls, wounds,
-          crops, shell-like coverings. Think in terms of <strong style={{ color: '#c8d6e8' }}>source -&gt; layout -&gt; effect</strong>.
-          The surface owns rows, sectors, and width; gameplay changes width or semantic state; the same
-          projection code keeps doing the work.
-        </p>
+
+        <div className="landing__actions">
+          <button type="button" className="btn btn--primary" onClick={onEnterEditor}>
+            Open third person demo
+          </button>
+          <button type="button" className="btn btn--accent" onClick={onEnterScenery}>
+            Open first person demo
+          </button>
+          <a className="btn btn--secondary" href={weftGuideUrl} target="_blank" rel="noreferrer">
+            Open `weft.md` guide
+          </a>
+        </div>
 
         <section className="landing__hero-media" aria-label="Hero gameplay demo">
           <div className="landing__hero-video-shell">
@@ -82,19 +116,28 @@ export function Landing({ onEnterEditor }: LandingProps) {
           </p>
         </section>
 
-        <div className="landing__actions">
-          <button type="button" className="btn btn--primary" onClick={onEnterEditor}>
-            Open third person demo
-          </button>
-          <a className="btn btn--secondary" href={weftGuideUrl} target="_blank" rel="noreferrer">
-            Open `weft.md` guide
-          </a>
-        </div>
-
         <p className="landing__lead">
-          Shipped presets already cover grass, wall surfaces, rock fields, fire walls, and sky surfaces
-          through the same <code className="landing__code-inline">src/weft/three</code> entrypoint.
+          Weft is for authored reactive surfaces: grass, facades, forest-floor clutter, rubble bands, fire walls, and sky surfaces. Think in terms of <strong style={{ color: '#c8d6e8' }}>source -&gt; layout -&gt; effect</strong>. The surface owns rows, sectors, and width; gameplay changes width or semantic state; the same projection code keeps doing the work. The demos already prove this across multiple families through the same{' '}
+          <code className="landing__code-inline">src/weft/three</code> entrypoint, not just one grass
+          sample with a few tweaks.
         </p>
+
+        <section className="landing__family-proof" aria-label="Surface families covered by the same model">
+          <h2 className="landing__section-title">One contract, multiple surface families</h2>
+          <p className="landing__lead">
+            The promise is not "a cool grass trick." The promise is that several surface problems that
+            usually splinter into separate placement, damage, and recovery systems can live under one
+            deterministic authoring pattern.
+          </p>
+          <div className="landing__family-grid">
+            {SURFACE_FAMILIES.map((family) => (
+              <article key={family.title} className="landing__family-card">
+                <strong className="landing__family-title">{family.title}</strong>
+                <p className="landing__family-description">{family.description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <div className="landing__compare">
           <div className="landing__compare-col">
@@ -115,7 +158,7 @@ export function Landing({ onEnterEditor }: LandingProps) {
               <li>Rows, sectors, and available width define what fits on a surface</li>
               <li>Gameplay narrows width and the same layout engine handles thinning or disappearance</li>
               <li>Semantic states can swap a field between healthy, dry, corrupted, and dead with the same projection code</li>
-              <li>Grass, facades, rubble, fire, and sky surfaces share one driver and API</li>
+              <li>Grass, facades, forest floor, grounded clutter, fire, and sky surfaces share one driver and API</li>
               <li>Traversal is deterministic per band, so the same world state produces the same result</li>
             </ul>
           </div>
@@ -181,9 +224,9 @@ scene.add(grass.group)`}</pre>
 
         <p className="landing__lead">
           Weft gives you an SDK path built around sources, behaviors, and presets instead of hand-wiring
-          every sample from scratch. The current repo already ships public preset factories for grass,
-          wall facades, rubble, neon, and sky while still exposing the layout core directly when you want
-          lower-level control.
+          every sample from scratch. The current repo already ships public preset factories for bands,
+          grass, rock fields, shrubs, trees, logs, sticks, shell facades, fire walls, sky, and book-page
+          layouts while still exposing the layout core directly when you want lower-level control.
         </p>
 
         <h2 className="landing__section-title">The payoff is one gameplay contract</h2>
@@ -263,7 +306,8 @@ scene.add(grass.group)`}</pre>
           <li>
             <strong>One driver, every surface type</strong>
             <span>
-              Grass, wall scales, rock fields, glow surfaces, sky, coral, ornament. All share{' '}
+              Grass, wall scales, rock fields, tree canopies, grounded clutter, glow surfaces, and sky all
+              share{' '}
               <code>SurfaceLayoutDriver</code> and <code>forEachLaidOutLine</code>. You author the source
               and the per-token placement, not a brand new mutation system for every effect.
             </span>

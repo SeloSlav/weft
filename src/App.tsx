@@ -56,14 +56,21 @@ export default function App() {
             className="btn btn--primary site-nav__cta"
             onClick={() => setPage('editor')}
           >
-            Enter third person demo
+            Third person demo
+          </button>
+          <button
+            type="button"
+            className="btn btn--accent site-nav__cta"
+            onClick={() => setPage('scenery')}
+          >
+            First person demo
           </button>
         </div>
       </header>
 
       <main className="site-main">
         {page === 'home' ? (
-          <Landing onEnterEditor={() => setPage('editor')} />
+          <Landing onEnterEditor={() => setPage('editor')} onEnterScenery={() => setPage('scenery')} />
         ) : page === 'docs' ? (
           <Docs onEnterEditor={() => setPage('editor')} />
         ) : page === 'demo' ? (

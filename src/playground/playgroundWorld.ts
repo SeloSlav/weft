@@ -208,6 +208,42 @@ export const PLAYGROUND_VERGE_BAND_WIDTH = 10.8
 export const PLAYGROUND_FUNGUS_SEAM_WIDTH = 3.85
 export const PLAYGROUND_BAND_EDGE_SOFTNESS = 1.05
 
+type PlaygroundPocket = {
+  x: number
+  z: number
+  radius: number
+}
+
+const PLAYGROUND_SHRUB_POCKETS: PlaygroundPocket[] = [
+  { x: 8.8, z: 9.4, radius: 2.15 },
+  { x: 12.7, z: 15.1, radius: 1.9 },
+  { x: 17.0, z: 8.8, radius: 2.05 },
+]
+
+const PLAYGROUND_TREE_POCKETS: PlaygroundPocket[] = [
+  { x: 8.9, z: 15.3, radius: 2.35 },
+  { x: 16.4, z: 15.0, radius: 2.2 },
+]
+
+const PLAYGROUND_LOG_POCKETS: PlaygroundPocket[] = [
+  { x: 10.7, z: 6.8, radius: 2.05 },
+  { x: 15.5, z: 11.7, radius: 2.1 },
+]
+
+const PLAYGROUND_STICK_POCKETS: PlaygroundPocket[] = [
+  { x: 8.4, z: 6.2, radius: 2.25 },
+  { x: 13.0, z: 10.7, radius: 3.2 },
+  { x: 17.1, z: 13.7, radius: 2.2 },
+]
+
+function isInsideAnyPlaygroundPocket(x: number, z: number, pockets: readonly PlaygroundPocket[]): boolean {
+  return pockets.some((pocket) => {
+    const dx = x - pocket.x
+    const dz = z - pocket.z
+    return dx * dx + dz * dz <= pocket.radius * pocket.radius
+  })
+}
+
 export function isInsideRubbleZone(x: number, z: number): boolean {
   return x >= RUBBLE_ZONE.minX && x <= RUBBLE_ZONE.maxX && z >= RUBBLE_ZONE.minZ && z <= RUBBLE_ZONE.maxZ
 }
@@ -230,6 +266,26 @@ export function distanceToFungusSeamAtXZ(x: number, z: number): number {
     Math.sin(localX * 0.72) * 0.95 +
     Math.cos(localX * 0.24) * 0.35
   return z - centerZ
+}
+
+/** Sparse third-person shrubs so the town scene proves more than grass + facades. */
+export function isInsidePlaygroundShrubZone(x: number, z: number): boolean {
+  return isInsideAnyPlaygroundPocket(x, z, PLAYGROUND_SHRUB_POCKETS)
+}
+
+/** Two small tree clusters in the rubble lot edge keep the street scene readable. */
+export function isInsidePlaygroundTreeZone(x: number, z: number): boolean {
+  return isInsideAnyPlaygroundPocket(x, z, PLAYGROUND_TREE_POCKETS)
+}
+
+/** Fallen logs sit in a couple of authored pockets instead of covering the whole lot. */
+export function isInsidePlaygroundLogZone(x: number, z: number): boolean {
+  return isInsideAnyPlaygroundPocket(x, z, PLAYGROUND_LOG_POCKETS)
+}
+
+/** Stick litter reads best as a few localized patches around the rubble lot. */
+export function isInsidePlaygroundStickZone(x: number, z: number): boolean {
+  return isInsideAnyPlaygroundPocket(x, z, PLAYGROUND_STICK_POCKETS)
 }
 
 /** Sum of wound strengths (each capped 1) before the lamp reads as fully broken; tuned to break early. */

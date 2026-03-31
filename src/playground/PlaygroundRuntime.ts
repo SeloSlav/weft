@@ -38,13 +38,10 @@ import {
   getPreparedGlassSurface,
   getPreparedShellSurface,
   getPreparedIvySurface,
-  getPreparedLogSurface,
   getPreparedNeedleLitterSurface,
   getPreparedRockSurface,
-  getPreparedShrubSurface,
   getPreparedStarSurface,
   getPreparedStickSurface,
-  getPreparedTreeSurface,
   type BandFieldParams,
   type FireWallEffect,
   type FireWallParams,
@@ -137,6 +134,10 @@ import {
   distanceToFungusSeamAtXZ,
   isInsideBuildingInterior,
   isInsideFungusSeamZone,
+  isInsidePlaygroundLogZone,
+  isInsidePlaygroundShrubZone,
+  isInsidePlaygroundStickZone,
+  isInsidePlaygroundTreeZone,
   isInsideRubbleZone,
 } from './playgroundWorld'
 import {
@@ -706,6 +707,22 @@ export class PlaygroundRuntime {
     this.treeFieldDirty = true
     this.logFieldDirty = true
   }
+
+  private syncPlaygroundFoliageSeason(season: LeafPileSeason): void {
+    if (this.sceneryMode) return
+    this.grassFieldParams.colorSeason = season
+    this.grassEffect.setParams({ colorSeason: season })
+    this.leafPileParams.season = season
+    this.leafPileEffect.setParams({ season })
+    this.leafPileEffect.setSurface(buildLeafPileSeasonSurface(season))
+    this.shrubFieldEffect.setSurface(buildShrubSeasonSurface(season), seedCursor)
+    this.treeFieldEffect.setSurface(buildTreeSeasonSurface(season), seedCursor)
+    this.logFieldEffect.setSurface(buildLogSeasonSurface(season), seedCursor)
+    this.leafPileDirty = true
+    this.shrubFieldDirty = true
+    this.treeFieldDirty = true
+    this.logFieldDirty = true
+  }
   private static readonly PERF_WINDOW_FRAMES = 45
   private static readonly PERF_LONG_WINDOW_MS = 30_000
   /** Grass uses a tighter disc than sparse props because it also gets a frustum pass. */
@@ -844,8 +861,41 @@ export class PlaygroundRuntime {
         sizeScale: 1.3,
       }
     } else {
-      this.grassFieldParams = { ...this.grassFieldParams, burnRecoveryRate: 0.00015 }
+      this.grassFieldParams = {
+        ...this.grassFieldParams,
+        burnRecoveryRate: 0.00015,
+        colorSeason: this.leafPileParams.season,
+      }
       this.grassEffect.setParams(this.grassFieldParams)
+      this.userShrubLayoutDensity = 0.44
+      this.shrubFieldParams = {
+        ...DEFAULT_SHRUB_FIELD_PARAMS,
+        layoutDensity: this.userShrubLayoutDensity,
+        sizeScale: 1.95,
+        heightScale: 2.45,
+      }
+      this.userTreeLayoutDensity = 0.24
+      this.treeFieldParams = {
+        ...DEFAULT_TREE_FIELD_PARAMS,
+        layoutDensity: this.userTreeLayoutDensity,
+        sizeScale: 1.18,
+        heightScale: 1.22,
+        crownScale: 1.02,
+      }
+      this.userLogLayoutDensity = 0.16
+      this.logFieldParams = {
+        ...DEFAULT_LOG_FIELD_PARAMS,
+        layoutDensity: this.userLogLayoutDensity,
+        sizeScale: 0.94,
+        lengthScale: 1.08,
+      }
+      this.userStickLayoutDensity = 0.22
+      this.stickFieldParams = {
+        ...DEFAULT_STICK_FIELD_PARAMS,
+        layoutDensity: this.userStickLayoutDensity,
+        sizeScale: 1.6,
+        lengthScale: 1.8,
+      }
     }
     this.vergeBandEffect = createBandFieldEffect({
       surface: getPreparedBandSurface(),
@@ -866,7 +916,9 @@ export class PlaygroundRuntime {
     })
     this.leafPileEffect = createLeafPileBandEffect({
       seedCursor,
-      surface: this.sceneryMode ? buildLeafPileSeasonSurface(this.resolvedSceneryFoliageSeason()) : undefined,
+      surface: this.sceneryMode
+        ? buildLeafPileSeasonSurface(this.resolvedSceneryFoliageSeason())
+        : buildLeafPileSeasonSurface(this.leafPileParams.season),
       initialParams: this.leafPileParams,
       placementMask: this.sceneryMode
         ? {
@@ -915,7 +967,7 @@ export class PlaygroundRuntime {
     this.shrubFieldEffect = createShrubFieldEffect({
       surface: this.sceneryMode
         ? buildShrubSeasonSurface(this.resolvedSceneryFoliageSeason())
-        : getPreparedShrubSurface(),
+        : buildShrubSeasonSurface(this.leafPileParams.season),
       seedCursor,
       initialParams: this.shrubFieldParams,
       placementMask: this.sceneryMode
@@ -925,13 +977,13 @@ export class PlaygroundRuntime {
           }
         : {
             bounds: PLAYGROUND_BOUNDS,
-            includeAtXZ: () => false,
+            includeAtXZ: isInsidePlaygroundShrubZone,
           },
     })
     this.treeFieldEffect = createTreeFieldEffect({
       surface: this.sceneryMode
         ? buildTreeSeasonSurface(this.resolvedSceneryFoliageSeason())
-        : getPreparedTreeSurface(),
+        : buildTreeSeasonSurface(this.leafPileParams.season),
       seedCursor,
       initialParams: this.treeFieldParams,
       placementMask: this.sceneryMode
@@ -941,13 +993,13 @@ export class PlaygroundRuntime {
           }
         : {
             bounds: PLAYGROUND_BOUNDS,
-            includeAtXZ: () => false,
+            includeAtXZ: isInsidePlaygroundTreeZone,
           },
     })
     this.logFieldEffect = createLogFieldEffect({
       surface: this.sceneryMode
         ? buildLogSeasonSurface(this.resolvedSceneryFoliageSeason())
-        : getPreparedLogSurface(),
+        : buildLogSeasonSurface(this.leafPileParams.season),
       seedCursor,
       initialParams: this.logFieldParams,
       placementMask: this.sceneryMode
@@ -957,7 +1009,7 @@ export class PlaygroundRuntime {
           }
         : {
             bounds: PLAYGROUND_BOUNDS,
-            includeAtXZ: () => false,
+            includeAtXZ: isInsidePlaygroundLogZone,
           },
     })
     this.stickFieldEffect = createStickFieldEffect({
@@ -971,7 +1023,7 @@ export class PlaygroundRuntime {
           }
         : {
             bounds: PLAYGROUND_BOUNDS,
-            includeAtXZ: () => false,
+            includeAtXZ: isInsidePlaygroundStickZone,
           },
     })
     this.needleLitterEffect = createNeedleLitterFieldEffect({
@@ -1306,7 +1358,7 @@ export class PlaygroundRuntime {
       this.leafPileParams.bandWidth = params.leafPileBandWidth
     }
     if (params.leafPileSeason !== undefined && !this.sceneryMode) {
-      this.leafPileParams.season = params.leafPileSeason
+      this.syncPlaygroundFoliageSeason(params.leafPileSeason)
     }
     if (params.fungusBandWidth !== undefined) {
       this.fungusBandParams.bandWidth = params.fungusBandWidth
@@ -2765,24 +2817,29 @@ export class PlaygroundRuntime {
     this.needleLitterDirty = true
   }
 
+  private resolveReticleTargetKind(hit: THREE.Intersection): ReticleHit['targetKind'] {
+    if (hit.object === this.shutterEffect.interactionMesh) return 'shutter'
+    if (hit.object === this.ivyEffect.interactionMesh) return 'ivy'
+    if (this.neonSignEffects.some((e) => e.interactionMesh === hit.object)) return 'neon'
+    if (this.lampEffects.some((e) => e.interactionMesh === hit.object)) return 'lamp'
+    if (this.windowGlassEffects.some((e) => e.interactionMesh === hit.object)) return 'glass'
+    if (hit.object === this.rockFieldEffect.interactionMesh) return 'rock'
+    if (hit.object === this.shrubFieldEffect.foliageInteractionMesh) return 'shrub'
+    if (hit.object === this.treeFieldEffect.crownInteractionMesh) return 'tree-crown'
+    return 'grass'
+  }
+
   private getCenterRayHit(): ReticleHit | null {
     this.raycaster.setFromCamera(this.ndcCenter, this.camera)
     this.raycaster.far = 140
 
     const hits = this.raycaster.intersectObjects(this.raycastTargets, false)
-    const hit = hits[0]
+    const hit =
+      hits.find((candidate) => this.resolveReticleTargetKind(candidate) !== 'grass') ??
+      hits[0]
     if (!hit?.point) return null
 
-    let targetKind: ReticleHit['targetKind']
-    if (hit.object === this.shutterEffect.interactionMesh) targetKind = 'shutter'
-    else if (hit.object === this.ivyEffect.interactionMesh) targetKind = 'ivy'
-    else if (this.neonSignEffects.some((e) => e.interactionMesh === hit.object)) targetKind = 'neon'
-    else if (this.lampEffects.some((e) => e.interactionMesh === hit.object)) targetKind = 'lamp'
-    else if (this.windowGlassEffects.some((e) => e.interactionMesh === hit.object)) targetKind = 'glass'
-    else if (hit.object === this.rockFieldEffect.interactionMesh) targetKind = 'rock'
-    else if (hit.object === this.shrubFieldEffect.foliageInteractionMesh) targetKind = 'shrub'
-    else if (hit.object === this.treeFieldEffect.crownInteractionMesh) targetKind = 'tree-crown'
-    else targetKind = 'grass'
+    const targetKind = this.resolveReticleTargetKind(hit)
 
     return { ...hit, targetKind }
   }

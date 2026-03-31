@@ -456,9 +456,9 @@ export class ShellSurfaceEffect {
       this.patchMaterial.depthWrite = false
       this.patchMaterial.colorWrite = false
       this.scaleMaterial.side = THREE.DoubleSide
-      this.scaleMaterial.color.set('#9aa8b8')
-      this.scaleMaterial.emissive.set('#223040')
-      this.scaleMaterial.emissiveIntensity = 0.35
+      this.scaleMaterial.color.set('#c9d7e6')
+      this.scaleMaterial.emissive.set('#425e78')
+      this.scaleMaterial.emissiveIntensity = 0.58
       this.scaleMaterial.metalness = 0.62
       this.scaleMaterial.roughness = 0.38
       this.patchMaterial.color.set('#3d4a5c')
@@ -470,9 +470,9 @@ export class ShellSurfaceEffect {
       this.patchMaterial.depthWrite = false
       this.patchMaterial.colorWrite = false
       this.scaleMaterial.side = THREE.DoubleSide
-      this.scaleMaterial.color.set('#4a8f52')
-      this.scaleMaterial.emissive.set('#1a3020')
-      this.scaleMaterial.emissiveIntensity = 0.18
+      this.scaleMaterial.color.set('#72c97c')
+      this.scaleMaterial.emissive.set('#2e5a34')
+      this.scaleMaterial.emissiveIntensity = 0.34
       this.scaleMaterial.metalness = 0.12
       this.scaleMaterial.roughness = 0.62
       this.patchMaterial.color.set('#2d4a32')
