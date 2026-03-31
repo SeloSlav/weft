@@ -8,6 +8,7 @@ import type {
 import { createWorldField, SurfaceLayoutDriver } from '../../core'
 import { createSurfaceEffect, fieldLayout } from '../api'
 import { createBarkGrainTexture, warmBarkColor } from './barkShared'
+import { makeTreeCrownBranchedGeometries, TREE_CROWN_LOCAL_EXTENT_Y } from './branchedFoliageGeometry'
 import {
   createTreeBarkSurfaceEffect,
   DEFAULT_TREE_BARK_SURFACE_PARAMS,
@@ -120,10 +121,6 @@ const treeOrganicWorldField = createWorldField(1427, {
   contrast: 1.08,
 })
 
-function makeCrownGeometry(): THREE.BufferGeometry {
-  return new THREE.SphereGeometry(0.5, 7, 5)
-}
-
 function makeTrunkGeometry(): THREE.BufferGeometry {
   return new THREE.CylinderGeometry(0.5, 0.5, 1, 14, 1, false)
 }
@@ -138,6 +135,8 @@ function treeCrownColor(identity: number, noise: number, meta: TreeTokenMeta): T
   return tmpColor.setHSL(hue, sat, light)
 }
 
+const TREE_CROWN_GEOMS = makeTreeCrownBranchedGeometries()
+
 export class TreeFieldEffect {
   readonly group = new THREE.Group()
   readonly trunkInteractionMesh: THREE.InstancedMesh
@@ -151,9 +150,22 @@ export class TreeFieldEffect {
     emissiveIntensity: 0.28,
   })
   private readonly trunkMesh: THREE.InstancedMesh
-  private readonly crownGeometry = makeCrownGeometry()
-  private readonly crownMaterial = new THREE.MeshLambertMaterial({ emissive: '#2a5a10', emissiveIntensity: 0.38 })
-  private readonly crownMesh: THREE.InstancedMesh
+  private readonly crownWoodGeometry = TREE_CROWN_GEOMS.wood
+  private readonly crownLeafGeometry = TREE_CROWN_GEOMS.leaves
+  /** Same bark tile as trunk; small branch cylinders in the crown read as continuous wood. */
+  private readonly crownWoodMaterial = new THREE.MeshLambertMaterial({
+    map: this.trunkBarkTexture,
+    emissive: '#5c3a18',
+    emissiveIntensity: 0.28,
+  })
+  /** Same leaf silhouette + shading model as `shrubField` / `leafPileBand`. */
+  private readonly crownLeafMaterial = new THREE.MeshStandardMaterial({
+    roughness: 0.96,
+    metalness: 0.02,
+    side: THREE.DoubleSide,
+  })
+  private readonly crownWoodMesh: THREE.InstancedMesh
+  private readonly crownLeafMesh: THREE.InstancedMesh
   private readonly placementMask: Required<TreeFieldPlacementMask>
   private readonly fieldWidth: number
   private readonly fieldDepth: number
@@ -191,12 +203,16 @@ export class TreeFieldEffect {
     this.trunkMesh.frustumCulled = false
     this.trunkMesh.instanceMatrix.setUsage(THREE.StaticDrawUsage)
     this.trunkInteractionMesh = this.trunkMesh
-    this.crownMesh = new THREE.InstancedMesh(this.crownGeometry, this.crownMaterial, MAX_INSTANCES)
-    this.crownMesh.frustumCulled = false
-    this.crownMesh.instanceMatrix.setUsage(THREE.StaticDrawUsage)
+    this.crownWoodMesh = new THREE.InstancedMesh(this.crownWoodGeometry, this.crownWoodMaterial, MAX_INSTANCES)
+    this.crownWoodMesh.frustumCulled = false
+    this.crownWoodMesh.instanceMatrix.setUsage(THREE.StaticDrawUsage)
+    this.crownLeafMesh = new THREE.InstancedMesh(this.crownLeafGeometry, this.crownLeafMaterial, MAX_INSTANCES)
+    this.crownLeafMesh.frustumCulled = false
+    this.crownLeafMesh.instanceMatrix.setUsage(THREE.StaticDrawUsage)
     this.group.add(this.trunkMesh)
     this.group.add(this.barkSurfaceEffect.group)
-    this.group.add(this.crownMesh)
+    this.group.add(this.crownWoodMesh)
+    this.group.add(this.crownLeafMesh)
   }
 
   setParams(params: Partial<TreeFieldParams>): void {
@@ -264,8 +280,10 @@ export class TreeFieldEffect {
     this.trunkBarkTexture.dispose()
     this.trunkGeometry.dispose()
     this.trunkMaterial.dispose()
-    this.crownGeometry.dispose()
-    this.crownMaterial.dispose()
+    this.crownWoodGeometry.dispose()
+    this.crownLeafGeometry.dispose()
+    this.crownWoodMaterial.dispose()
+    this.crownLeafMaterial.dispose()
   }
 
   private getSlotMaxWidth(slot: SurfaceLayoutSlot): number {
@@ -306,8 +324,10 @@ export class TreeFieldEffect {
     ) {
       this.trunkMesh.count = 0
       this.trunkMesh.instanceMatrix.needsUpdate = true
-      this.crownMesh.count = 0
-      this.crownMesh.instanceMatrix.needsUpdate = true
+      this.crownWoodMesh.count = 0
+      this.crownLeafMesh.count = 0
+      this.crownWoodMesh.instanceMatrix.needsUpdate = true
+      this.crownLeafMesh.instanceMatrix.needsUpdate = true
       this.treePlacements.length = 0
       return
     }
@@ -339,10 +359,15 @@ export class TreeFieldEffect {
     if (this.trunkMesh.instanceColor) {
       this.trunkMesh.instanceColor.needsUpdate = true
     }
-    this.crownMesh.count = instanceIndex
-    this.crownMesh.instanceMatrix.needsUpdate = true
-    if (this.crownMesh.instanceColor) {
-      this.crownMesh.instanceColor.needsUpdate = true
+    this.crownWoodMesh.count = instanceIndex
+    this.crownLeafMesh.count = instanceIndex
+    this.crownWoodMesh.instanceMatrix.needsUpdate = true
+    this.crownLeafMesh.instanceMatrix.needsUpdate = true
+    if (this.crownWoodMesh.instanceColor) {
+      this.crownWoodMesh.instanceColor.needsUpdate = true
+    }
+    if (this.crownLeafMesh.instanceColor) {
+      this.crownLeafMesh.instanceColor.needsUpdate = true
     }
   }
 
@@ -453,12 +478,16 @@ export class TreeFieldEffect {
       warmBarkColor(identity, noise, meta.warmth, tmpColor)
       this.trunkMesh.setColorAt(instanceIndex, tmpColor)
 
-      dummy.position.set(x, groundY + trunkHeight * 0.78 + crownHeight * 0.24, z)
+      const ex = TREE_CROWN_LOCAL_EXTENT_Y
+      const crownZ = crownWidth * (0.94 + noise * 0.14 + hashForm * 0.08)
+      dummy.position.set(x, groundY + trunkHeight, z)
       dummy.rotation.set(leanX * 0.45, crownYaw, leanZ * 0.4)
-      dummy.scale.set(crownWidth, crownHeight, crownWidth * (0.94 + noise * 0.14 + hashForm * 0.08))
+      dummy.scale.set(crownWidth / ex, crownHeight / ex, crownZ / ex)
       dummy.updateMatrix()
-      this.crownMesh.setMatrixAt(instanceIndex, dummy.matrix)
-      this.crownMesh.setColorAt(instanceIndex, treeCrownColor(identity, noise, meta))
+      this.crownWoodMesh.setMatrixAt(instanceIndex, dummy.matrix)
+      this.crownWoodMesh.setColorAt(instanceIndex, warmBarkColor(identity, noise + 0.05, meta.warmth, tmpColor))
+      this.crownLeafMesh.setMatrixAt(instanceIndex, dummy.matrix)
+      this.crownLeafMesh.setColorAt(instanceIndex, treeCrownColor(identity, noise, meta))
 
       instanceIndex++
     }

@@ -368,25 +368,28 @@ export class LogFieldEffect {
     baseZ: number,
     delta: number,
     getGroundHeight: (x: number, z: number) => number,
+    applyImpulses = true,
   ): void {
     const currentX = baseX + state.offsetX
     const currentZ = baseZ + state.offsetZ
     let receivedImpulse = false
-    for (const impulse of this.pendingImpulses) {
-      const dx = currentX - impulse.x
-      const dz = currentZ - impulse.z
-      const distance = Math.hypot(dx, dz)
-      if (distance > impulse.radius) continue
-      receivedImpulse = true
-      const falloff = 1 - THREE.MathUtils.smoothstep(distance, 0, impulse.radius)
-      const push = impulse.strength * falloff * falloff
-      const tangentX = -impulse.directionZ
-      const tangentZ = impulse.directionX
-      const side = impulse.directionX * dz - impulse.directionZ * dx >= 0 ? 1 : -1
-      state.velocityX += impulse.directionX * push * 0.95 + tangentX * push * impulse.tangentialStrength * 0.35
-      state.velocityZ += impulse.directionZ * push * 0.95 + tangentZ * push * impulse.tangentialStrength * 0.35
-      state.rollVelocity += side * push * (impulse.spin * 0.28 + impulse.tangentialStrength * 0.08)
-      state.yawVelocity += (impulse.directionX * dz - impulse.directionZ * dx) * push * 0.028
+    if (applyImpulses) {
+      for (const impulse of this.pendingImpulses) {
+        const dx = currentX - impulse.x
+        const dz = currentZ - impulse.z
+        const distance = Math.hypot(dx, dz)
+        if (distance > impulse.radius) continue
+        receivedImpulse = true
+        const falloff = 1 - THREE.MathUtils.smoothstep(distance, 0, impulse.radius)
+        const push = impulse.strength * falloff * falloff
+        const tangentX = -impulse.directionZ
+        const tangentZ = impulse.directionX
+        const side = impulse.directionX * dz - impulse.directionZ * dx >= 0 ? 1 : -1
+        state.velocityX += impulse.directionX * push * 0.95 + tangentX * push * impulse.tangentialStrength * 0.35
+        state.velocityZ += impulse.directionZ * push * 0.95 + tangentZ * push * impulse.tangentialStrength * 0.35
+        state.rollVelocity += side * push * (impulse.spin * 0.28 + impulse.tangentialStrength * 0.08)
+        state.yawVelocity += (impulse.directionX * dz - impulse.directionZ * dx) * push * 0.028
+      }
     }
 
     if (delta <= 0) return
@@ -592,7 +595,12 @@ export class LogFieldEffect {
       const state = this.motionStates.get(motionKey)
       if (state || this.shouldActivateMotionAt(x, z)) {
         const ensuredState = state ?? this.getMotionState(motionKey)
-        this.applyMotionState(ensuredState, x, z, delta, getGroundHeight)
+        const dt = delta
+        const nStep = dt > 0.001 ? Math.max(1, Math.min(5, Math.ceil(dt / 0.013))) : 1
+        const h = dt / nStep
+        for (let si = 0; si < nStep; si++) {
+          this.applyMotionState(ensuredState, x, z, h, getGroundHeight, si === 0)
+        }
         if (this.motionInactive(ensuredState)) {
           this.motionStates.delete(motionKey)
         } else {

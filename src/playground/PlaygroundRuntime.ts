@@ -260,10 +260,10 @@ type PerfWindowSample = {
 }
 
 const INTERSECTION_LEAF_PILES = [
-  { x: -2.15, z: -1.55, radius: 0.34 },
-  { x: 2.05, z: -1.35, radius: 0.32 },
-  { x: -1.55, z: 2.05, radius: 0.33 },
-  { x: 1.8, z: 1.75, radius: 0.28 },
+  { x: -2.42, z: -1.72, radius: 0.38 },
+  { x: 2.32, z: -1.52, radius: 0.36 },
+  { x: -1.78, z: 2.28, radius: 0.37 },
+  { x: 2.05, z: 2.02, radius: 0.32 },
 ] as const
 
 function isInsideIntersectionLeafPile(x: number, z: number): boolean {
@@ -406,6 +406,7 @@ export class PlaygroundRuntime {
     moveLeft: false,
     moveRight: false,
     sprint: false,
+    crouch: false,
     lookActive: false,
     lookDeltaX: 0,
     lookDeltaY: 0,
@@ -461,7 +462,7 @@ export class PlaygroundRuntime {
   }
   private leafPileParams: LeafPileBandParams = {
     ...DEFAULT_LEAF_PILE_BAND_PARAMS,
-    layoutDensity: PLAYGROUND_BAND_LAYOUT_DENSITY * 1.3,
+    layoutDensity: PLAYGROUND_BAND_LAYOUT_DENSITY * 1.02,
     sizeScale: PLAYGROUND_BAND_SIZE_SCALE * 1.72,
     bandWidth: 1.85,
     edgeSoftness: PLAYGROUND_BAND_EDGE_SOFTNESS * 0.9,
@@ -483,7 +484,7 @@ export class PlaygroundRuntime {
   private starSkyParams: StarSkyParams = { ...DEFAULT_STAR_SKY_PARAMS }
   private sceneryMotionResponse: SceneryMotionResponseParams = {
     logPushScale: 1.55,
-    stickPushScale: 1,
+    stickPushScale: 2.6,
   }
   private sceneryFoliageSeasonOverride: LeafPileSeason | null = null
   private zoomDistance = PLAYGROUND_ZOOM.current
@@ -503,6 +504,7 @@ export class PlaygroundRuntime {
     moveRight: false,
     sprint: false,
     jump: false,
+    crouch: false,
     lookActive: false,
     lookDeltaX: 0,
     lookDeltaY: 0,
@@ -766,7 +768,7 @@ export class PlaygroundRuntime {
       this.leafPileParams = {
         ...DEFAULT_LEAF_PILE_BAND_PARAMS,
         ...SCENERY_LEAF_PILE_BURN_PARAMS,
-        layoutDensity: this.userBandLayoutDensity * 0.92,
+        layoutDensity: this.userBandLayoutDensity * 0.78,
         sizeScale: 1.38,
         bandWidth: 2.45,
         edgeSoftness: 1.8,
@@ -778,12 +780,12 @@ export class PlaygroundRuntime {
         layoutDensity: this.userRockLayoutDensity,
         sizeScale: 1.28,
       }
-      this.userShrubLayoutDensity = 1.12
+      this.userShrubLayoutDensity = 1
       this.shrubFieldParams = {
         ...DEFAULT_SHRUB_FIELD_PARAMS,
         layoutDensity: this.userShrubLayoutDensity,
-        sizeScale: 1.55,
-        heightScale: 1.35,
+        sizeScale: 2.25,
+        heightScale: 3,
       }
       this.userTreeLayoutDensity = 0.56
       this.treeFieldParams = {
@@ -806,8 +808,8 @@ export class PlaygroundRuntime {
       this.stickFieldParams = {
         ...DEFAULT_STICK_FIELD_PARAMS,
         layoutDensity: this.userStickLayoutDensity,
-        sizeScale: 1.45,
-        lengthScale: 1.55,
+        sizeScale: 2,
+        lengthScale: 2.2,
       }
       this.userNeedleLayoutDensity = 0.5
       this.needleLitterParams = {
@@ -1267,7 +1269,7 @@ export class PlaygroundRuntime {
     }
     const scaledDensity = this.userBandLayoutDensity * PLAYGROUND_GRASS_LAYOUT_SCALE
     this.vergeBandParams.layoutDensity = scaledDensity
-    this.leafPileParams.layoutDensity = scaledDensity * 0.92
+    this.leafPileParams.layoutDensity = scaledDensity * 0.78
     this.fungusBandParams.layoutDensity = scaledDensity * (this.sceneryMode ? 1.05 : 1)
     this.vergeBandEffect.setParams(this.vergeBandParams)
     this.leafPileEffect.setParams(this.leafPileParams)
@@ -1468,6 +1470,7 @@ export class PlaygroundRuntime {
   }
 
   clearGrassBurns(): void {
+    this.grassEffect.clearDisturbances()
     this.grassEffect.clearBurns()
   }
 
@@ -1687,6 +1690,7 @@ export class PlaygroundRuntime {
     this.frameInput.lookDeltaX = this.inputState.lookDeltaX
     this.frameInput.lookDeltaY = this.inputState.lookDeltaY
     this.frameInput.jump = this.pendingJump
+    this.frameInput.crouch = this.inputState.crouch
     return this.frameInput
   }
 
@@ -2426,6 +2430,9 @@ export class PlaygroundRuntime {
     if (event.code === 'KeyA') this.inputState.moveLeft = true
     if (event.code === 'KeyD') this.inputState.moveRight = true
     if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') this.inputState.sprint = true
+    if (event.code === 'KeyC' && !event.repeat) {
+      this.inputState.crouch = !this.inputState.crouch
+    }
     if (event.code === 'Space' && !event.repeat) {
       event.preventDefault()
       this.pendingJump = true
@@ -2449,6 +2456,7 @@ export class PlaygroundRuntime {
     this.inputState.moveLeft = false
     this.inputState.moveRight = false
     this.inputState.sprint = false
+    this.inputState.crouch = false
     this.inputState.lookActive = false
     this.inputState.lookDeltaX = 0
     this.inputState.lookDeltaY = 0
@@ -2605,21 +2613,20 @@ export class PlaygroundRuntime {
     if (isInsideBuildingInterior(point.x, point.z)) return
     const opts = this.sceneryMode
       ? {
-          radiusScale: 0.78,
-          maxRadiusScale: 0.95,
-          strength: 0.72,
+          radiusScale: 0.34,
+          strength: 1.12,
           mergeRadius: 0.58,
-          /** Lower = slower regrow (`decayRecoveringStrength`); keep well below `burnRecoveryRate` fallback. */
           recoveryRate: 0.0001,
+          deformGround: false,
         }
       : {
-          radiusScale: 1.02,
-          maxRadiusScale: 1.18,
-          strength: 0.92,
+          radiusScale: 0.4,
+          strength: 1.2,
           mergeRadius: 0.62,
           recoveryRate: 0.00013,
+          deformGround: false,
         }
-    this.grassEffect.addBurnFromWorldPoint(point, opts)
+    this.grassEffect.addDisturbanceFromWorldPoint(point, opts)
   }
 
   private stampStickFieldDisturbance(
@@ -3120,8 +3127,13 @@ export class PlaygroundRuntime {
     }
     const leafHasDisturbances = this.leafPileEffect.hasDisturbances()
     const leafHasBurns = this.leafPileEffect.hasBurns()
-    // Burns-only uses idle cadence; disturbances use the faster active cadence.
-    const leafCadence = leafHasDisturbances ? this.cadenceFor('leaf') : this.idleCadenceFor('leaf')
+    // Interactive leaf motion must run every frame; burns-only can stay on the lighter cadence.
+    const leafCadence =
+      leafHasDisturbances || this.leafPileDirty
+        ? 1
+        : leafHasBurns
+          ? this.cadenceFor('leaf')
+          : this.idleCadenceFor('leaf')
     if ((leafHasBurns || leafHasDisturbances || this.leafPileDirty) && this.shouldRunCadencedUpdate(leafCadence, 0)) {
       const tLeaf0 = now()
       this.leafPileEffect.update(elapsed, this.getGroundHeightAtWorld)
@@ -3166,7 +3178,8 @@ export class PlaygroundRuntime {
     }
     const tLog0 = now()
     const logHasMotion = this.logFieldEffect.hasMotion()
-    if ((logHasMotion || this.logFieldDirty) && this.shouldRunCadencedUpdate(this.cadenceFor('log'), 3)) {
+    const logCadence = logHasMotion || this.logFieldDirty ? 1 : this.cadenceFor('log')
+    if ((logHasMotion || this.logFieldDirty) && this.shouldRunCadencedUpdate(logCadence, 3)) {
       this.logFieldEffect.update(elapsed, this.getGroundHeightAtWorld)
       this.logFieldDirty = this.logFieldEffect.hasMotion()
       ranLog = true
@@ -3174,7 +3187,8 @@ export class PlaygroundRuntime {
     logCpuMs = now() - tLog0
     const tStick0 = now()
     const stickHasMotion = this.stickFieldEffect.hasMotion()
-    if ((stickHasMotion || this.stickFieldDirty) && this.shouldRunCadencedUpdate(this.cadenceFor('stick'), 1)) {
+    const stickCadence = stickHasMotion || this.stickFieldDirty ? 1 : this.cadenceFor('stick')
+    if ((stickHasMotion || this.stickFieldDirty) && this.shouldRunCadencedUpdate(stickCadence, 1)) {
       this.stickFieldEffect.update(elapsed, this.getGroundHeightAtWorld)
       this.stickFieldDirty = this.stickFieldEffect.hasMotion()
       ranStick = true

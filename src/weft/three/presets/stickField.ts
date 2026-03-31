@@ -29,9 +29,9 @@ export type StickFieldParams = {
 }
 
 export const DEFAULT_STICK_FIELD_PARAMS: StickFieldParams = {
-  layoutDensity: 0.8,
-  sizeScale: 1,
-  lengthScale: 1,
+  layoutDensity: 0.5,
+  sizeScale: 2,
+  lengthScale: 2.2,
   disturbanceRadius: 1.15,
   disturbanceStrength: 1.2,
   displacementDistance: 0.62,
@@ -370,26 +370,29 @@ export class StickFieldEffect {
     delta: number,
     pieceBias: number,
     getGroundHeight: (x: number, z: number) => number,
+    applyImpulses = true,
   ): void {
     const currentX = baseX + state.offsetX
     const currentZ = baseZ + state.offsetZ
     const pieceSign = pieceBias >= 0 ? 1 : -1
     let receivedImpulse = false
-    for (const impulse of this.pendingImpulses) {
-      const dx = currentX - impulse.x
-      const dz = currentZ - impulse.z
-      const distance = Math.hypot(dx, dz)
-      if (distance > impulse.radius) continue
-      receivedImpulse = true
-      const falloff = 1 - THREE.MathUtils.smoothstep(distance, 0, impulse.radius)
-      const push = impulse.strength * falloff * falloff
-      const tangentX = -impulse.directionZ
-      const tangentZ = impulse.directionX
-      const forwardScale = 0.72 + Math.abs(pieceBias) * 0.38
-      const tangentScale = impulse.tangentialStrength * (0.24 + Math.abs(pieceBias) * 0.72) * pieceSign
-      state.velocityX += impulse.directionX * push * forwardScale + tangentX * push * tangentScale
-      state.velocityZ += impulse.directionZ * push * forwardScale + tangentZ * push * tangentScale
-      state.twistVelocity += push * pieceSign * (impulse.spin * 0.24 + impulse.tangentialStrength * 0.18)
+    if (applyImpulses) {
+      for (const impulse of this.pendingImpulses) {
+        const dx = currentX - impulse.x
+        const dz = currentZ - impulse.z
+        const distance = Math.hypot(dx, dz)
+        if (distance > impulse.radius) continue
+        receivedImpulse = true
+        const falloff = 1 - THREE.MathUtils.smoothstep(distance, 0, impulse.radius)
+        const push = impulse.strength * falloff * falloff
+        const tangentX = -impulse.directionZ
+        const tangentZ = impulse.directionX
+        const forwardScale = 0.72 + Math.abs(pieceBias) * 0.38
+        const tangentScale = impulse.tangentialStrength * (0.24 + Math.abs(pieceBias) * 0.72) * pieceSign
+        state.velocityX += impulse.directionX * push * forwardScale + tangentX * push * tangentScale
+        state.velocityZ += impulse.directionZ * push * forwardScale + tangentZ * push * tangentScale
+        state.twistVelocity += push * pieceSign * (impulse.spin * 0.24 + impulse.tangentialStrength * 0.18)
+      }
     }
 
     if (delta <= 0) return
@@ -605,7 +608,12 @@ export class StickFieldEffect {
         const state = this.twigStates.get(twigKey)
         if (state || this.shouldActivateMotionAt(basePieceX, basePieceZ)) {
           const ensuredState = state ?? this.getTwigState(twigKey)
-          this.applyTwigState(ensuredState, basePieceX, basePieceZ, delta, pieceHash - 0.5, getGroundHeight)
+          const dt = delta
+          const nStep = dt > 0.001 ? Math.max(1, Math.min(5, Math.ceil(dt / 0.013))) : 1
+          const h = dt / nStep
+          for (let si = 0; si < nStep; si++) {
+            this.applyTwigState(ensuredState, basePieceX, basePieceZ, h, pieceHash - 0.5, getGroundHeight, si === 0)
+          }
           if (this.twigInactive(ensuredState)) {
             this.twigStates.delete(twigKey)
           } else {

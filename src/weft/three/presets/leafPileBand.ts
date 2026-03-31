@@ -14,6 +14,7 @@ import {
   type LeafPileTokenId,
   type LeafPileTokenMeta,
 } from './leafPileBandSource'
+import { makeLeafPileLeafGeometry } from './leafPileLeafGeometry'
 import {
   shouldVisitSlotForViewCull,
   type PresetLayoutViewCull,
@@ -116,8 +117,8 @@ const SEASON_STYLE: Record<
     widthScale: 1,
     lengthScale: 1,
     lift: 1,
-    leavesPerClump: 9,
-    spread: 1,
+    leavesPerClump: 12,
+    spread: 1.12,
   },
   summer: {
     baseHue: 0.23,
@@ -128,8 +129,8 @@ const SEASON_STYLE: Record<
     widthScale: 1,
     lengthScale: 1,
     lift: 1,
-    leavesPerClump: 9,
-    spread: 1,
+    leavesPerClump: 12,
+    spread: 1.12,
   },
   autumn: {
     baseHue: 0.09,
@@ -140,8 +141,8 @@ const SEASON_STYLE: Record<
     widthScale: 1,
     lengthScale: 1,
     lift: 1,
-    leavesPerClump: 9,
-    spread: 1,
+    leavesPerClump: 13,
+    spread: 1.16,
   },
   winter: {
     baseHue: 0.1,
@@ -152,8 +153,8 @@ const SEASON_STYLE: Record<
     widthScale: 1,
     lengthScale: 1,
     lift: 1,
-    leavesPerClump: 9,
-    spread: 1,
+    leavesPerClump: 12,
+    spread: 1.12,
   },
 }
 
@@ -236,16 +237,6 @@ const leafOrganicWorldField = createWorldField(823, {
   contrast: 1.16,
 })
 
-function makeLeafGeometry(): THREE.BufferGeometry {
-  const shape = new THREE.Shape()
-  shape.moveTo(0, 0.56)
-  shape.bezierCurveTo(0.19, 0.46, 0.38, 0.18, 0.3, -0.04)
-  shape.bezierCurveTo(0.22, -0.27, 0.08, -0.48, 0, -0.58)
-  shape.bezierCurveTo(-0.08, -0.47, -0.24, -0.26, -0.3, -0.02)
-  shape.bezierCurveTo(-0.38, 0.22, -0.18, 0.47, 0, 0.56)
-  return new THREE.ShapeGeometry(shape, 4)
-}
-
 function leafColor(
   identity: number,
   coverage: number,
@@ -279,7 +270,7 @@ function leafColor(
 export class LeafPileBandEffect {
   readonly group = new THREE.Group()
 
-  private readonly leafGeometry = makeLeafGeometry()
+  private readonly leafGeometry = makeLeafPileLeafGeometry()
   private readonly leafMaterial = new THREE.MeshStandardMaterial({
     roughness: 0.96,
     metalness: 0.02,
@@ -603,10 +594,12 @@ export class LeafPileBandEffect {
     fallbackAngle: number,
     breakupA: number,
     breakupB: number,
+    applyDisturbances = true,
   ) {
     const currentX = x + state.offsetX
     const currentZ = z + state.offsetZ
-    for (const disturbance of this.disturbances) {
+    if (applyDisturbances) {
+      for (const disturbance of this.disturbances) {
       const dx = currentX - disturbance.x
       const dz = currentZ - disturbance.z
       const radius = Math.max(0.001, disturbance.radius)
@@ -650,6 +643,7 @@ export class LeafPileBandEffect {
       state.velocityZ += scatterZ * leafScatter * 2.2
       state.twistVelocity += (breakupA - 0.5) * push * 1.2
       state.stretchVelocity += push * (0.18 + breakupB * 0.24) * 0.8
+      }
     }
 
     if (delta <= 0) {
@@ -751,7 +745,7 @@ export class LeafPileBandEffect {
       if (glyphHash(identity + 5, slot.row, k ^ 0x55) > remainingCoverage * seasonStyle.presence) continue
 
       const leavesInClump = Math.min(
-        14,
+        20,
         Math.max(
           5,
           seasonStyle.leavesPerClump + Math.floor((coverage - 0.25) * 5 + hashYaw * 4 + organicNoise * 4),
@@ -784,7 +778,12 @@ export class LeafPileBandEffect {
         if (state || nearDisturbance) {
           state = state ?? this.getLeafState(leafKey)
           state.generation = generation
-          this.applyLeafState(state, baseLeafX, baseLeafZ, delta, angle, leafHashC, leafHashD)
+          const dt = delta
+          const nStep = dt > 0.001 ? Math.max(1, Math.min(5, Math.ceil(dt / 0.013))) : 1
+          const h = dt / nStep
+          for (let si = 0; si < nStep; si++) {
+            this.applyLeafState(state, baseLeafX, baseLeafZ, h, angle, leafHashC, leafHashD, si === 0)
+          }
         }
         const leafX = baseLeafX + (state?.offsetX ?? 0)
         const leafZ = baseLeafZ + (state?.offsetZ ?? 0)

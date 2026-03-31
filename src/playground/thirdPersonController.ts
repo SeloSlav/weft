@@ -34,6 +34,8 @@ export type ThirdPersonControllerInput = {
   moveRight: boolean
   sprint: boolean
   jump: boolean
+  /** First-person only: lowers eye height when true (toggle in playground). */
+  crouch: boolean
   lookActive: boolean
   lookDeltaX: number
   lookDeltaY: number
@@ -72,6 +74,8 @@ const tmpModelBox = new THREE.Box3()
 const RETICLE_LOCAL_DISTANCE = 1.8
 const RETICLE_LOCAL_SCALE = 0.18
 const CAMERA_GROUND_CLEARANCE = 0.22
+/** First-person crouch: vertical drop from standing eye height (meters). */
+const FIRST_PERSON_CROUCH_HEIGHT_DROP = 0.58
 const GROUND_DETACH_DISTANCE = 0.32
 /** Applied on `visualRoot` so size is identical for every clip (not animated). */
 const PLAYER_VISUAL_SCALE = 0.9 * 1.2
@@ -361,6 +365,7 @@ export class ThirdPersonController {
   private jumpVelocity = 0
   private isJumping = false
   private remainingAirJumps = 0
+  private crouchBlend = 0
 
   setSpawn(position: THREE.Vector3, yaw: number, cameraYaw = yaw, cameraPitch = this.cameraPitch): void {
     this.position.copy(position)
@@ -371,6 +376,7 @@ export class ThirdPersonController {
     this.jumpVelocity = 0
     this.isJumping = false
     this.remainingAirJumps = 0
+    this.crouchBlend = 0
     this.position.y = position.y
     this.player.setPose(this.position, this.yaw)
   }
@@ -385,6 +391,10 @@ export class ThirdPersonController {
     resolveHorizontalMove?: ResolveHorizontalMove,
   ): ThirdPersonControllerFrame {
     const isFirstPerson = config.firstPerson === true
+    const crouchTarget = isFirstPerson && input.crouch ? 1 : 0
+    const crouchAlpha = 1 - Math.exp(-16 * delta)
+    this.crouchBlend = THREE.MathUtils.lerp(this.crouchBlend, crouchTarget, crouchAlpha)
+    const eyeHeightDrop = this.crouchBlend * FIRST_PERSON_CROUCH_HEIGHT_DROP
     if (input.lookActive) {
       this.cameraYaw += input.lookDeltaX * config.lookYawSpeed
       this.cameraPitch = THREE.MathUtils.clamp(
@@ -482,7 +492,9 @@ export class ThirdPersonController {
     this.frame.aimDirection.normalize()
 
     this.frame.aimOrigin.copy(this.position)
-    this.frame.aimOrigin.y += isFirstPerson ? config.cameraHeight : config.cameraHeight * 0.84
+    const standingEye =
+      isFirstPerson ? config.cameraHeight : config.cameraHeight * 0.84
+    this.frame.aimOrigin.y += standingEye - (isFirstPerson ? eyeHeightDrop : 0)
 
     if (isFirstPerson) {
       tmpDesiredCamera.copy(this.frame.aimOrigin)

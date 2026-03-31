@@ -8,7 +8,7 @@ Weft lets you author surfaces as `source -> layout -> effect` so placement and g
 - npm package: [`weft-sdk`](https://www.npmjs.com/package/weft-sdk)
 - AI integration guide: [`weft.md`](./weft.md)
 
-Current release: `0.1.6` as of March 30, 2026.
+Current release: `1.0.0` as of March 31, 2026.
 
 ![Playground screenshot](https://raw.githubusercontent.com/SeloSlav/weft/main/public/readme-playground-screenshot.png)
 

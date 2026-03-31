@@ -117,9 +117,9 @@ export function SceneryDemo() {
   const [rockLayoutDensity, setRockLayoutDensity] = useState(0.48);
   const [rockSizeScale, setRockSizeScale] = useState(1.28);
   const [showRocks, setShowRocks] = useState(true);
-  const [shrubLayoutDensity, setShrubLayoutDensity] = useState(1.12);
-  const [shrubSizeScale, setShrubSizeScale] = useState(1.55);
-  const [shrubHeightScale, setShrubHeightScale] = useState(1.35);
+  const [shrubLayoutDensity, setShrubLayoutDensity] = useState(1);
+  const [shrubSizeScale, setShrubSizeScale] = useState(2.25);
+  const [shrubHeightScale, setShrubHeightScale] = useState(3);
   const [showShrubs, setShowShrubs] = useState(true);
   const [treeLayoutDensity, setTreeLayoutDensity] = useState(0.56);
   const [treeSizeScale, setTreeSizeScale] = useState(1.7);
@@ -135,9 +135,9 @@ export function SceneryDemo() {
   );
   const [showLogs, setShowLogs] = useState(true);
   const [stickLayoutDensity, setStickLayoutDensity] = useState(0.5);
-  const [stickSizeScale, setStickSizeScale] = useState(1.45);
-  const [stickLengthScale, setStickLengthScale] = useState(1.55);
-  const [stickPushScale, setStickPushScale] = useState(1.4);
+  const [stickSizeScale, setStickSizeScale] = useState(2);
+  const [stickLengthScale, setStickLengthScale] = useState(2.2);
+  const [stickPushScale, setStickPushScale] = useState(2.6);
   const [stickDownhillDrift, setStickDownhillDrift] = useState(
     DEFAULT_STICK_FIELD_PARAMS.downhillDrift,
   );
@@ -1617,8 +1617,8 @@ export function SceneryDemo() {
         )}
         {runtimeState === "ready" && (
           <div className="viewport-hint" aria-hidden>
-            Click the first person view to capture the mouse. Press <code>Escape</code>{" "}
-            to release it.
+            Click the first person view to capture the mouse. Press <code>C</code> to toggle crouch.
+            Press <code>Escape</code> to release the mouse.
           </div>
         )}
         {runtimeState !== "ready" && (
