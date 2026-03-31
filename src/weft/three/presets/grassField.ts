@@ -552,6 +552,7 @@ export class GrassFieldEffect {
   private readonly cachedBlades: CachedBladeInstance[] = []
   /** Blade indices per spatial cell (`bladeCellKey`); rebuilt with the blade cache. */
   private readonly bladeCellBuckets = new Map<number, number[]>()
+  private readonly activeCellKeysScratch = new Set<number>()
   private bladeWindPhaseAttr!: THREE.InstancedBufferAttribute
   private readonly bladeBurnRimAttr: THREE.InstancedBufferAttribute
   private readonly bladeShaderUniforms: Record<string, THREE.IUniform<number>> = {
@@ -1090,11 +1091,12 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     let activeCellKeys: Set<number> | null = null
     if (cull && this.bladeCellBuckets.size > 0) {
       /**
-       * Per-frame buckets: disc only. Frustum tests on coarse cells toggle when the camera
-       * nudges (AABB vs frustum), which reads as distant grass flicker.
-       * Layout-slot culling during cache rebuild still uses frustum for CPU savings.
+       * Per-frame buckets: disc only. This is intentionally conservative so nearby camera nudges
+       * do not churn the visible fringe every frame; exact per-blade rejection at the same edge
+       * read as shimmer, and bucket-level cull is already tight enough for this dense cover.
        */
-      activeCellKeys = new Set<number>()
+      activeCellKeys = this.activeCellKeysScratch
+      activeCellKeys.clear()
       addGrassCellKeysInDisc(
         camLX,
         camLZ,
@@ -1122,7 +1124,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
 
     const processBlade = (i: number): void => {
       const blade = this.cachedBlades[i]!
-      if (cull) {
+      if (cull && !activeCellKeys) {
         const dx = blade.x - camLX
         const dz = blade.z - camLZ
         if (dx * dx + dz * dz > cullRsq) {
