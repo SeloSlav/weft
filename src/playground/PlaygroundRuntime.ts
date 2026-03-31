@@ -696,9 +696,14 @@ export class PlaygroundRuntime {
   private static readonly PERF_WINDOW_FRAMES = 45
   private static readonly PERF_LONG_WINDOW_MS = 30_000
   /** Grass uses a tighter disc than sparse props because it also gets a frustum pass. */
-  private static readonly SCENERY_GRASS_VIEW_CULL_RADIUS = 78
+  /** Slightly tighter than full mask so idle grass/layout work stays inside the 60fps budget. */
+  private static readonly SCENERY_GRASS_VIEW_CULL_RADIUS = 72
   private static readonly PLAYGROUND_GRASS_VIEW_CULL_RADIUS = 52
+  /** Tighter than grass: leaf/stick layout skips distant slots; motion integrates off-screen. */
+  private static readonly SCENERY_CLUTTER_VIEW_CULL_RADIUS = 52
+  private static readonly PLAYGROUND_CLUTTER_VIEW_CULL_RADIUS = 40
   private static readonly GRASS_VIEW_CULL_PADDING = 18
+  private static readonly CLUTTER_VIEW_CULL_PADDING = 26
   /**
    * Third-person: blade updates use a disc-only pass (no frustum on cells — avoids flicker).
    * Shift the disc center forward along view so we do not spend CPU on grass behind the camera.
@@ -712,6 +717,8 @@ export class PlaygroundRuntime {
   private static readonly PLAYGROUND_GLASS_IDLE_VISIBLE_DISTANCE = 24
   /** Camera-centered disc + frustum for grass in both demos. */
   private readonly grassViewCullBundle: PresetLayoutViewCull
+  /** Same camera/frustum as grass; smaller radius for leaf pile + stick field layout culling. */
+  private readonly clutterViewCullBundle: PresetLayoutViewCull
   private readonly sceneryProjScreenMatrix = new THREE.Matrix4()
   private readonly sceneryFrustum = new THREE.Frustum()
 
@@ -725,6 +732,13 @@ export class PlaygroundRuntime {
         ? PlaygroundRuntime.SCENERY_GRASS_VIEW_CULL_RADIUS
         : PlaygroundRuntime.PLAYGROUND_GRASS_VIEW_CULL_RADIUS,
       padding: PlaygroundRuntime.GRASS_VIEW_CULL_PADDING,
+    }
+    this.clutterViewCullBundle = {
+      cameraWorld: new THREE.Vector3(),
+      radius: this.sceneryMode
+        ? PlaygroundRuntime.SCENERY_CLUTTER_VIEW_CULL_RADIUS
+        : PlaygroundRuntime.PLAYGROUND_CLUTTER_VIEW_CULL_RADIUS,
+      padding: PlaygroundRuntime.CLUTTER_VIEW_CULL_PADDING,
     }
     this.movementBounds = this.sceneryMode ? SCENERY_BOUNDS : PLAYGROUND_BOUNDS
     this.spawnConfig = this.sceneryMode ? SCENERY_SPAWN : PLAYGROUND_SPAWN
@@ -1723,6 +1737,15 @@ export class PlaygroundRuntime {
     )
     this.sceneryFrustum.setFromProjectionMatrix(this.sceneryProjScreenMatrix)
     grassCull.frustum = this.sceneryFrustum
+    const clutter = this.clutterViewCullBundle
+    // Use the raw camera position (no forward bias) so the disc is centred on the player,
+    // not shifted forward. No frustum: disc-only culling avoids visible pop on nearby slots.
+    clutter.cameraWorld.copy(this.camera.position)
+    clutter.frustum = undefined
+    clutter.radius = this.sceneryMode
+      ? PlaygroundRuntime.SCENERY_CLUTTER_VIEW_CULL_RADIUS
+      : PlaygroundRuntime.PLAYGROUND_CLUTTER_VIEW_CULL_RADIUS
+    clutter.padding = PlaygroundRuntime.CLUTTER_VIEW_CULL_PADDING
   }
 
   private getGroundHeightAtWorld = (x: number, z: number): number => {
@@ -1776,20 +1799,20 @@ export class PlaygroundRuntime {
     if (!this.sceneryMode) return interval
     switch (kind) {
       case 'stick':
-        return Math.max(interval, 8)
+        return Math.max(interval, 9)
       case 'log':
-        return Math.max(interval, 7)
+        return Math.max(interval, 8)
       case 'leaf':
       case 'band':
-        return Math.max(interval, 6)
-      case 'grass':
-        return Math.max(interval, 5)
-      case 'needle':
-        return Math.max(interval, 8)
-      case 'tree':
         return Math.max(interval, 7)
+      case 'grass':
+        return Math.max(interval, 6)
+      case 'needle':
+        return Math.max(interval, 9)
+      case 'tree':
+        return Math.max(interval, 8)
       case 'sky':
-        return Math.max(interval, 5)
+        return Math.max(interval, 6)
       default:
         return interval
     }
@@ -3130,7 +3153,7 @@ export class PlaygroundRuntime {
     // Interactive leaf motion must run every frame; burns-only can stay on the lighter cadence.
     const leafCadence =
       leafHasDisturbances || this.leafPileDirty
-        ? 1
+        ? 3
         : leafHasBurns
           ? this.cadenceFor('leaf')
           : this.idleCadenceFor('leaf')
@@ -3157,7 +3180,9 @@ export class PlaygroundRuntime {
     }
     bandCpuMs = vergeCpuMs + leafCpuMs + fungusCpuMs
     const tRock0 = now()
-    if (this.rockFieldDirty || this.rockFieldEffect.hasActiveShards()) {
+    const rockHasActivity = this.rockFieldDirty || this.rockFieldEffect.hasActiveShards()
+    const rockCadence = rockHasActivity ? 2 : this.cadenceFor('needle')
+    if (rockHasActivity && this.shouldRunCadencedUpdate(rockCadence, 4)) {
       this.rockFieldEffect.update(elapsed, this.getGroundHeightAtWorld)
       this.rockFieldDirty = false
       ranRock = true
@@ -3178,7 +3203,7 @@ export class PlaygroundRuntime {
     }
     const tLog0 = now()
     const logHasMotion = this.logFieldEffect.hasMotion()
-    const logCadence = logHasMotion || this.logFieldDirty ? 1 : this.cadenceFor('log')
+    const logCadence = logHasMotion || this.logFieldDirty ? 2 : this.cadenceFor('log')
     if ((logHasMotion || this.logFieldDirty) && this.shouldRunCadencedUpdate(logCadence, 3)) {
       this.logFieldEffect.update(elapsed, this.getGroundHeightAtWorld)
       this.logFieldDirty = this.logFieldEffect.hasMotion()
@@ -3187,7 +3212,7 @@ export class PlaygroundRuntime {
     logCpuMs = now() - tLog0
     const tStick0 = now()
     const stickHasMotion = this.stickFieldEffect.hasMotion()
-    const stickCadence = stickHasMotion || this.stickFieldDirty ? 1 : this.cadenceFor('stick')
+    const stickCadence = stickHasMotion || this.stickFieldDirty ? 2 : this.cadenceFor('stick')
     if ((stickHasMotion || this.stickFieldDirty) && this.shouldRunCadencedUpdate(stickCadence, 1)) {
       this.stickFieldEffect.update(elapsed, this.getGroundHeightAtWorld)
       this.stickFieldDirty = this.stickFieldEffect.hasMotion()

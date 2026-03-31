@@ -336,135 +336,150 @@ function createGroundTexture(): THREE.CanvasTexture {
 
   const width = canvas.width
   const height = canvas.height
-  const rand = () => Math.random()
+  // Seeded deterministic random for stable texture across reloads
+  let seed = 0x9e3779b9
+  const rand = () => {
+    seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5
+    return (seed >>> 0) / 0xffffffff
+  }
   const randRange = (min: number, max: number) => min + rand() * (max - min)
 
-  ctx.fillStyle = '#8b9252'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  // Forest floor base — warm mid-tone soil, brown-green
+  ctx.fillStyle = '#4a3f28'
+  ctx.fillRect(0, 0, width, height)
 
-  for (let i = 0; i < 90; i++) {
+  // Large soil-tone variation blobs — earthy browns and olive
+  for (let i = 0; i < 60; i++) {
     const x = rand() * width
     const y = rand() * height
-    const radius = randRange(120, 260)
-    const alpha = randRange(0.025, 0.05)
-    const patch = ctx.createRadialGradient(x, y, radius * 0.12, x, y, radius)
-    patch.addColorStop(0, `rgba(164, 170, 100, ${alpha})`)
-    patch.addColorStop(0.55, `rgba(132, 140, 76, ${alpha * 0.78})`)
-    patch.addColorStop(1, 'rgba(132, 140, 76, 0)')
+    const rx = randRange(80, 220)
+    const ry = rx * randRange(0.4, 0.85)
+    const alpha = randRange(0.10, 0.22)
+    const patch = ctx.createRadialGradient(x, y, rx * 0.08, x, y, rx)
+    const hue = randRange(28, 72)
+    const sat = randRange(22, 42)
+    const light = randRange(28, 44)
+    patch.addColorStop(0, `hsla(${hue}, ${sat}%, ${light + 8}%, ${alpha})`)
+    patch.addColorStop(0.5, `hsla(${hue}, ${sat}%, ${light}%, ${alpha * 0.6})`)
+    patch.addColorStop(1, `hsla(${hue}, ${sat}%, ${light}%, 0)`)
     ctx.fillStyle = patch
     ctx.beginPath()
-    ctx.ellipse(x, y, radius, radius * randRange(0.45, 0.9), rand() * Math.PI, 0, Math.PI * 2)
+    ctx.ellipse(x, y, rx, ry, rand() * Math.PI, 0, Math.PI * 2)
     ctx.fill()
   }
 
-  for (let i = 0; i < 4200; i++) {
+  // Moss patches — soft green blobs
+  for (let i = 0; i < 45; i++) {
     const x = rand() * width
     const y = rand() * height
-    const radius = randRange(6, 22)
-    const alpha = randRange(0.03, 0.075)
-    const patch = ctx.createRadialGradient(x, y, radius * 0.2, x, y, radius)
-    patch.addColorStop(0, `rgba(156, 164, 92, ${alpha})`)
-    patch.addColorStop(0.55, `rgba(116, 124, 66, ${alpha * 0.72})`)
-    patch.addColorStop(1, 'rgba(116, 124, 66, 0)')
+    const rx = randRange(30, 120)
+    const ry = rx * randRange(0.5, 0.9)
+    const alpha = randRange(0.12, 0.28)
+    const patch = ctx.createRadialGradient(x, y, rx * 0.1, x, y, rx)
+    const hue = randRange(72, 100)
+    const sat = randRange(28, 48)
+    const light = randRange(30, 46)
+    patch.addColorStop(0, `hsla(${hue}, ${sat}%, ${light + 6}%, ${alpha})`)
+    patch.addColorStop(0.6, `hsla(${hue}, ${sat}%, ${light}%, ${alpha * 0.5})`)
+    patch.addColorStop(1, `hsla(${hue}, ${sat}%, ${light}%, 0)`)
     ctx.fillStyle = patch
     ctx.beginPath()
-    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.ellipse(x, y, rx, ry, rand() * Math.PI, 0, Math.PI * 2)
     ctx.fill()
   }
 
-  for (let i = 0; i < 26000; i++) {
+  // Leaf litter — small irregular warm-brown ellipses scattered densely
+  for (let i = 0; i < 3200; i++) {
     const x = rand() * width
     const y = rand() * height
-    const radius = randRange(0.6, 2.1)
-    const alpha = randRange(0.03, 0.08)
-    const hue = randRange(68, 82)
-    const sat = randRange(20, 30)
-    const light = randRange(32, 46)
+    const rx = randRange(4, 18)
+    const ry = rx * randRange(0.25, 0.55)
+    const alpha = randRange(0.12, 0.30)
+    const hue = randRange(22, 48)
+    const sat = randRange(30, 55)
+    const light = randRange(32, 52)
     ctx.fillStyle = `hsla(${hue}, ${sat}%, ${light}%, ${alpha})`
     ctx.beginPath()
-    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.ellipse(x, y, rx, ry, rand() * Math.PI, 0, Math.PI * 2)
     ctx.fill()
   }
 
-  for (let i = 0; i < 20000; i++) {
-    ctx.strokeStyle = `hsla(${randRange(72, 86)}, ${randRange(18, 28)}%, ${randRange(34, 48)}%, ${randRange(0.035, 0.085)})`
-    ctx.lineWidth = randRange(0.45, 1.1)
-    ctx.beginPath()
+  // Decomposed leaf fragments — tiny warm specks
+  for (let i = 0; i < 8000; i++) {
     const x = rand() * width
     const y = rand() * height
-    const length = randRange(3, 9)
-    const angle = rand() * Math.PI
-    ctx.moveTo(x, y)
-    ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length)
+    const r = randRange(1.2, 3.8)
+    const alpha = randRange(0.08, 0.20)
+    const hue = randRange(20, 55)
+    const sat = randRange(24, 48)
+    const light = randRange(28, 48)
+    ctx.fillStyle = `hsla(${hue}, ${sat}%, ${light}%, ${alpha})`
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  // Dark soil pores / micro-texture — very small dark dots
+  for (let i = 0; i < 6000; i++) {
+    const x = rand() * width
+    const y = rand() * height
+    const r = randRange(0.5, 1.8)
+    const alpha = randRange(0.04, 0.10)
+    ctx.fillStyle = `hsla(${randRange(20, 40)}, 15%, 12%, ${alpha})`
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  // Bright moss highlights — tiny bright green-yellow dots
+  for (let i = 0; i < 2200; i++) {
+    const x = rand() * width
+    const y = rand() * height
+    const r = randRange(0.8, 2.4)
+    const alpha = randRange(0.06, 0.14)
+    ctx.fillStyle = `hsla(${randRange(78, 105)}, ${randRange(35, 55)}%, ${randRange(40, 56)}%, ${alpha})`
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  // Curved leaf veins / organic fibres — gentle arcs, NOT straight crosshatch lines
+  for (let i = 0; i < 1800; i++) {
+    const x = rand() * width
+    const y = rand() * height
+    const len = randRange(6, 22)
+    const startAngle = rand() * Math.PI * 2
+    const sweep = randRange(0.3, 1.1) * (rand() > 0.5 ? 1 : -1)
+    const r = len / Math.abs(sweep)
+    const alpha = randRange(0.04, 0.09)
+    const hue = randRange(25, 55)
+    ctx.strokeStyle = `hsla(${hue}, ${randRange(22, 40)}%, ${randRange(30, 46)}%, ${alpha})`
+    ctx.lineWidth = randRange(0.4, 1.0)
+    ctx.beginPath()
+    ctx.arc(x + Math.cos(startAngle + Math.PI / 2) * r, y + Math.sin(startAngle + Math.PI / 2) * r, r, startAngle - Math.PI / 2, startAngle - Math.PI / 2 + sweep)
     ctx.stroke()
   }
 
-  for (let i = 0; i < 9000; i++) {
-    ctx.strokeStyle = `hsla(${randRange(60, 72)}, ${randRange(18, 26)}%, ${randRange(24, 34)}%, ${randRange(0.02, 0.05)})`
-    ctx.lineWidth = randRange(0.35, 0.9)
-    ctx.beginPath()
+  // Broad dark humus zones — large very-low-alpha dark blobs for depth variation
+  for (let i = 0; i < 30; i++) {
     const x = rand() * width
     const y = rand() * height
-    const length = randRange(4, 10)
-    const angle = rand() * Math.PI
-    ctx.moveTo(x, y)
-    ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length * randRange(0.65, 1))
-    ctx.stroke()
-  }
-
-  for (let i = 0; i < 1600; i++) {
-    const x = rand() * width
-    const y = rand() * height
-    const radius = randRange(8, 24)
-    const alpha = randRange(0.02, 0.045)
-    ctx.fillStyle = `hsla(${randRange(70, 84)}, ${randRange(14, 22)}%, ${randRange(48, 58)}%, ${alpha})`
+    const rx = randRange(60, 180)
+    const ry = rx * randRange(0.4, 0.75)
+    const alpha = randRange(0.04, 0.09)
+    const patch = ctx.createRadialGradient(x, y, rx * 0.05, x, y, rx)
+    patch.addColorStop(0, `rgba(12, 10, 6, ${alpha})`)
+    patch.addColorStop(1, 'rgba(12, 10, 6, 0)')
+    ctx.fillStyle = patch
     ctx.beginPath()
-    ctx.ellipse(x, y, radius, radius * randRange(0.45, 0.8), rand() * Math.PI, 0, Math.PI * 2)
+    ctx.ellipse(x, y, rx, ry, rand() * Math.PI, 0, Math.PI * 2)
     ctx.fill()
-  }
-
-  for (let i = 0; i < 120; i++) {
-    const x = rand() * width
-    const y = rand() * height
-    const radius = randRange(32, 110)
-    const alpha = randRange(0.018, 0.04)
-    const broadPatch = ctx.createRadialGradient(x, y, radius * 0.1, x, y, radius)
-    broadPatch.addColorStop(0, `rgba(104, 112, 60, ${alpha})`)
-    broadPatch.addColorStop(0.62, `rgba(86, 94, 50, ${alpha * 0.72})`)
-    broadPatch.addColorStop(1, 'rgba(86, 94, 50, 0)')
-    ctx.fillStyle = broadPatch
-    ctx.beginPath()
-    ctx.ellipse(x, y, radius, radius * randRange(0.46, 0.82), rand() * Math.PI, 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  for (let i = 0; i < 2400; i++) {
-    const x = rand() * width
-    const y = rand() * height
-    const radius = randRange(0.8, 2.8)
-    const alpha = randRange(0.02, 0.05)
-    ctx.fillStyle = `hsla(${randRange(58, 72)}, ${randRange(18, 24)}%, ${randRange(26, 34)}%, ${alpha})`
-    ctx.beginPath()
-    ctx.arc(x, y, radius, 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  for (let i = 0; i < 18; i++) {
-    const y = rand() * height
-    const thickness = randRange(18, 42)
-    const alpha = randRange(0.012, 0.024)
-    const band = ctx.createLinearGradient(0, y - thickness, 0, y + thickness)
-    band.addColorStop(0, 'rgba(0,0,0,0)')
-    band.addColorStop(0.5, `rgba(118, 126, 70, ${alpha})`)
-    band.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.fillStyle = band
-    ctx.fillRect(0, y - thickness, width, thickness * 2)
   }
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.wrapS = THREE.RepeatWrapping
   texture.wrapT = THREE.RepeatWrapping
-  texture.repeat.set(7.2, 7.2)
+  texture.repeat.set(6.0, 6.0)
   texture.needsUpdate = true
   texture.colorSpace = THREE.SRGBColorSpace
   return texture

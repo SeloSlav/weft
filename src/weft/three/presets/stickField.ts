@@ -609,7 +609,7 @@ export class StickFieldEffect {
         if (state || this.shouldActivateMotionAt(basePieceX, basePieceZ)) {
           const ensuredState = state ?? this.getTwigState(twigKey)
           const dt = delta
-          const nStep = dt > 0.001 ? Math.max(1, Math.min(5, Math.ceil(dt / 0.013))) : 1
+          const nStep = dt > 0.001 ? Math.max(1, Math.min(3, Math.ceil(dt / 0.017))) : 1
           const h = dt / nStep
           for (let si = 0; si < nStep; si++) {
             this.applyTwigState(ensuredState, basePieceX, basePieceZ, h, pieceHash - 0.5, getGroundHeight, si === 0)
