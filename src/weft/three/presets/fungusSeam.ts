@@ -1,12 +1,13 @@
 import { LineOutputCache } from '../helpers/lineOutputCache'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
-import { updateInstanceMatrices } from '../helpers/bufferUpdates'
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
   ResolvedSurfaceGlyph,
   SeedCursorFactory,
   SurfaceLayoutSlot,
+  SurfaceLayoutLine,
 } from '../../core'
 import { updateRecoveringImpacts } from '../../runtime'
 import { createSurfaceEffect, fieldLayout } from '../api'
@@ -156,6 +157,9 @@ function fungusColor(
 export class FungusSeamEffect {
   readonly group = new THREE.Group()
   private readonly outputCache = new LineOutputCache()
+  private readonly potentialLines: SurfaceLayoutLine<BandTokenId, BandTokenMeta>[] = []
+  private lineInputs: readonly unknown[] = []
+  private potentialLinesValid = false
 
   private readonly fungusGeometry = makeFungusGeometry()
   private readonly fungusMaterial = new THREE.MeshStandardMaterial({
@@ -275,14 +279,15 @@ export class FungusSeamEffect {
   }
 
   /** Refresh after mutating terrain or placement callbacks in place. */
-  invalidate(): void { this.outputCache.clear(); this.runtime.invalidate() }
+  invalidate(): void { this.outputCache.clear(); this.potentialLines.length = 0; this.potentialLinesValid = false; this.runtime.invalidate() }
 
-  getOutputCacheStats() { return this.outputCache.getStats() }
+  getOutputCacheStats() { return { ...this.outputCache.getStats(), potentialLines: this.potentialLines.length } }
 
   getRuntimeStats() { return this.runtime.getStats() }
 
   dispose(): void {
     this.outputCache.clear()
+    this.potentialLines.length = 0
     this.runtime.dispose(this.group)
     this.fungusGeometry.dispose()
     this.fungusMaterial.dispose()
@@ -336,6 +341,8 @@ export class FungusSeamEffect {
       this.params.bandWidth <= 0
     ) {
       this.outputCache.clear()
+      this.potentialLines.length = 0
+      this.potentialLinesValid = false
       this.fungusMesh.count = 0
       updateInstanceMatrices(this.fungusMesh)
       return
@@ -345,26 +352,60 @@ export class FungusSeamEffect {
     const backZ = this.fieldDepth * 0.48
     let instanceIndex = 0
 
-    this.outputCache.begin(this.fungusMesh, this.fungusBurnRimAttr, [...Object.values(this.params), getGroundHeight],
-      this.burns.map(burn => ({ x: burn.x, z: burn.z, radius: Math.max(0.001, burn.radius) + 0.8 })))
-    this.runtime.forEachLaidOutLine({
-      spanMin: -this.fieldWidth * 0.5,
-      spanMax: this.fieldWidth * 0.5,
-      lineCoordAtRow: (row) => backZ - row * rowStep,
-      getMaxWidth: (slot) => this.getSlotMaxWidth(slot),
-      onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
-        instanceIndex = this.outputCache.visit(slot.row * SECTORS + slot.sector, instanceIndex, () => this.projectLine(
-          slot,
-          resolvedGlyphs,
-          tokenLineKey,
-          rowStep,
-          getGroundHeight,
-          instanceIndex,
-        ))
-      },
-    }, [this.params.layoutDensity])
+    // Saturation can hide later lines, and non-finite burns can break the coverage
+    // bound. Stream those cases until a reusable authored-line set is safe.
+    if ((this.lineInputs.length > 0 && this.fungusMesh.count >= MAX_INSTANCES) ||
+      this.burns.some(burn => !Number.isFinite(burn.radius) || !Number.isFinite(burn.strength))) {
+      this.outputCache.clear(); this.potentialLines.length = 0; this.potentialLinesValid = false
+      this.runtime.forEachLaidOutLine({
+        spanMin: -this.fieldWidth * 0.5, spanMax: this.fieldWidth * 0.5,
+        lineCoordAtRow: row => backZ - row * rowStep,
+        getMaxWidth: slot => this.getSlotMaxWidth(slot),
+        onLine: ({slot, resolvedGlyphs, tokenLineKey}) => {
+          instanceIndex = this.projectLine(slot, resolvedGlyphs, tokenLineKey, rowStep, getGroundHeight, instanceIndex)
+        },
+      }, [this.params.layoutDensity])
+      this.fungusMesh.count = instanceIndex
+      updateInstanceMatrices(this.fungusMesh)
+      this.fungusBurnRimAttr.needsUpdate = true
+      if (this.fungusMesh.instanceColor) updateActiveAttribute(this.fungusMesh.instanceColor, instanceIndex)
+      return
+    }
 
-    this.outputCache.finish(instanceIndex)
+    const inputs = [...Object.values(this.params), getGroundHeight]
+    if (inputs.length !== this.lineInputs.length || inputs.some((value, index) => !Object.is(value, this.lineInputs[index])) ||
+      this.fungusMesh.count >= MAX_INSTANCES) {
+      this.potentialLines.length = 0; this.potentialLinesValid = false
+    }
+    this.lineInputs = inputs
+    this.outputCache.begin(this.fungusMesh, this.fungusBurnRimAttr, inputs,
+      this.burns.map(burn => ({ x: burn.x, z: burn.z, radius: Math.max(0.001, burn.radius) + 0.8 })))
+    const project = (line: SurfaceLayoutLine<BandTokenId, BandTokenMeta>) => {
+      const { slot, resolvedGlyphs, tokenLineKey } = line
+      const key = slot.row * SECTORS + slot.sector
+      instanceIndex = this.outputCache.visit(key, instanceIndex, () => this.projectLine(
+        slot, resolvedGlyphs, tokenLineKey, rowStep, getGroundHeight, instanceIndex))
+      if (!this.potentialLinesValid && this.outputCache.hasPotential(key)) this.potentialLines.push(line)
+    }
+    try {
+      if (this.potentialLinesValid) {
+        for (const line of this.potentialLines) project(line)
+      } else {
+        this.potentialLines.length = 0
+        this.runtime.forEachLaidOutLine({
+          spanMin: -this.fieldWidth * 0.5,
+          spanMax: this.fieldWidth * 0.5,
+          lineCoordAtRow: (row) => backZ - row * rowStep,
+          getMaxWidth: (slot) => this.getSlotMaxWidth(slot),
+          onLine: project,
+        }, [this.params.layoutDensity])
+      }
+      this.outputCache.finish(instanceIndex)
+      this.potentialLinesValid = instanceIndex < MAX_INSTANCES
+    } catch (error) {
+      this.outputCache.clear(); this.potentialLines.length = 0; this.potentialLinesValid = false
+      throw error
+    }
   }
 
   private projectLine(
@@ -405,19 +446,22 @@ export class FungusSeamEffect {
         slot.lineCoord +
         (hashDep - 0.5) * rowStep * 0.62 +
         lineDepthShift
-      this.outputCache.note(x, z)
       if (!this.placementMask.includeAtXZ(x, z)) continue
 
       const signedDistance = this.placementMask.distanceToBandAtXZ(x, z)
       const coverage = smoothBandCoverage(Math.abs(signedDistance), halfWidth, edgeSoftness)
       if (coverage <= 0.02) continue
+      const presenceHash = glyphHash(identity + 5, slot.row, k ^ 0x55)
+      // Burns only reduce coverage, so positions failing the unburned gate can never appear.
+      if (!Number.isFinite(coverage) || !Number.isFinite(x) || !Number.isFinite(z) ||
+        (coverage > 0.09 && presenceHash <= Math.min(1, coverage + 0.11))) this.outputCache.note(x, z)
 
       const burnField = this.burnFieldAt(x, z)
       const remainingCoverage = coverage * (1 - burnField.burn * 0.995)
       if (remainingCoverage <= 0.09) continue
       /** Slight bias so wide bands stay visually dense at mid-coverage (forest seams). */
       const presenceGate = Math.min(1, remainingCoverage + 0.11)
-      if (glyphHash(identity + 5, slot.row, k ^ 0x55) > presenceGate) continue
+      if (presenceHash > presenceGate) continue
 
       const groundY = getGroundHeight(x, z)
       const yaw = hashYaw * Math.PI * 2

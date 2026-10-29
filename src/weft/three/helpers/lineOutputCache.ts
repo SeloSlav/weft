@@ -24,6 +24,11 @@ export class LineOutputCache {
 
   clear(): void { this.entries.clear(); this.previousRegions = []; this.regions = []; this.dependency = []; this.previousCount = 0 }
   getStats() { return { projectedLines: this.projected, replayedLines: this.replayed, cachedLines: this.entries.size } }
+  hasPotential(key: number): boolean {
+    const entry = this.entries.get(key)
+    return !!entry && (entry.bounds.minX !== Infinity || entry.bounds.maxX !== -Infinity ||
+      entry.bounds.minZ !== Infinity || entry.bounds.maxZ !== -Infinity)
+  }
   begin(mesh: THREE.InstancedMesh, extra: THREE.InstancedBufferAttribute | undefined,
     dependencies: readonly unknown[], regions: readonly Region[], force = false): void {
     if (dependencies.length !== this.dependency.length || dependencies.some((v, i) => !Object.is(v, this.dependency[i])) ||
@@ -39,6 +44,7 @@ export class LineOutputCache {
     this.bounds.minZ = Math.min(this.bounds.minZ, z); this.bounds.maxZ = Math.max(this.bounds.maxZ, z)
   }
   private affected(bounds: Bounds): boolean {
+    if (Number.isNaN(bounds.minX) || Number.isNaN(bounds.maxX) || Number.isNaN(bounds.minZ) || Number.isNaN(bounds.maxZ)) return true
     for (const r of this.regions) {
       const radius = Math.abs(r.radius)
       if (!Number.isFinite(radius) || !Number.isFinite(r.x) || !Number.isFinite(r.z)) return true

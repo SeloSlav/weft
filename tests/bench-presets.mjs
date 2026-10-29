@@ -30,17 +30,18 @@ const cases=after.results.map((current,index)=>{
   const baseline=before.results[index]
   if(baseline.name!==current.name)throw Error('Fixture order mismatch')
   const parity=Object.fromEntries(Object.entries(current.states).map(([stage,state])=>[stage,JSON.stringify(state)===JSON.stringify(baseline.states[stage])]))
-  const timings=Object.fromEntries(['cold','idle','refresh','active'].map(phase=>[phase,{before:baseline[phase],after:current[phase],
+  const timings=Object.fromEntries(['cold','idle','refresh','firstReaction','active'].map(phase=>[phase,{before:baseline[phase],after:current[phase],
     speedup:baseline[phase].medianMs/Math.max(current[phase].medianMs,1e-9)}]))
   if(current.activation)timings.activation={before:baseline.activation,after:current.activation,
     speedup:baseline.activation.medianMs/Math.max(current.activation.medianMs,1e-9)}
   if(current.moving)timings.moving={before:baseline.moving,after:current.moving,
     speedup:baseline.moving.medianMs/Math.max(current.moving.medianMs,1e-9)}
-  const {states:_,cold:_cold,idle:_idle,refresh:_refresh,active:_active,activation:_activation,moving:_moving,...metadata}=current
+  const {states:_,cold:_cold,idle:_idle,refresh:_refresh,firstReaction:_first,active:_active,activation:_activation,moving:_moving,...metadata}=current
   return {...metadata,beforeIdleUploadVersionDelta:baseline.idleUploadVersionDelta,
     beforeActivationCandidates:baseline.activationCandidates,activationMatches:current.activated===baseline.activated,parity,timings}
 })
 const staticNames=cases.filter(row=>!['fire','stars'].includes(row.name)).map(row=>row.name)
+const sparseFungus=cases.find(row=>row.name==='fungus-seam')
 const gates={allFamiliesUseRuntime:cases.every(row=>row.stats!==undefined),
   cachedExecutionReused:cases.every(row=>row.stats.replayedRows>0 || row.stats.skippedPasses>0 ||
     (row.stats.projectionPasses>0 && row.idleProjectionPasses===0)),
@@ -50,7 +51,10 @@ const gates={allFamiliesUseRuntime:cases.every(row=>row.stats!==undefined),
   warmIdleNoReflow:cases.every(row=>row.idleRebuiltRows===0),
   ownedBuffersDisposed:cases.every(row=>row.disposedMeshes===row.ownedMeshes && row.cachedRowsAfterDispose===0),
   outputCachesReleased:cases.every(row=>!row.outputCacheAfterDispose ||
-    (row.outputCacheAfterDispose.cachedLines ?? row.outputCacheAfterDispose.cachedGlyphs)===0)}
+    ((row.outputCacheAfterDispose.cachedLines ?? row.outputCacheAfterDispose.cachedGlyphs)===0 &&
+      (row.outputCacheAfterDispose.potentialLines ?? 0)===0)),
+  sparseFungusSkipsEmptyLines:Boolean(sparseFungus?.cacheWork?.afterActive &&
+    sparseFungus.cacheWork.afterActive.potentialLines < sparseFungus.cacheWork.afterActive.cachedLines / 2)}
 console.table(cases.map(row=>({preset:row.name,instances:row.initialCounts.reduce((sum,n)=>sum+(n??0),0),
   'idle ms':row.timings.idle.after.medianMs.toFixed(4),'idle speedup':row.timings.idle.speedup.toFixed(2)+'x',
   'refresh speedup':row.timings.refresh.speedup.toFixed(2)+'x','active speedup':row.hasReaction?row.timings.active.speedup.toFixed(2)+'x':'—',

@@ -1,0 +1,227 @@
+{
+  "generatedAt": "2026-10-29T20:33:40.847Z",
+  "beforeBundle": "validation.local/fungus-before.mjs",
+  "afterBundle": "validation.local/presets-after.mjs",
+  "beforeSha256": "29dba8e4984c5dabd1fc20498e21e099212ebc88e1242313a864f86c1f688606",
+  "afterSha256": "98c19f8407a8a3e45b7565d1dd8329ef0b43a580fda9a9580498bc201d3b4170",
+  "rounds": 3,
+  "records": [
+    {
+      "round": 1,
+      "name": "fungus-seam",
+      "beforeMs": 0.03819999999996071,
+      "afterMs": 0.016200000000026193,
+      "speedup": 2.358024691351787,
+      "beforeStats": {
+        "projectedLines": 846,
+        "replayedLines": 45074,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 719,
+        "replayedLines": 4539,
+        "cachedLines": 560,
+        "potentialLines": 58
+      }
+    },
+    {
+      "round": 1,
+      "name": "fungus-dense",
+      "beforeMs": 0.07280000000002929,
+      "afterMs": 0.05190000000004602,
+      "speedup": 1.4026974951823648,
+      "beforeStats": {
+        "projectedLines": 1001,
+        "replayedLines": 44919,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 1001,
+        "replayedLines": 14544,
+        "cachedLines": 560,
+        "potentialLines": 185
+      }
+    },
+    {
+      "round": 1,
+      "name": "fungus-saturated",
+      "beforeMs": 1.4549000000001797,
+      "afterMs": 1.1011999999998352,
+      "speedup": 1.3211950599349778,
+      "beforeStats": {
+        "projectedLines": 45920,
+        "replayedLines": 0,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 560,
+        "replayedLines": 0,
+        "cachedLines": 0,
+        "potentialLines": 0
+      }
+    },
+    {
+      "round": 1,
+      "name": "fungus-mask",
+      "beforeMs": 0.04580000000009932,
+      "afterMs": 0.008599999999887586,
+      "speedup": 5.325581395429998,
+      "beforeStats": {
+        "projectedLines": 846,
+        "replayedLines": 45074,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 647,
+        "replayedLines": 2343,
+        "cachedLines": 560,
+        "potentialLines": 30
+      }
+    },
+    {
+      "round": 2,
+      "name": "fungus-seam",
+      "beforeMs": 0.047100000000000364,
+      "afterMs": 0.016100000000051296,
+      "speedup": 2.9254658385000187,
+      "beforeStats": {
+        "projectedLines": 846,
+        "replayedLines": 45074,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 719,
+        "replayedLines": 4539,
+        "cachedLines": 560,
+        "potentialLines": 58
+      }
+    },
+    {
+      "round": 2,
+      "name": "fungus-dense",
+      "beforeMs": 0.13079999999990832,
+      "afterMs": 0.08619999999996253,
+      "speedup": 1.517401392110965,
+      "beforeStats": {
+        "projectedLines": 1001,
+        "replayedLines": 44919,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 1001,
+        "replayedLines": 14544,
+        "cachedLines": 560,
+        "potentialLines": 185
+      }
+    },
+    {
+      "round": 2,
+      "name": "fungus-saturated",
+      "beforeMs": 1.373199999999997,
+      "afterMs": 1.205900000000156,
+      "speedup": 1.1387345551039219,
+      "beforeStats": {
+        "projectedLines": 45920,
+        "replayedLines": 0,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 560,
+        "replayedLines": 0,
+        "cachedLines": 0,
+        "potentialLines": 0
+      }
+    },
+    {
+      "round": 2,
+      "name": "fungus-mask",
+      "beforeMs": 0.033599999999978536,
+      "afterMs": 0.006900000000086948,
+      "speedup": 4.869565217326832,
+      "beforeStats": {
+        "projectedLines": 846,
+        "replayedLines": 45074,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 647,
+        "replayedLines": 2343,
+        "cachedLines": 560,
+        "potentialLines": 30
+      }
+    },
+    {
+      "round": 3,
+      "name": "fungus-seam",
+      "beforeMs": 0.05819999999994252,
+      "afterMs": 0.023300000000062937,
+      "speedup": 2.4978540772440048,
+      "beforeStats": {
+        "projectedLines": 846,
+        "replayedLines": 45074,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 719,
+        "replayedLines": 4539,
+        "cachedLines": 560,
+        "potentialLines": 58
+      }
+    },
+    {
+      "round": 3,
+      "name": "fungus-dense",
+      "beforeMs": 0.07459999999991851,
+      "afterMs": 0.055399999999963256,
+      "speedup": 1.3465703971113354,
+      "beforeStats": {
+        "projectedLines": 1001,
+        "replayedLines": 44919,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 1001,
+        "replayedLines": 14544,
+        "cachedLines": 560,
+        "potentialLines": 185
+      }
+    },
+    {
+      "round": 3,
+      "name": "fungus-saturated",
+      "beforeMs": 1.209500000000162,
+      "afterMs": 1.1399000000001251,
+      "speedup": 1.0610579875427923,
+      "beforeStats": {
+        "projectedLines": 45920,
+        "replayedLines": 0,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 560,
+        "replayedLines": 0,
+        "cachedLines": 0,
+        "potentialLines": 0
+      }
+    },
+    {
+      "round": 3,
+      "name": "fungus-mask",
+      "beforeMs": 0.027399999999943248,
+      "afterMs": 0.005999999999858119,
+      "speedup": 4.566666666765196,
+      "beforeStats": {
+        "projectedLines": 846,
+        "replayedLines": 45074,
+        "cachedLines": 560
+      },
+      "afterStats": {
+        "projectedLines": 647,
+        "replayedLines": 2343,
+        "cachedLines": 560,
+        "potentialLines": 30
+      }
+    }
+  ],
+  "note": "The before bundle was captured from an uncommitted working tree and is local/ignored. These are paired CPU samples; parity covers every fixture."
+}

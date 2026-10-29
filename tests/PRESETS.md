@@ -13,9 +13,10 @@ CPU benchmark. It uses the build tool already declared by `tsup`.
 
 ## Coverage and method
 
-There are 40 configurations: all 14 executable preset classes, the three band
+There are 42 configurations: all 14 executable preset classes, the three band
 appearances, five shell appearances, and all five constituent families of each
-meadow/woodland/autumn look, plus dense log, stick, fungus, needle and leaf workloads. Standard fixtures use their authored SDK densities, seed 17,
+meadow/woodland/autumn look, plus dense log, stick, fungus, needle and leaf workloads
+and saturated/mutable-mask fungus cases. Standard fixtures use their authored SDK densities, seed 17,
 the same terrain and matched elapsed times. No instance reductions are introduced
 to obtain a speedup.
 
@@ -32,6 +33,8 @@ transforms at six matched states: initial, idle, parameter refresh, damage,
 reaction update, and clear. Grass also checks overlapping disturbances and burns,
 recovery, moving culling, and restoration. Cases without an interaction API repeat an ordinary
 update for the damage stages. Book interaction uses a stationary nearby player.
+The fungus cases also check a mutable placement mask and transitions into and out
+of the instance-capacity limit.
 
 Timing phases are reported separately:
 
@@ -41,6 +44,8 @@ Timing phases are reported separately:
 - Refresh reapplies the same parameter values before each update, measuring
   unnecessary/repeated application configuration and warm projection. Grass
   already avoids rebuilding for identical parameters.
+- First reaction measures the first update immediately after adding a reaction;
+  it is one observation rather than a statistically stable timing.
 - Active adds a reaction where supported and measures 25 following updates after
   warm-up. Ongoing deformation, physics and recovery keep their original cadence.
 - Activation isolates adding an impulse and finding affected log/stick placements;
@@ -86,23 +91,42 @@ npm run bench:presets -- --baseline e68a57b1227f0ab32cd4649c9a4b591009a3af15 --o
 
 | Workload | Before (ms) | After (ms) |
 | --- | ---: | ---: |
-| Fungus, default / active | 0.0812 | 0.0436 |
-| Fungus, dense / active | 0.1992 | 0.0812 |
-| Needle litter / active | 0.2842 | 0.0397 |
-| Needle litter, dense / active | 1.3782 | 0.1297 |
-| Leaf pile / active | 0.4092 | 0.1225 |
-| Leaf pile, dense / active | 2.5077 | 0.5194 |
-| Book / moving player | 0.0780 | 0.0615 |
+| Fungus, default / active | 0.0873 | 0.0200 |
+| Fungus, dense / active | 0.2308 | 0.0657 |
+| Needle litter / active | 0.3048 | 0.0472 |
+| Needle litter, dense / active | 1.3560 | 0.1074 |
+| Leaf pile / active | 0.4464 | 0.1490 |
+| Leaf pile, dense / active | 2.5472 | 0.4918 |
+| Book / moving player | 0.1398 | 0.1077 |
 
 These are paired CPU medians for the described fixtures, not GPU or frame timings.
-The small default fungus case varied between runs, including a slower sample;
-cache overhead and timing noise matter at this scale. The three line caches retain
+The fungus projector keeps only lines that can produce an unburned instance for
+repeated passes. Burns can only reduce coverage, so excluded lines cannot become
+visible until the authored inputs change. Invalidated inputs rebuild the set;
+saturated fields and non-finite burns use a full traversal. In the small fixture,
+58 of 560 authored lines remain candidates. The three line caches retain
 matrix/color copies (and burn-rim values where applicable), about 76–80 bytes per cached instance plus
 line metadata. Book glyphs retain a matrix and spatial/bucket metadata per glyph.
 They release these caches on disposal. Camera-culling changes force a complete
 needle projection to preserve visibility and ordering.
 The four effects expose `getOutputCacheStats()` for cached and projected work;
 the paired report records these counters during the measured reaction phases.
+
+The [immediate comparison](./benchmarks/fungus-immediate-results.json) uses three
+paired runs against the cached implementation immediately before the sparse-line
+change. That baseline was an uncommitted working tree: its captured bundle is
+stored locally at `validation.local/fungus-before.mjs`, and the report records its
+SHA-256. While that local bundle is present, reproduce the comparison after running
+the preset benchmark above to build the current bundle:
+
+```bash
+npm run bench:fungus-paired -- validation.local/fungus-before.mjs validation.local/presets-after.mjs
+```
+
+In the recorded three runs, the default active fungus median changed from
+0.0382–0.0582 ms to 0.0161–0.0233 ms, a 2.36–2.93× speedup per paired run.
+All fixture outputs matched. The Git-pinned comparison above remains reproducible
+without that local bundle.
 
 The committed sample is [preset-results.json](./benchmarks/preset-results.json).
 Sub-microsecond idle ratios are dominated by call overhead and timer precision.
@@ -163,13 +187,13 @@ npm run validate:baseline -- e68a57b1227f0ab32cd4649c9a4b591009a3af15
 npm run dev -- --host 127.0.0.1
 ```
 
-Open `/tests/presets-browser.html` and run all checks. This repeats all 40 output
+Open `/tests/presets-browser.html` and run all checks. This repeats all 42 output
 comparisons using native browser metrics, draws every migrated preset through
 WebGPU, and verifies consumed instance upload ranges. Seven further checks cover
 terrain invalidation, needle visibility movement/restoration, and repeated source
 replacement in all five mutable-source families. Its preview selects each preset
 and its reaction at fixed seed, camera, 960 × 540 resolution and DPR 1.
 
-`/tests/core-browser.html` also runs 25 core checks plus a native partial-upload
+`/tests/core-browser.html` also runs 27 core checks plus a native partial-upload
 check. `/tests/browser.html` retains the 11 existing grass/camera/burn/foliage and
 WebGL/WebGPU regressions.

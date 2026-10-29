@@ -43,6 +43,7 @@ for(let caseIndex=0;caseIndex<fixtures[0].length;caseIndex++) {
   const refresh=measure(benches.map((bench,index)=>()=>{bench.params();updates[index]()}))
   for(const bench of benches)bench.damage?.()
   const beforeActiveCache=benches.map(bench=>bench.effect.getOutputCacheStats?.())
+  const firstReaction=measure(updates,{warmup:0,samples:1})
   const active=measure(updates)
   const afterActiveCache=benches.map(bench=>bench.effect.getOutputCacheStats?.())
   let moving
@@ -82,7 +83,7 @@ for(let caseIndex=0;caseIndex<fixtures[0].length;caseIndex++) {
     const stats=bench.effect.getRuntimeStats?.()
     bench.effect.dispose()
     results[index].push({name:bench.name,hasReaction:Boolean(bench.damage),states:states[index],initialCounts:states[index].initial.map(mesh=>mesh.count),
-      cold:cold[index],idle:idle[index],refresh:refresh[index],active:active[index],
+      cold:cold[index],idle:idle[index],refresh:refresh[index],active:active[index],firstReaction:firstReaction[index],
       activation:activation?.[index],activationCandidates,activationTotal,activated,moving:moving?.[index],
       cacheWork:afterActiveCache[index] ? { before:beforeActiveCache[index], afterActive:afterActiveCache[index],
         afterMoving:afterMovingCache[index] } : undefined,

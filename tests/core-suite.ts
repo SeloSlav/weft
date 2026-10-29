@@ -5,6 +5,7 @@ import {createSurfaceMotionField, decayRecoveringStrength, updateRecoveringImpac
 import {createSurfaceEffect, createSurfaceSource, fieldLayout, recoverableDamage, threeInstancedMeshRenderer} from '../src/weft/three/api'
 import {SurfaceExecutionRuntime} from '../src/weft/three/executionRuntime'
 import {LineOutputCache} from '../src/weft/three/helpers/lineOutputCache'
+import {createFungusSeamEffect, DEFAULT_FUNGUS_SEAM_PARAMS} from '../src/weft/three/presets/fungusSeam'
 
 type Check = {name:string; passed:boolean; error?:string}
 function assert(value:unknown, message = 'assertion failed'): asserts value { if (!value) throw new Error(message) }
@@ -54,11 +55,53 @@ export function runCoreChecks(): Check[] {
     equal(Array.from(mesh.instanceMatrix.array).filter((_,i)=>i%16===12).slice(0,mesh.count),[0,1,10,11,20,21])
     assert(mesh.instanceMatrix.updateRanges.length>0,'updated spans were not uploaded')
     cache.clear();assert(cache.getStats().cachedLines===0)
-    counts.splice(0,3,4,4,4);render([]);assert(mesh.count===12)
+    counts.splice(0,3,4,4,4);render([]);assert(Number(mesh.count)===12)
     counts[0]=3;render([{x:0,z:0,radius:1}])
     equal(Array.from(mesh.instanceMatrix.array).filter((_,i)=>i%16===12).slice(0,mesh.count),[0,1,2,10,11,12,13,20,21,22,23],
       'capacity overflow hid instances after a later removal')
     mesh.dispose();geometry.dispose();material.dispose()
+  })
+  test('sparse fungus cache matches full reprojection through initial burns and recovery',()=>{
+    const cached=createFungusSeamEffect({seedCursor:core.seedCursor})
+    const full=createFungusSeamEffect({seedCursor:core.seedCursor})
+    const ground=(x:number,z:number)=>Math.sin(x*.1)*.1+Math.cos(z*.1)*.1
+    const meshes=[cached,full].map(effect=>effect.group.children.find(child=>(child as THREE.InstancedMesh).isInstancedMesh) as THREE.InstancedMesh)
+    const compare=()=>{
+      const capture=(mesh:THREE.InstancedMesh)=>({count:mesh.count,
+        matrix:Array.from(mesh.instanceMatrix.array.slice(0,mesh.count*16)),
+        color:Array.from(mesh.instanceColor!.array.slice(0,mesh.count*3)),
+        rim:Array.from((mesh.geometry.getAttribute('burnRim').array as Float32Array).slice(0,mesh.count))})
+      equal(capture(meshes[0]!),capture(meshes[1]!), 'cached fungus differs from full reprojection')
+    }
+    for(const effect of [cached,full])effect.addBurnFromWorldPoint(new THREE.Vector3(0,0,0),{strength:1})
+    for(let i=0;i<24;i++) {
+      if(i===4)for(const effect of [cached,full])effect.addBurnFromWorldPoint(new THREE.Vector3(3,0,0),{strength:.8})
+      if(i===12)for(const effect of [cached,full])effect.clearBurns()
+      if(i===15)for(const effect of [cached,full])effect.setParams({bandWidth:6})
+      cached.update(1+i*.05,ground);full.invalidate();full.update(1+i*.05,ground);compare()
+    }
+    const stats=cached.getOutputCacheStats()
+    assert(stats.potentialLines < stats.cachedLines/2, 'sparse field retained every authored line for updates')
+    cached.dispose();full.dispose()
+  })
+  test('fungus cache retries cleanly after a terrain sampler throws',()=>{
+    const options={seedCursor:core.seedCursor,initialParams:{...DEFAULT_FUNGUS_SEAM_PARAMS,burnSpreadSpeed:0,recoveryRate:0}}
+    const cached=createFungusSeamEffect(options),full=createFungusSeamEffect(options)
+    let fail=false
+    const ground=()=>{if(fail){fail=false;throw Error('terrain unavailable')}return 0}
+    const mesh=(effect:typeof cached)=>effect.group.children.find(child=>(child as THREE.InstancedMesh).isInstancedMesh) as THREE.InstancedMesh
+    cached.update(1,ground);full.update(1,ground)
+    assert(cached.getOutputCacheStats().cachedLines>0,'initial projection did not prepare the cache')
+    const first=mesh(cached).instanceMatrix.array
+    const point=new THREE.Vector3(first[12],0,first[14])
+    for(const effect of [cached,full])effect.addBurnFromWorldPoint(point,{strength:.3,radiusScale:.3})
+    cached.update(1.1,ground);full.update(1.1,ground)
+    fail=true;throws(()=>cached.update(1.15,ground))
+    cached.update(1.15,ground);full.invalidate();full.update(1.15,ground)
+    const a=mesh(cached),b=mesh(full)
+    assert(a.count===b.count)
+    equal(Array.from(a.instanceMatrix.array.slice(0,a.count*16)),Array.from(b.instanceMatrix.array.slice(0,b.count*16)))
+    cached.dispose();full.dispose()
   })
 
   test('shared spatial candidates preserve order and include exact hits across overlap and rebuilds',()=>{

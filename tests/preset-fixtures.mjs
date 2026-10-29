@@ -27,6 +27,14 @@ export function presetCases(sdk) {
   cases.push(()=>field('needle-litter',sdk.createNeedleLitterFieldEffect,sdk.DEFAULT_NEEDLE_LITTER_FIELD_PARAMS))
   cases.push(()=>field('leaf-pile',sdk.createLeafPileBandEffect,sdk.DEFAULT_LEAF_PILE_BAND_PARAMS))
   cases.push(()=>field('fungus-dense',sdk.createFungusSeamEffect,{...sdk.DEFAULT_FUNGUS_SEAM_PARAMS,layoutDensity:5,bandWidth:14}))
+  cases.push(()=>field('fungus-saturated',sdk.createFungusSeamEffect,{...sdk.DEFAULT_FUNGUS_SEAM_PARAMS,layoutDensity:200,bandWidth:56}))
+  cases.push(()=>{
+    let right=false
+    const effect=sdk.createFungusSeamEffect({...options,placementMask:{includeAtXZ:x=>right ? x>=0 : x<0}})
+    return {name:'fungus-mask',effect,update:t=>effect.update(t,ground),params:()=>effect.setParams({...sdk.DEFAULT_FUNGUS_SEAM_PARAMS}),
+      damage:()=>effect.addBurnFromWorldPoint(point),clear:()=>effect.clearBurns(),
+      toggleMask:()=>{right=!right;effect.invalidate()}}
+  })
   cases.push(()=>field('needle-dense',sdk.createNeedleLitterFieldEffect,{...sdk.DEFAULT_NEEDLE_LITTER_FIELD_PARAMS,layoutDensity:5}))
   cases.push(()=>field('leaf-dense',sdk.createLeafPileBandEffect,{...sdk.DEFAULT_LEAF_PILE_BAND_PARAMS,layoutDensity:5,bandWidth:14}))
   cases.push(()=>{
@@ -147,7 +155,7 @@ export function inspectFixture(fixture) {
   fixture.damage?.();update(1.15);states.damage=snapshot(effect)
   update(1.2);states.reaction=snapshot(effect)
   fixture.clear?.();update(1.25);states.clear=snapshot(effect)
-  if(['fungus-seam','needle-litter','leaf-pile','fungus-dense','needle-dense','leaf-dense',
+  if(['fungus-seam','fungus-saturated','fungus-mask','needle-litter','leaf-pile','fungus-dense','needle-dense','leaf-dense',
     'meadow/leafPile','woodland/leafPile','autumn/leafPile'].includes(fixture.name)) {
     effect.addBurnFromWorldPoint(new THREE.Vector3(-1,0,0),{radiusScale:1.4,strength:1})
     effect.addBurnFromWorldPoint(new THREE.Vector3(2,0,1),{radiusScale:1.2,strength:.8})
@@ -159,6 +167,14 @@ export function inspectFixture(fixture) {
     }
     states.overlappingReactions=snapshot(effect)
     fixture.clear?.();effect.clearDisturbances?.();update(1.9);states.restoredReactions=snapshot(effect)
+    if(fixture.toggleMask) {
+      fixture.toggleMask();update(1.95);states.changedMask=snapshot(effect)
+      fixture.toggleMask();update(2);states.restoredMask=snapshot(effect)
+    }
+    if(fixture.name==='fungus-saturated') {
+      effect.setParams({bandWidth:2});update(1.95);states.belowCapacity=snapshot(effect)
+      fixture.params();update(2);states.returnToCapacity=snapshot(effect)
+    }
     if(fixture.name.startsWith('needle')) {
       const cull={cameraWorld:new THREE.Vector3(-10,2,0),radius:8}
       const ground=()=>0
