@@ -30,7 +30,8 @@ Raw binary frames were 49–62% smaller in these fixtures. With gzip applied to
 both formats, the default grass sample was 10,335,788 bytes for JSON and
 8,560,386 bytes for binary; the report contains gzip sizes for every case.
 Compression CPU cost is not included in the timings. Full binary frames are
-still large for dense scenes; this is not a delta or streaming protocol.
+still large for dense scenes. The separate [delta benchmark](./ANIMATION-DELTAS.md)
+measures ordered delta packets against these full frames.
 
 The binary path writes 32-bit words directly rather than expanding them into
 JSON decimal numbers and validating each decoded number. It still validates the

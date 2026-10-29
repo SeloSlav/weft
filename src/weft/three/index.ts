@@ -5,6 +5,8 @@ export type { SurfaceTransformFrame } from './surfaceTransformFrame.ts'
 export { captureSurfaceAnimationFrame, applySurfaceAnimationFrame } from './surfaceAnimationFrame.ts'
 export type { SurfaceAnimationFrame, SurfaceAnimationTarget, SurfaceAnimationUniforms } from './surfaceAnimationFrame.ts'
 export { captureSurfaceAnimationBinary, applySurfaceAnimationBinary } from './surfaceAnimationBinary.ts'
+export { encodeSurfaceAnimationDelta, decodeSurfaceAnimationDelta, applySurfaceAnimationDelta } from './surfaceAnimationDelta.ts'
+export type { SurfaceAnimationDeltaOptions } from './surfaceAnimationDelta.ts'
 
 export { LANDSCAPE_PRESETS } from './presets/landscapePresets.ts'
 export type { LandscapePreset, LandscapePresetId } from './presets/landscapePresets.ts'

@@ -1,0 +1,1058 @@
+{
+  "environment": {
+    "node": "v24.22.1",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "baseline": {
+    "source": "tests/fixtures/animationDeltaBaseline.ts",
+    "sha256": "be2e99abe58376f797b24cea28b7341f7c1e11001de8683041bb11a8c05ee023"
+  },
+  "note": "Three independent sequential paired runs. Each case alternates old and new implementations on identical captured state; timings include full capture/encode or verified replay, not GPU or network.",
+  "runs": [
+    {
+      "generatedAt": "2026-10-29T22:04:55.437Z",
+      "cases": [
+        {
+          "name": "fungus-active",
+          "instances": 58,
+          "fullBytes": 7424,
+          "packetBytes": 1440,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.1100733333333333,
+              "p95Ms": 0.12244666666666622,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.5333333333333333,
+              "cpuMeanMs": 0.15238095238095237,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.07772333333333374,
+              "p95Ms": 0.09636333333333293,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0,
+              "cpuMeanMs": 0,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.13177333333333272,
+              "p95Ms": 0.15897666666666624,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.0333333333333334,
+              "cpuMeanMs": 0.14761904761904762,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.07895333333333383,
+              "p95Ms": 0.089609999999999,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.0666666666666667,
+              "cpuMeanMs": 0.22380952380952382,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "grass-wind-default",
+          "instances": 128298,
+          "fullBytes": 11380500,
+          "packetBytes": 3328,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 20.76548749999995,
+              "p95Ms": 21.336499999999944,
+              "cpuMedianMs": 44.875,
+              "cpuP95Ms": 52.75,
+              "cpuMeanMs": 46.857142857142854,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 10.302662499999997,
+              "p95Ms": 10.50182499999994,
+              "cpuMedianMs": 31.25,
+              "cpuP95Ms": 35.125,
+              "cpuMeanMs": 31.25,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 17.403674999999907,
+              "p95Ms": 17.603925000000004,
+              "cpuMedianMs": 54.75,
+              "cpuP95Ms": 56.625,
+              "cpuMeanMs": 52.464285714285715,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 10.719287500000064,
+              "p95Ms": 10.81230000000005,
+              "cpuMedianMs": 35.125,
+              "cpuP95Ms": 44.875,
+              "cpuMeanMs": 35.982142857142854,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "grass-active-low",
+          "instances": 21216,
+          "fullBytes": 1957276,
+          "packetBytes": 90532,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 4.35552000000007,
+              "p95Ms": 4.500879999999961,
+              "cpuMedianMs": 6.2,
+              "cpuP95Ms": 15.6,
+              "cpuMeanMs": 6.285714285714286,
+              "samples": 7,
+              "batch": 5
+            },
+            "after": {
+              "medianMs": 2.169220000000132,
+              "p95Ms": 2.9696600000001125,
+              "cpuMedianMs": 6.2,
+              "cpuP95Ms": 15.6,
+              "cpuMeanMs": 6.657142857142858,
+              "samples": 7,
+              "batch": 5
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 3.3664999999999052,
+              "p95Ms": 3.6486000000000787,
+              "cpuMedianMs": 3.2,
+              "cpuP95Ms": 21.8,
+              "cpuMeanMs": 6.228571428571429,
+              "samples": 7,
+              "batch": 5
+            },
+            "after": {
+              "medianMs": 2.446820000000298,
+              "p95Ms": 2.68237999999983,
+              "cpuMedianMs": 3.2,
+              "cpuP95Ms": 9.4,
+              "cpuMeanMs": 3.6,
+              "samples": 7,
+              "batch": 5
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "leaf-active",
+          "instances": 809,
+          "fullBytes": 66484,
+          "packetBytes": 1336,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.20246500000002926,
+              "p95Ms": 0.419524999999976,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 3.95,
+              "cpuMeanMs": 0.8928571428571429,
+              "samples": 7,
+              "batch": 20
+            },
+            "after": {
+              "medianMs": 0.14516499999999724,
+              "p95Ms": 0.2747650000000249,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.8,
+              "cpuMeanMs": 0.1142857142857143,
+              "samples": 7,
+              "batch": 20
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.23038500000002388,
+              "p95Ms": 0.4145800000000236,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 3.1,
+              "cpuMeanMs": 0.5571428571428572,
+              "samples": 7,
+              "batch": 20
+            },
+            "after": {
+              "medianMs": 0.15426500000003215,
+              "p95Ms": 0.27450000000008,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 2.35,
+              "cpuMeanMs": 0.45000000000000007,
+              "samples": 7,
+              "batch": 20
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "shell-active",
+          "instances": 396,
+          "fullBytes": 190332,
+          "packetBytes": 45768,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.4709399999999732,
+              "p95Ms": 0.7104100000000472,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0,
+              "cpuMeanMs": 0,
+              "samples": 7,
+              "batch": 10
+            },
+            "after": {
+              "medianMs": 0.2847600000000966,
+              "p95Ms": 0.3322200000000521,
+              "cpuMedianMs": 1.6,
+              "cpuP95Ms": 4.7,
+              "cpuMeanMs": 1.9999999999999998,
+              "samples": 7,
+              "batch": 10
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.5402200000000448,
+              "p95Ms": 0.8640000000001237,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 7.8,
+              "cpuMeanMs": 1.5714285714285714,
+              "samples": 7,
+              "batch": 10
+            },
+            "after": {
+              "medianMs": 0.27942000000002737,
+              "p95Ms": 0.339429999999993,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 4.7,
+              "cpuMeanMs": 0.6714285714285715,
+              "samples": 7,
+              "batch": 10
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "fire-active",
+          "instances": 2356,
+          "fullBytes": 183500,
+          "packetBytes": 162872,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.7305999999998676,
+              "p95Ms": 0.7959000000000742,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 2,
+              "cpuMeanMs": 0.5714285714285714,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 0.5204375000000709,
+              "p95Ms": 0.831762499999968,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.875,
+              "cpuMeanMs": 0.8035714285714286,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.6835375000000568,
+              "p95Ms": 0.903374999999869,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 2,
+              "cpuMeanMs": 0.8214285714285714,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 0.42136249999998654,
+              "p95Ms": 0.5123000000000957,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 2,
+              "cpuMeanMs": 0.2857142857142857,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "fungus-full-change",
+          "instances": 58,
+          "fullBytes": 7424,
+          "packetBytes": 7424,
+          "packetKind": "WFA1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.05186000000000301,
+              "p95Ms": 0.07342000000001765,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.5,
+              "cpuMeanMs": 0.07142857142857142,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.04428000000001096,
+              "p95Ms": 0.05433333333336729,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0,
+              "cpuMeanMs": 0,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.02609333333336205,
+              "p95Ms": 0.0337433333333441,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.5,
+              "cpuMeanMs": 0.07142857142857142,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.021103333333364085,
+              "p95Ms": 0.02439000000000912,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0,
+              "cpuMeanMs": 0,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "packetParity": true
+        }
+      ]
+    },
+    {
+      "generatedAt": "2026-10-29T22:05:06.610Z",
+      "cases": [
+        {
+          "name": "fungus-active",
+          "instances": 58,
+          "fullBytes": 7424,
+          "packetBytes": 1440,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.10578999999999988,
+              "p95Ms": 0.1117999999999995,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.5333333333333333,
+              "cpuMeanMs": 0.07619047619047618,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.07605333333333325,
+              "p95Ms": 0.09215333333333338,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.0333333333333334,
+              "cpuMeanMs": 0.14761904761904762,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.1466066666666658,
+              "p95Ms": 0.19532333333333252,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.0333333333333334,
+              "cpuMeanMs": 0.14761904761904762,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.07653000000000058,
+              "p95Ms": 0.10291333333333341,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.5333333333333333,
+              "cpuMeanMs": 0.1476190476190476,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "grass-wind-default",
+          "instances": 128298,
+          "fullBytes": 11380500,
+          "packetBytes": 3328,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 23.32269999999994,
+              "p95Ms": 24.790975000000003,
+              "cpuMedianMs": 48.75,
+              "cpuP95Ms": 80.125,
+              "cpuMeanMs": 54.42857142857143,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 10.93119999999999,
+              "p95Ms": 11.128612500000031,
+              "cpuMedianMs": 33.25,
+              "cpuP95Ms": 44.875,
+              "cpuMeanMs": 35.42857142857143,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 17.977899999999977,
+              "p95Ms": 18.581749999999943,
+              "cpuMedianMs": 48.75,
+              "cpuP95Ms": 76.125,
+              "cpuMeanMs": 51.875,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 11.672062500000038,
+              "p95Ms": 12.135150000000067,
+              "cpuMedianMs": 43,
+              "cpuP95Ms": 54.625,
+              "cpuMeanMs": 42.160714285714285,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "grass-active-low",
+          "instances": 21216,
+          "fullBytes": 1957276,
+          "packetBytes": 90532,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 4.827319999999963,
+              "p95Ms": 5.475820000000022,
+              "cpuMedianMs": 9.2,
+              "cpuP95Ms": 18.6,
+              "cpuMeanMs": 9.8,
+              "samples": 7,
+              "batch": 5
+            },
+            "after": {
+              "medianMs": 2.5136999999998806,
+              "p95Ms": 3.2094399999998133,
+              "cpuMedianMs": 3.2,
+              "cpuP95Ms": 9.6,
+              "cpuMeanMs": 4.914285714285714,
+              "samples": 7,
+              "batch": 5
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 3.789480000000185,
+              "p95Ms": 4.011179999999877,
+              "cpuMedianMs": 6.2,
+              "cpuP95Ms": 15.6,
+              "cpuMeanMs": 9.37142857142857,
+              "samples": 7,
+              "batch": 5
+            },
+            "after": {
+              "medianMs": 2.705400000000009,
+              "p95Ms": 2.895520000000033,
+              "cpuMedianMs": 3,
+              "cpuP95Ms": 15.6,
+              "cpuMeanMs": 5.314285714285715,
+              "samples": 7,
+              "batch": 5
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "leaf-active",
+          "instances": 809,
+          "fullBytes": 66484,
+          "packetBytes": 1336,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.2719449999999597,
+              "p95Ms": 0.5036549999999806,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.8,
+              "cpuMeanMs": 0.2285714285714286,
+              "samples": 7,
+              "batch": 20
+            },
+            "after": {
+              "medianMs": 0.19711999999999535,
+              "p95Ms": 0.35882000000001424,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 4.65,
+              "cpuMeanMs": 0.8857142857142858,
+              "samples": 7,
+              "batch": 20
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.3053549999999632,
+              "p95Ms": 0.4902900000000045,
+              "cpuMedianMs": 0.75,
+              "cpuP95Ms": 0.8,
+              "cpuMeanMs": 0.4428571428571429,
+              "samples": 7,
+              "batch": 20
+            },
+            "after": {
+              "medianMs": 0.18100500000000466,
+              "p95Ms": 0.37129500000000915,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.75,
+              "cpuMeanMs": 0.10714285714285714,
+              "samples": 7,
+              "batch": 20
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "shell-active",
+          "instances": 396,
+          "fullBytes": 190332,
+          "packetBytes": 45768,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.6146199999999226,
+              "p95Ms": 0.8971800000001167,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 3.2,
+              "cpuMeanMs": 0.8857142857142858,
+              "samples": 7,
+              "batch": 10
+            },
+            "after": {
+              "medianMs": 0.361160000000018,
+              "p95Ms": 0.4535200000000259,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.6,
+              "cpuMeanMs": 0.4428571428571429,
+              "samples": 7,
+              "batch": 10
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.6603699999999663,
+              "p95Ms": 1.0772999999999229,
+              "cpuMedianMs": 1.6,
+              "cpuP95Ms": 3.2,
+              "cpuMeanMs": 1.5714285714285714,
+              "samples": 7,
+              "batch": 10
+            },
+            "after": {
+              "medianMs": 0.3997400000000198,
+              "p95Ms": 0.427940000000126,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0,
+              "cpuMeanMs": 0,
+              "samples": 7,
+              "batch": 10
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "fire-active",
+          "instances": 2356,
+          "fullBytes": 183500,
+          "packetBytes": 162872,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 1.1522625000000062,
+              "p95Ms": 1.6207875000000058,
+              "cpuMedianMs": 1.875,
+              "cpuP95Ms": 2,
+              "cpuMeanMs": 1.125,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 0.859375,
+              "p95Ms": 1.0492874999999913,
+              "cpuMedianMs": 1.875,
+              "cpuP95Ms": 3.875,
+              "cpuMeanMs": 1.3928571428571428,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 1.0207749999999578,
+              "p95Ms": 1.237724999999955,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 7.75,
+              "cpuMeanMs": 1.6607142857142858,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 0.6072625000001608,
+              "p95Ms": 0.725162500000124,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 4,
+              "cpuMeanMs": 1.3928571428571428,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "fungus-full-change",
+          "instances": 58,
+          "fullBytes": 7424,
+          "packetBytes": 7424,
+          "packetKind": "WFA1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.06273666666669063,
+              "p95Ms": 0.1041033333333568,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.5,
+              "cpuMeanMs": 0.07142857142857142,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.0627033333333505,
+              "p95Ms": 0.08509666666662573,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.5333333333333333,
+              "cpuMeanMs": 0.07619047619047618,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.036959999999999125,
+              "p95Ms": 0.05506333333335836,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0,
+              "cpuMeanMs": 0,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.03223666666666152,
+              "p95Ms": 0.04090999999995499,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.0333333333333334,
+              "cpuMeanMs": 0.14761904761904762,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "packetParity": true
+        }
+      ]
+    },
+    {
+      "generatedAt": "2026-10-29T22:05:19.436Z",
+      "cases": [
+        {
+          "name": "fungus-active",
+          "instances": 58,
+          "fullBytes": 7424,
+          "packetBytes": 1440,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.17720333333333352,
+              "p95Ms": 0.21744000000000105,
+              "cpuMedianMs": 0.5333333333333333,
+              "cpuP95Ms": 1.0333333333333334,
+              "cpuMeanMs": 0.4476190476190477,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.1557366666666667,
+              "p95Ms": 0.23347333333333228,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.0333333333333334,
+              "cpuMeanMs": 0.14761904761904762,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.21206666666666743,
+              "p95Ms": 0.3591166666666671,
+              "cpuMedianMs": 0.5,
+              "cpuP95Ms": 1.0666666666666667,
+              "cpuMeanMs": 0.4428571428571428,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.11739000000000033,
+              "p95Ms": 0.1321366666666658,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.0666666666666667,
+              "cpuMeanMs": 0.15238095238095237,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "grass-wind-default",
+          "instances": 128298,
+          "fullBytes": 11380500,
+          "packetBytes": 3328,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 27.625187500000038,
+              "p95Ms": 28.76128749999998,
+              "cpuMedianMs": 52.75,
+              "cpuP95Ms": 66.25,
+              "cpuMeanMs": 53.285714285714285,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 12.806825000000003,
+              "p95Ms": 16.380025000000046,
+              "cpuMedianMs": 46.875,
+              "cpuP95Ms": 48.875,
+              "cpuMeanMs": 46.05357142857143,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 19.296337499999936,
+              "p95Ms": 20.23167500000011,
+              "cpuMedianMs": 64.375,
+              "cpuP95Ms": 82,
+              "cpuMeanMs": 65.83928571428571,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 12.236237500000016,
+              "p95Ms": 13.236525000000029,
+              "cpuMedianMs": 33.125,
+              "cpuP95Ms": 48.875,
+              "cpuMeanMs": 33.767857142857146,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "grass-active-low",
+          "instances": 21216,
+          "fullBytes": 1957276,
+          "packetBytes": 90532,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 5.038419999999678,
+              "p95Ms": 5.53022000000019,
+              "cpuMedianMs": 6.2,
+              "cpuP95Ms": 18.8,
+              "cpuMeanMs": 9.400000000000002,
+              "samples": 7,
+              "batch": 5
+            },
+            "after": {
+              "medianMs": 3.058599999999933,
+              "p95Ms": 3.3409999999999855,
+              "cpuMedianMs": 9.4,
+              "cpuP95Ms": 18.8,
+              "cpuMeanMs": 10.22857142857143,
+              "samples": 7,
+              "batch": 5
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 4.156360000000132,
+              "p95Ms": 4.3197199999998706,
+              "cpuMedianMs": 6.4,
+              "cpuP95Ms": 18.8,
+              "cpuMeanMs": 8.057142857142859,
+              "samples": 7,
+              "batch": 5
+            },
+            "after": {
+              "medianMs": 2.782800000000134,
+              "p95Ms": 3.1649600000000646,
+              "cpuMedianMs": 6.2,
+              "cpuP95Ms": 22,
+              "cpuMeanMs": 7.114285714285715,
+              "samples": 7,
+              "batch": 5
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "leaf-active",
+          "instances": 809,
+          "fullBytes": 66484,
+          "packetBytes": 1336,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.31993000000002214,
+              "p95Ms": 0.5112499999999273,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.55,
+              "cpuMeanMs": 0.33571428571428574,
+              "samples": 7,
+              "batch": 20
+            },
+            "after": {
+              "medianMs": 0.21770999999998822,
+              "p95Ms": 0.37079499999999826,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 2.4,
+              "cpuMeanMs": 0.5642857142857143,
+              "samples": 7,
+              "batch": 20
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.26851999999998954,
+              "p95Ms": 0.5176950000000033,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.6,
+              "cpuMeanMs": 0.5571428571428572,
+              "samples": 7,
+              "batch": 20
+            },
+            "after": {
+              "medianMs": 0.17528500000007624,
+              "p95Ms": 0.34894500000000334,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.8,
+              "cpuMeanMs": 0.1142857142857143,
+              "samples": 7,
+              "batch": 20
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "shell-active",
+          "instances": 396,
+          "fullBytes": 190332,
+          "packetBytes": 45768,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.6299600000000283,
+              "p95Ms": 1.0108699999998862,
+              "cpuMedianMs": 1.5,
+              "cpuP95Ms": 9.4,
+              "cpuMeanMs": 2.2285714285714286,
+              "samples": 7,
+              "batch": 10
+            },
+            "after": {
+              "medianMs": 0.3980199999999968,
+              "p95Ms": 0.47286999999996626,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0,
+              "cpuMeanMs": 0,
+              "samples": 7,
+              "batch": 10
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.5930500000000393,
+              "p95Ms": 1.2204499999999825,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 3.1,
+              "cpuMeanMs": 0.8714285714285713,
+              "samples": 7,
+              "batch": 10
+            },
+            "after": {
+              "medianMs": 0.37076999999990223,
+              "p95Ms": 0.48330999999998314,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 3.2,
+              "cpuMeanMs": 0.4571428571428572,
+              "samples": 7,
+              "batch": 10
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "fire-active",
+          "instances": 2356,
+          "fullBytes": 183500,
+          "packetBytes": 162872,
+          "packetKind": "WFD1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 1.046974999999975,
+              "p95Ms": 1.187349999999924,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 3.875,
+              "cpuMeanMs": 1.1071428571428572,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 0.8124625000000378,
+              "p95Ms": 1.208549999999832,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 9.75,
+              "cpuMeanMs": 1.9642857142857142,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.8205125000001772,
+              "p95Ms": 1.2286249999999654,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 2,
+              "cpuMeanMs": 0.8392857142857143,
+              "samples": 7,
+              "batch": 8
+            },
+            "after": {
+              "medianMs": 0.6022625000000517,
+              "p95Ms": 0.8755750000000262,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 7.875,
+              "cpuMeanMs": 1.9464285714285714,
+              "samples": 7,
+              "batch": 8
+            }
+          },
+          "packetParity": true
+        },
+        {
+          "name": "fungus-full-change",
+          "instances": 58,
+          "fullBytes": 7424,
+          "packetBytes": 7424,
+          "packetKind": "WFA1",
+          "parity": true,
+          "captureAndEncode": {
+            "before": {
+              "medianMs": 0.0864266666666784,
+              "p95Ms": 0.10212333333329297,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.5333333333333333,
+              "cpuMeanMs": 0.07619047619047618,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.07842666666668568,
+              "p95Ms": 0.08920333333335292,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 1.0333333333333334,
+              "cpuMeanMs": 0.14761904761904762,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "decodeAndApply": {
+            "before": {
+              "medianMs": 0.026070000000011837,
+              "p95Ms": 0.04178999999997662,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.5,
+              "cpuMeanMs": 0.07142857142857142,
+              "samples": 7,
+              "batch": 30
+            },
+            "after": {
+              "medianMs": 0.02070666666665299,
+              "p95Ms": 0.028489999999995536,
+              "cpuMedianMs": 0,
+              "cpuP95Ms": 0.5333333333333333,
+              "cpuMeanMs": 0.07619047619047618,
+              "samples": 7,
+              "batch": 30
+            }
+          },
+          "packetParity": true
+        }
+      ]
+    }
+  ]
+}

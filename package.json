@@ -58,9 +58,10 @@
     "build:sdk": "tsup",
     "build:demo": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node tests/run-core.mjs && npm run test:portable && npm run test:transforms",
+    "test": "node tests/run-core.mjs && npm run test:portable && npm run test:transforms && npm run test:animation-deltas",
     "test:portable": "node tests/test-portable.mjs",
     "test:transforms": "node tests/test-transform-frames.mjs",
+    "test:animation-deltas": "node tests/test-animation-deltas.mjs",
     "bench:core": "node tests/bench-core.mjs",
     "check:core": "npm run validate:types && npm test && npm run bench:core --",
     "validate:baseline": "node tests/prepare-baseline.mjs",
@@ -70,7 +71,8 @@
     "bench:presets": "node tests/bench-presets.mjs",
     "check:presets": "npm run validate:types && npm test && npm run bench:presets --",
     "bench:fungus-paired": "node tests/bench-fungus-paired.mjs",
-    "bench:animation-frames": "node tests/bench-animation-frames.mjs"
+    "bench:animation-frames": "node tests/bench-animation-frames.mjs",
+    "bench:animation-deltas": "node tests/bench-animation-deltas.mjs"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

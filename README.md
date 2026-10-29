@@ -186,12 +186,43 @@ applySurfaceAnimationBinary(replicaEffect, new Uint8Array(event.data))
 ```
 
 The binary format carries the same state and bit patterns as the JSON frame and
-uses explicit little-endian 32-bit blocks. Each frame is self-contained; it does
-not compress or send deltas, and callers must handle ordering, delivery and
-transport integrity. Pass the `Uint8Array` itself when sending so a subarray's
+uses explicit little-endian 32-bit blocks. Each frame is self-contained; it is
+not compressed, and callers must handle ordering, delivery and transport
+integrity. Pass the `Uint8Array` itself when sending so a subarray's
 offset and length are respected. Malformed or incompatible frames are checked
 before they modify the replica. See [animation frame benchmarks](tests/ANIMATION-FRAMES.md)
 for workload sizes, CPU costs and gzip comparisons.
+
+For ordered streams, encode changes against the last **acknowledged** full binary
+frame. Keep the corresponding reconstructed frame on the receiver:
+
+```ts
+import { captureSurfaceAnimationBinary, encodeSurfaceAnimationDelta,
+  applySurfaceAnimationDelta } from 'weft-sdk/three'
+
+// After sending an initial WFA1 keyframe and receiving its acknowledgement:
+const next = captureSurfaceAnimationBinary(authorityEffect, tick)
+const packet = await encodeSurfaceAnimationDelta(acknowledgedFrame, next)
+socket.send(packet)
+// Promote next to acknowledgedFrame only after the receiver confirms application.
+
+// Receiver, processing packets sequentially:
+previousFrame = await applySurfaceAnimationDelta(replicaEffect, previousFrame, packet)
+```
+
+The encoder returns a full WFA1 keyframe automatically if a delta would be no
+smaller; the receiver accepts either format. For the initial keyframe, pass
+`null` as `previousFrame`. Deltas verify SHA-256 digests of the required baseline
+and reconstructed result before application. A missing, stale, corrupted or
+wrong baseline is rejected: request a new keyframe to recover. Process each
+stream sequentially and keep the returned bytes unchanged for its next baseline.
+Verification requires Web Crypto in a secure browser context. SHA-256 checks
+identity and accidental corruption; it does not authenticate the sender. Full
+keyframes have no delta checksum, so use an integrity-protected transport.
+The decoder defaults to a 256 MiB limit for the packet and both frames; pass
+`{ maxFrameBytes }` to change it. Deltas require scanning and hashing full frames
+and allocating reconstruction buffers, so smaller packets can cost more CPU.
+See [delta benchmarks](tests/ANIMATION-DELTAS.md) for the measured tradeoff.
 
 ## Package layers
 
