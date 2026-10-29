@@ -224,6 +224,54 @@ The decoder defaults to a 256 MiB limit for the packet and both frames; pass
 and allocating reconstruction buffers, so smaller packets can cost more CPU.
 See [delta benchmarks](tests/ANIMATION-DELTAS.md) for the measured tradeoff.
 
+When only exposed shader uniforms change, a stateful uniform stream avoids
+capturing, scanning and reapplying the full frame on every tick:
+
+```ts
+import { createSurfaceAnimationUniformEncoder, createSurfaceAnimationUniformDecoder,
+  SurfaceAnimationKeyframeRequiredError } from 'weft-sdk/three'
+
+// Authority: send and acknowledge both keyframe and streamId before updates.
+let { encoder, keyframe, streamId } = await createSurfaceAnimationUniformEncoder(authorityEffect, tick)
+// Receiver, after getting the matching keyframe and streamId:
+let decoder = await createSurfaceAnimationUniformDecoder(replicaEffect, keyframe, streamId)
+
+// After advancing authorityEffect, while geometry and transforms remain unchanged:
+try {
+  const packet = await encoder.capture(nextTick)
+  // Send packet; receiver processes it sequentially with await decoder.apply(packet).
+} catch (error) {
+  if (!(error instanceof SurfaceAnimationKeyframeRequiredError)) throw error
+  // Stop this stream, create and acknowledge a new keyframe and streamId,
+  // then replace both encoder and decoder before sending more uniform packets.
+}
+```
+
+Uniform packets contain absolute values, so a later packet can replace a lost
+one; stale ticks, wrong stream IDs, wrong keyframes and corrupt packets are
+rejected. Only one capture or apply may be in flight per stream. Stream IDs and
+SHA-256 checks are not sender authentication; use a protected transport. The
+decoder's default keyframe limit is 256 MiB, adjustable with
+`{ maxFrameBytes }` as its fourth argument.
+
+The fast path checks object transforms, visibility, instance counts, buffer
+identities and Three.js attribute versions. **Every direct buffer mutation must
+set `attribute.needsUpdate = true`**, and the decoder must be the only writer to
+replica render state. Unmarked in-place mutations cannot be detected without a
+full scan. Custom uniform getters and setters should be side-effect free. The
+stream does not synchronize textures, material properties, geometry indices,
+unexposed uniforms or gameplay state, and it retains the existing Float32,
+non-interleaved geometry restrictions. Shared geometry and external ancestor
+transforms remain the application's responsibility.
+
+This fast path is for stable render buffers, such as shader-only wind. A burn,
+disturbance, terrain edit, buffer upload or transform change requires a fresh
+keyframe; it is not a low-cost solution for continuous changing geometry. You can
+instead stop the uniform stream and use the verified full-state delta path for
+active changes. A new stream must begin from an acknowledged keyframe. The
+[benchmark notes](tests/ANIMATION-DELTAS.md) report steady-state, active and
+keyframe costs separately.
+
 ## Package layers
 
 - `weft-sdk/three`: preset factories, layouts, behaviors, and Three.js-facing helpers

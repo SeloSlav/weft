@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-29T22:05:19.436Z",
+  "generatedAt": "2026-10-29T22:16:16.715Z",
   "environment": {
     "node": "v24.22.1",
     "platform": "win32",
@@ -23,28 +23,8 @@
       "packetGzipBytes": 585,
       "captureAndEncode": {
         "full": {
-          "medianMs": 0.03722666666666612,
-          "p95Ms": 0.05937999999999969,
-          "cpuMedianMs": 0,
-          "cpuP95Ms": 0.5,
-          "cpuMeanMs": 0.07142857142857142,
-          "samples": 7,
-          "batch": 30
-        },
-        "delta": {
-          "medianMs": 0.13432333333333304,
-          "p95Ms": 0.27376666666666644,
-          "cpuMedianMs": 0,
-          "cpuP95Ms": 1.0666666666666667,
-          "cpuMeanMs": 0.15238095238095237,
-          "samples": 7,
-          "batch": 30
-        }
-      },
-      "decodeAndApply": {
-        "full": {
-          "medianMs": 0.0307233333333329,
-          "p95Ms": 0.03846333333333405,
+          "medianMs": 0.027093333333333667,
+          "p95Ms": 0.03588333333333272,
           "cpuMedianMs": 0,
           "cpuP95Ms": 0,
           "cpuMeanMs": 0,
@@ -52,11 +32,31 @@
           "batch": 30
         },
         "delta": {
-          "medianMs": 0.1723100000000007,
-          "p95Ms": 0.24151000000000142,
+          "medianMs": 0.10447666666666654,
+          "p95Ms": 0.18599000000000007,
           "cpuMedianMs": 0,
-          "cpuP95Ms": 1.0333333333333334,
-          "cpuMeanMs": 0.29523809523809524,
+          "cpuP95Ms": 1.5666666666666667,
+          "cpuMeanMs": 0.37142857142857144,
+          "samples": 7,
+          "batch": 30
+        }
+      },
+      "decodeAndApply": {
+        "full": {
+          "medianMs": 0.010483333333332704,
+          "p95Ms": 0.018233333333333233,
+          "cpuMedianMs": 0,
+          "cpuP95Ms": 0,
+          "cpuMeanMs": 0,
+          "samples": 7,
+          "batch": 30
+        },
+        "delta": {
+          "medianMs": 0.0761433333333334,
+          "p95Ms": 0.09339000000000036,
+          "cpuMedianMs": 0,
+          "cpuP95Ms": 0.5333333333333333,
+          "cpuMeanMs": 0.07619047619047618,
           "samples": 7,
           "batch": 30
         }
@@ -64,40 +64,40 @@
       "beforeAfter": {
         "captureAndEncode": {
           "before": {
-            "medianMs": 0.17720333333333352,
-            "p95Ms": 0.21744000000000105,
-            "cpuMedianMs": 0.5333333333333333,
-            "cpuP95Ms": 1.0333333333333334,
-            "cpuMeanMs": 0.4476190476190477,
+            "medianMs": 0.09713000000000041,
+            "p95Ms": 0.1113333333333325,
+            "cpuMedianMs": 0,
+            "cpuP95Ms": 0.5333333333333333,
+            "cpuMeanMs": 0.07619047619047618,
             "samples": 7,
             "batch": 30
           },
           "after": {
-            "medianMs": 0.1557366666666667,
-            "p95Ms": 0.23347333333333228,
+            "medianMs": 0.06856333333333282,
+            "p95Ms": 0.09532000000000002,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 1.0333333333333334,
-            "cpuMeanMs": 0.14761904761904762,
+            "cpuP95Ms": 0.5,
+            "cpuMeanMs": 0.07142857142857142,
             "samples": 7,
             "batch": 30
           }
         },
         "decodeAndApply": {
           "before": {
-            "medianMs": 0.21206666666666743,
-            "p95Ms": 0.3591166666666671,
-            "cpuMedianMs": 0.5,
-            "cpuP95Ms": 1.0666666666666667,
-            "cpuMeanMs": 0.4428571428571428,
+            "medianMs": 0.10854999999999866,
+            "p95Ms": 0.12572666666666615,
+            "cpuMedianMs": 0,
+            "cpuP95Ms": 1.5666666666666667,
+            "cpuMeanMs": 0.22380952380952382,
             "samples": 7,
             "batch": 30
           },
           "after": {
-            "medianMs": 0.11739000000000033,
-            "p95Ms": 0.1321366666666658,
+            "medianMs": 0.06327333333333438,
+            "p95Ms": 0.08522999999999949,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 1.0666666666666667,
-            "cpuMeanMs": 0.15238095238095237,
+            "cpuP95Ms": 0.5333333333333333,
+            "cpuMeanMs": 0.07619047619047618,
             "samples": 7,
             "batch": 30
           }
@@ -117,40 +117,40 @@
       "packetGzipBytes": 732,
       "captureAndEncode": {
         "full": {
-          "medianMs": 2.2106749999999806,
-          "p95Ms": 3.0278499999999724,
-          "cpuMedianMs": 9.75,
-          "cpuP95Ms": 17.5,
-          "cpuMeanMs": 7.535714285714286,
+          "medianMs": 1.5302250000000015,
+          "p95Ms": 2.032337499999983,
+          "cpuMedianMs": 2,
+          "cpuP95Ms": 7.75,
+          "cpuMeanMs": 2.5,
           "samples": 7,
           "batch": 8
         },
         "delta": {
-          "medianMs": 13.148187500000006,
-          "p95Ms": 15.255525000000006,
-          "cpuMedianMs": 39.125,
-          "cpuP95Ms": 46.875,
-          "cpuMeanMs": 38.5,
+          "medianMs": 10.636899999999997,
+          "p95Ms": 11.459087499999981,
+          "cpuMedianMs": 41,
+          "cpuP95Ms": 52.75,
+          "cpuMeanMs": 41.017857142857146,
           "samples": 7,
           "batch": 8
         }
       },
       "decodeAndApply": {
         "full": {
-          "medianMs": 0.8042874999999867,
-          "p95Ms": 1.0727125000000228,
+          "medianMs": 0.6001875000000041,
+          "p95Ms": 0.7119374999999764,
           "cpuMedianMs": 0,
-          "cpuP95Ms": 4,
-          "cpuMeanMs": 0.8571428571428571,
+          "cpuP95Ms": 9.75,
+          "cpuMeanMs": 1.3928571428571428,
           "samples": 7,
           "batch": 8
         },
         "delta": {
-          "medianMs": 12.631812500000024,
-          "p95Ms": 12.964400000000012,
-          "cpuMedianMs": 48.875,
-          "cpuP95Ms": 64.5,
-          "cpuMeanMs": 50.767857142857146,
+          "medianMs": 11.144412499999987,
+          "p95Ms": 11.481562499999995,
+          "cpuMedianMs": 50.875,
+          "cpuP95Ms": 52.875,
+          "cpuMeanMs": 47.44642857142857,
           "samples": 7,
           "batch": 8
         }
@@ -158,45 +158,189 @@
       "beforeAfter": {
         "captureAndEncode": {
           "before": {
-            "medianMs": 27.625187500000038,
-            "p95Ms": 28.76128749999998,
-            "cpuMedianMs": 52.75,
-            "cpuP95Ms": 66.25,
-            "cpuMeanMs": 53.285714285714285,
+            "medianMs": 24.931887500000016,
+            "p95Ms": 29.050275000000056,
+            "cpuMedianMs": 52.875,
+            "cpuP95Ms": 74.125,
+            "cpuMeanMs": 56.089285714285715,
             "samples": 7,
             "batch": 8
           },
           "after": {
-            "medianMs": 12.806825000000003,
-            "p95Ms": 16.380025000000046,
-            "cpuMedianMs": 46.875,
-            "cpuP95Ms": 48.875,
-            "cpuMeanMs": 46.05357142857143,
+            "medianMs": 11.70771250000007,
+            "p95Ms": 11.843674999999962,
+            "cpuMedianMs": 41,
+            "cpuP95Ms": 45,
+            "cpuMeanMs": 39.875,
             "samples": 7,
             "batch": 8
           }
         },
         "decodeAndApply": {
           "before": {
-            "medianMs": 19.296337499999936,
-            "p95Ms": 20.23167500000011,
-            "cpuMedianMs": 64.375,
-            "cpuP95Ms": 82,
-            "cpuMeanMs": 65.83928571428571,
+            "medianMs": 18.49577499999998,
+            "p95Ms": 18.707799999999907,
+            "cpuMedianMs": 52.75,
+            "cpuP95Ms": 66.375,
+            "cpuMeanMs": 53.55357142857143,
             "samples": 7,
             "batch": 8
           },
           "after": {
-            "medianMs": 12.236237500000016,
-            "p95Ms": 13.236525000000029,
-            "cpuMedianMs": 33.125,
-            "cpuP95Ms": 48.875,
-            "cpuMeanMs": 33.767857142857146,
+            "medianMs": 11.71962499999995,
+            "p95Ms": 12.200375000000008,
+            "cpuMedianMs": 41.125,
+            "cpuP95Ms": 54.625,
+            "cpuMeanMs": 42.142857142857146,
             "samples": 7,
             "batch": 8
           }
         },
         "packetParity": true
+      },
+      "uniformStream": {
+        "packetBytes": 304,
+        "noBufferWrites": true,
+        "uniformParity": true,
+        "captureAndEncode": {
+          "previous": {
+            "medianMs": 13.038914999999998,
+            "p95Ms": 17.071680000000015,
+            "cpuMedianMs": 51.55,
+            "cpuP95Ms": 54.7,
+            "cpuMeanMs": 50.785714285714285,
+            "samples": 7,
+            "batch": 20
+          },
+          "stream": {
+            "medianMs": 0.18073499999991327,
+            "p95Ms": 0.3409349999999904,
+            "cpuMedianMs": 0,
+            "cpuP95Ms": 3.15,
+            "cpuMeanMs": 1,
+            "samples": 7,
+            "batch": 20
+          }
+        },
+        "decodeAndApply": {
+          "previous": {
+            "medianMs": 12.75325499999999,
+            "p95Ms": 12.943264999999974,
+            "cpuMedianMs": 56.25,
+            "cpuP95Ms": 69.5,
+            "cpuMeanMs": 55.58571428571428,
+            "samples": 7,
+            "batch": 20
+          },
+          "stream": {
+            "medianMs": 0.17764999999999417,
+            "p95Ms": 0.29655499999998935,
+            "cpuMedianMs": 0,
+            "cpuP95Ms": 3.9,
+            "cpuMeanMs": 0.5571428571428572,
+            "samples": 7,
+            "batch": 20
+          }
+        },
+        "batchedCpu": {
+          "encode": {
+            "medianMs": 0.060184765624999415,
+            "p95Ms": 0.07328457031249869,
+            "cpuMedianMs": 0.060546875,
+            "cpuP95Ms": 0.0625,
+            "cpuMeanMs": 0.0546875,
+            "samples": 5,
+            "batch": 512
+          },
+          "replay": {
+            "medianMs": 0.05612050781249778,
+            "p95Ms": 0.06556249999999864,
+            "cpuMedianMs": 0.060546875,
+            "cpuP95Ms": 0.060546875,
+            "cpuMeanMs": 0.0546875,
+            "samples": 5,
+            "batch": 512
+          }
+        },
+        "bootstrap": {
+          "keyframeBytes": 11380500,
+          "fullCapture": {
+            "medianMs": 2.1041999999997643,
+            "p95Ms": 2.370100000000093,
+            "cpuMedianMs": 0,
+            "cpuP95Ms": 62,
+            "cpuMeanMs": 12.4,
+            "samples": 5,
+            "batch": 1
+          },
+          "encoder": {
+            "medianMs": 10.469500000001062,
+            "p95Ms": 10.80920000000151,
+            "cpuMedianMs": 16,
+            "cpuP95Ms": 79,
+            "cpuMeanMs": 31.4,
+            "samples": 5,
+            "batch": 1
+          },
+          "fullApply": {
+            "medianMs": 0.6748000000006869,
+            "p95Ms": 0.8500000000003638,
+            "cpuMedianMs": 0,
+            "cpuP95Ms": 0,
+            "cpuMeanMs": 0,
+            "samples": 5,
+            "batch": 1
+          },
+          "decoder": {
+            "medianMs": 9.05619999999908,
+            "p95Ms": 10.096199999999953,
+            "cpuMedianMs": 15,
+            "cpuP95Ms": 78,
+            "cpuMeanMs": 21.8,
+            "samples": 5,
+            "batch": 1
+          }
+        },
+        "disturbanceRekey": {
+          "changeDetected": true,
+          "keyframeBytes": 11380500,
+          "fullCapture": {
+            "medianMs": 2.050199999999677,
+            "p95Ms": 2.392699999998513,
+            "cpuMedianMs": 0,
+            "cpuP95Ms": 0,
+            "cpuMeanMs": 0,
+            "samples": 5,
+            "batch": 1
+          },
+          "encoder": {
+            "medianMs": 9.062200000000303,
+            "p95Ms": 10.669299999999566,
+            "cpuMedianMs": 16,
+            "cpuP95Ms": 78,
+            "cpuMeanMs": 34.2,
+            "samples": 5,
+            "batch": 1
+          },
+          "fullApply": {
+            "medianMs": 0.792699999999968,
+            "p95Ms": 1.0609000000004016,
+            "cpuMedianMs": 0,
+            "cpuP95Ms": 0,
+            "cpuMeanMs": 0,
+            "samples": 5,
+            "batch": 1
+          },
+          "decoder": {
+            "medianMs": 9.919499999999971,
+            "p95Ms": 10.339899999999034,
+            "cpuMedianMs": 16,
+            "cpuP95Ms": 94,
+            "cpuMeanMs": 31.2,
+            "samples": 5,
+            "batch": 1
+          }
+        }
       }
     },
     {
@@ -211,28 +355,28 @@
       "packetGzipBytes": 65539,
       "captureAndEncode": {
         "full": {
-          "medianMs": 0.508560000000216,
-          "p95Ms": 0.8904600000001665,
+          "medianMs": 0.4415800000002491,
+          "p95Ms": 1.0108000000000175,
           "cpuMedianMs": 0,
-          "cpuP95Ms": 12.6,
-          "cpuMeanMs": 1.8,
+          "cpuP95Ms": 3.2,
+          "cpuMeanMs": 0.4571428571428572,
           "samples": 7,
           "batch": 5
         },
         "delta": {
-          "medianMs": 2.604899999999907,
-          "p95Ms": 4.047899999999936,
-          "cpuMedianMs": 3.2,
-          "cpuP95Ms": 6.4,
-          "cpuMeanMs": 4,
+          "medianMs": 2.638839999999982,
+          "p95Ms": 4.687160000000222,
+          "cpuMedianMs": 6.4,
+          "cpuP95Ms": 18.8,
+          "cpuMeanMs": 9.4,
           "samples": 7,
           "batch": 5
         }
       },
       "decodeAndApply": {
         "full": {
-          "medianMs": 0.14078000000008614,
-          "p95Ms": 0.17628000000004249,
+          "medianMs": 0.1727999999999156,
+          "p95Ms": 0.26035999999985504,
           "cpuMedianMs": 0,
           "cpuP95Ms": 0,
           "cpuMeanMs": 0,
@@ -240,11 +384,11 @@
           "batch": 5
         },
         "delta": {
-          "medianMs": 2.655939999999828,
-          "p95Ms": 3.3536800000001676,
+          "medianMs": 2.7006400000002033,
+          "p95Ms": 3.541160000000309,
           "cpuMedianMs": 3.2,
-          "cpuP95Ms": 15.6,
-          "cpuMeanMs": 4.9142857142857155,
+          "cpuP95Ms": 18.8,
+          "cpuMeanMs": 6.685714285714285,
           "samples": 7,
           "batch": 5
         }
@@ -252,40 +396,134 @@
       "beforeAfter": {
         "captureAndEncode": {
           "before": {
-            "medianMs": 5.038419999999678,
-            "p95Ms": 5.53022000000019,
-            "cpuMedianMs": 6.2,
-            "cpuP95Ms": 18.8,
-            "cpuMeanMs": 9.400000000000002,
+            "medianMs": 5.064879999999903,
+            "p95Ms": 5.789679999999862,
+            "cpuMedianMs": 6.4,
+            "cpuP95Ms": 15.6,
+            "cpuMeanMs": 8.057142857142859,
             "samples": 7,
             "batch": 5
           },
           "after": {
-            "medianMs": 3.058599999999933,
-            "p95Ms": 3.3409999999999855,
-            "cpuMedianMs": 9.4,
-            "cpuP95Ms": 18.8,
-            "cpuMeanMs": 10.22857142857143,
+            "medianMs": 3.052939999999944,
+            "p95Ms": 3.773859999999695,
+            "cpuMedianMs": 15.6,
+            "cpuP95Ms": 21.8,
+            "cpuMeanMs": 12.028571428571427,
             "samples": 7,
             "batch": 5
           }
         },
         "decodeAndApply": {
           "before": {
-            "medianMs": 4.156360000000132,
-            "p95Ms": 4.3197199999998706,
-            "cpuMedianMs": 6.4,
-            "cpuP95Ms": 18.8,
-            "cpuMeanMs": 8.057142857142859,
+            "medianMs": 4.1166799999999055,
+            "p95Ms": 4.555860000000029,
+            "cpuMedianMs": 3.2,
+            "cpuP95Ms": 18.4,
+            "cpuMeanMs": 6.228571428571428,
             "samples": 7,
             "batch": 5
           },
           "after": {
-            "medianMs": 2.782800000000134,
-            "p95Ms": 3.1649600000000646,
-            "cpuMedianMs": 6.2,
+            "medianMs": 3.1304000000000087,
+            "p95Ms": 3.1961999999999535,
+            "cpuMedianMs": 15.6,
             "cpuP95Ms": 22,
-            "cpuMeanMs": 7.114285714285715,
+            "cpuMeanMs": 12.514285714285714,
+            "samples": 7,
+            "batch": 5
+          }
+        },
+        "packetParity": true
+      }
+    },
+    {
+      "name": "grass-active-default",
+      "instances": 128298,
+      "parity": true,
+      "packetKind": "WFD1",
+      "previousBytes": 11380500,
+      "fullBytes": 11380500,
+      "packetBytes": 521596,
+      "fullGzipBytes": 8560384,
+      "packetGzipBytes": 383057,
+      "captureAndEncode": {
+        "full": {
+          "medianMs": 1.9131199999999808,
+          "p95Ms": 2.316660000000411,
+          "cpuMedianMs": 12.4,
+          "cpuP95Ms": 15.6,
+          "cpuMeanMs": 9.342857142857143,
+          "samples": 7,
+          "batch": 5
+        },
+        "delta": {
+          "medianMs": 13.14048000000039,
+          "p95Ms": 13.728079999999318,
+          "cpuMedianMs": 43.8,
+          "cpuP95Ms": 72,
+          "cpuMeanMs": 49.57142857142858,
+          "samples": 7,
+          "batch": 5
+        }
+      },
+      "decodeAndApply": {
+        "full": {
+          "medianMs": 0.7154600000001665,
+          "p95Ms": 1.3358799999994517,
+          "cpuMedianMs": 0,
+          "cpuP95Ms": 6.4,
+          "cpuMeanMs": 0.9142857142857144,
+          "samples": 7,
+          "batch": 5
+        },
+        "delta": {
+          "medianMs": 12.897880000000441,
+          "p95Ms": 13.268159999999625,
+          "cpuMedianMs": 50.2,
+          "cpuP95Ms": 62.4,
+          "cpuMeanMs": 48.65714285714285,
+          "samples": 7,
+          "batch": 5
+        }
+      },
+      "beforeAfter": {
+        "captureAndEncode": {
+          "before": {
+            "medianMs": 27.116100000000007,
+            "p95Ms": 27.9731200000002,
+            "cpuMedianMs": 65.8,
+            "cpuP95Ms": 75,
+            "cpuMeanMs": 63.45714285714286,
+            "samples": 7,
+            "batch": 5
+          },
+          "after": {
+            "medianMs": 13.170580000000337,
+            "p95Ms": 14.022600000000239,
+            "cpuMedianMs": 50,
+            "cpuP95Ms": 78,
+            "cpuMeanMs": 52.17142857142857,
+            "samples": 7,
+            "batch": 5
+          }
+        },
+        "decodeAndApply": {
+          "before": {
+            "medianMs": 20.031400000000577,
+            "p95Ms": 20.47034000000058,
+            "cpuMedianMs": 59.4,
+            "cpuP95Ms": 93.8,
+            "cpuMeanMs": 67.42857142857142,
+            "samples": 7,
+            "batch": 5
+          },
+          "after": {
+            "medianMs": 12.977199999999721,
+            "p95Ms": 13.624779999999737,
+            "cpuMedianMs": 46.6,
+            "cpuP95Ms": 68.8,
+            "cpuMeanMs": 49.51428571428572,
             "samples": 7,
             "batch": 5
           }
@@ -305,40 +543,40 @@
       "packetGzipBytes": 486,
       "captureAndEncode": {
         "full": {
-          "medianMs": 0.07329999999992651,
-          "p95Ms": 0.0877849999999853,
+          "medianMs": 0.07160499999990862,
+          "p95Ms": 0.09887500000004365,
           "cpuMedianMs": 0,
           "cpuP95Ms": 0.8,
-          "cpuMeanMs": 0.22142857142857145,
+          "cpuMeanMs": 0.1142857142857143,
           "samples": 7,
           "batch": 20
         },
         "delta": {
-          "medianMs": 0.2125,
-          "p95Ms": 0.4642149999999674,
+          "medianMs": 0.2030000000000655,
+          "p95Ms": 0.24250499999998282,
           "cpuMedianMs": 0,
-          "cpuP95Ms": 0.8,
-          "cpuMeanMs": 0.1142857142857143,
+          "cpuP95Ms": 3.9,
+          "cpuMeanMs": 0.6642857142857144,
           "samples": 7,
           "batch": 20
         }
       },
       "decodeAndApply": {
         "full": {
-          "medianMs": 0.02346499999994194,
-          "p95Ms": 0.027494999999998982,
+          "medianMs": 0.024350000000049478,
+          "p95Ms": 0.03225000000002183,
           "cpuMedianMs": 0,
-          "cpuP95Ms": 0,
-          "cpuMeanMs": 0,
+          "cpuP95Ms": 0.75,
+          "cpuMeanMs": 0.10714285714285714,
           "samples": 7,
           "batch": 20
         },
         "delta": {
-          "medianMs": 0.18820000000005166,
-          "p95Ms": 0.2961699999999837,
+          "medianMs": 0.21005000000004656,
+          "p95Ms": 0.23352500000000873,
           "cpuMedianMs": 0,
-          "cpuP95Ms": 2.3,
-          "cpuMeanMs": 0.4428571428571428,
+          "cpuP95Ms": 1.55,
+          "cpuMeanMs": 0.33571428571428574,
           "samples": 7,
           "batch": 20
         }
@@ -346,40 +584,40 @@
       "beforeAfter": {
         "captureAndEncode": {
           "before": {
-            "medianMs": 0.31993000000002214,
-            "p95Ms": 0.5112499999999273,
+            "medianMs": 0.29813500000000204,
+            "p95Ms": 0.40693499999997584,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 1.55,
-            "cpuMeanMs": 0.33571428571428574,
+            "cpuP95Ms": 3.1,
+            "cpuMeanMs": 0.5571428571428572,
             "samples": 7,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.21770999999998822,
-            "p95Ms": 0.37079499999999826,
+            "medianMs": 0.1848150000001624,
+            "p95Ms": 0.4920849999998609,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 2.4,
-            "cpuMeanMs": 0.5642857142857143,
+            "cpuP95Ms": 3.9,
+            "cpuMeanMs": 0.7785714285714286,
             "samples": 7,
             "batch": 20
           }
         },
         "decodeAndApply": {
           "before": {
-            "medianMs": 0.26851999999998954,
-            "p95Ms": 0.5176950000000033,
+            "medianMs": 0.26498499999997877,
+            "p95Ms": 0.5058750000000145,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 1.6,
-            "cpuMeanMs": 0.5571428571428572,
+            "cpuP95Ms": 3.15,
+            "cpuMeanMs": 0.6714285714285715,
             "samples": 7,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.17528500000007624,
-            "p95Ms": 0.34894500000000334,
-            "cpuMedianMs": 0,
-            "cpuP95Ms": 0.8,
-            "cpuMeanMs": 0.1142857142857143,
+            "medianMs": 0.16508499999999912,
+            "p95Ms": 0.2273699999999735,
+            "cpuMedianMs": 0.75,
+            "cpuP95Ms": 2.35,
+            "cpuMeanMs": 0.6714285714285715,
             "samples": 7,
             "batch": 20
           }
@@ -399,28 +637,8 @@
       "packetGzipBytes": 29377,
       "captureAndEncode": {
         "full": {
-          "medianMs": 0.10786000000007334,
-          "p95Ms": 0.1620100000000093,
-          "cpuMedianMs": 0,
-          "cpuP95Ms": 1.6,
-          "cpuMeanMs": 0.2285714285714286,
-          "samples": 7,
-          "batch": 10
-        },
-        "delta": {
-          "medianMs": 0.4183299999998781,
-          "p95Ms": 0.8030800000000454,
-          "cpuMedianMs": 0,
-          "cpuP95Ms": 6.2,
-          "cpuMeanMs": 0.8857142857142858,
-          "samples": 7,
-          "batch": 10
-        }
-      },
-      "decodeAndApply": {
-        "full": {
-          "medianMs": 0.08230999999996129,
-          "p95Ms": 0.12358000000003813,
+          "medianMs": 0.1559400000001915,
+          "p95Ms": 0.2144400000001042,
           "cpuMedianMs": 0,
           "cpuP95Ms": 0,
           "cpuMeanMs": 0,
@@ -428,11 +646,31 @@
           "batch": 10
         },
         "delta": {
-          "medianMs": 0.3932199999999284,
-          "p95Ms": 0.7589799999999741,
+          "medianMs": 0.45063000000009196,
+          "p95Ms": 1.0118800000000192,
           "cpuMedianMs": 0,
-          "cpuP95Ms": 1.5,
-          "cpuMeanMs": 0.42857142857142855,
+          "cpuP95Ms": 7.8,
+          "cpuMeanMs": 2.6714285714285713,
+          "samples": 7,
+          "batch": 10
+        }
+      },
+      "decodeAndApply": {
+        "full": {
+          "medianMs": 0.08367999999973108,
+          "p95Ms": 0.12230000000017753,
+          "cpuMedianMs": 0,
+          "cpuP95Ms": 0,
+          "cpuMeanMs": 0,
+          "samples": 7,
+          "batch": 10
+        },
+        "delta": {
+          "medianMs": 0.39667999999983294,
+          "p95Ms": 1.0390400000000226,
+          "cpuMedianMs": 0,
+          "cpuP95Ms": 4.7,
+          "cpuMeanMs": 1.342857142857143,
           "samples": 7,
           "batch": 10
         }
@@ -440,40 +678,40 @@
       "beforeAfter": {
         "captureAndEncode": {
           "before": {
-            "medianMs": 0.6299600000000283,
-            "p95Ms": 1.0108699999998862,
-            "cpuMedianMs": 1.5,
-            "cpuP95Ms": 9.4,
-            "cpuMeanMs": 2.2285714285714286,
+            "medianMs": 0.6652999999998428,
+            "p95Ms": 1.0855199999998149,
+            "cpuMedianMs": 0,
+            "cpuP95Ms": 1.6,
+            "cpuMeanMs": 0.6571428571428571,
             "samples": 7,
             "batch": 10
           },
           "after": {
-            "medianMs": 0.3980199999999968,
-            "p95Ms": 0.47286999999996626,
+            "medianMs": 0.4213400000000547,
+            "p95Ms": 0.5196400000000722,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 0,
-            "cpuMeanMs": 0,
+            "cpuP95Ms": 7.8,
+            "cpuMeanMs": 1.342857142857143,
             "samples": 7,
             "batch": 10
           }
         },
         "decodeAndApply": {
           "before": {
-            "medianMs": 0.5930500000000393,
-            "p95Ms": 1.2204499999999825,
+            "medianMs": 0.5836800000000949,
+            "p95Ms": 0.7578400000002148,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 3.1,
-            "cpuMeanMs": 0.8714285714285713,
+            "cpuP95Ms": 7.8,
+            "cpuMeanMs": 1.342857142857143,
             "samples": 7,
             "batch": 10
           },
           "after": {
-            "medianMs": 0.37076999999990223,
-            "p95Ms": 0.48330999999998314,
+            "medianMs": 0.3918000000001484,
+            "p95Ms": 1.0244299999998474,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 3.2,
-            "cpuMeanMs": 0.4571428571428572,
+            "cpuP95Ms": 7.8,
+            "cpuMeanMs": 1.7857142857142858,
             "samples": 7,
             "batch": 10
           }
@@ -493,8 +731,8 @@
       "packetGzipBytes": 76174,
       "captureAndEncode": {
         "full": {
-          "medianMs": 0.11602500000003602,
-          "p95Ms": 0.19032500000002983,
+          "medianMs": 0.11110000000007858,
+          "p95Ms": 0.17052499999999782,
           "cpuMedianMs": 0,
           "cpuP95Ms": 0,
           "cpuMeanMs": 0,
@@ -502,19 +740,19 @@
           "batch": 8
         },
         "delta": {
-          "medianMs": 0.7230875000000196,
-          "p95Ms": 1.416524999999865,
-          "cpuMedianMs": 0,
-          "cpuP95Ms": 6,
-          "cpuMeanMs": 1.3928571428571428,
+          "medianMs": 1.2764749999996639,
+          "p95Ms": 1.555212499999925,
+          "cpuMedianMs": 1.875,
+          "cpuP95Ms": 9.875,
+          "cpuMeanMs": 4.196428571428571,
           "samples": 7,
           "batch": 8
         }
       },
       "decodeAndApply": {
         "full": {
-          "medianMs": 0.04704999999989923,
-          "p95Ms": 0.06092499999999745,
+          "medianMs": 0.05547500000011496,
+          "p95Ms": 0.06916249999994761,
           "cpuMedianMs": 0,
           "cpuP95Ms": 0,
           "cpuMeanMs": 0,
@@ -522,11 +760,11 @@
           "batch": 8
         },
         "delta": {
-          "medianMs": 0.5955500000000029,
-          "p95Ms": 1.029162499999984,
+          "medianMs": 0.6068875000000844,
+          "p95Ms": 0.6631499999998596,
           "cpuMedianMs": 0,
-          "cpuP95Ms": 11.75,
-          "cpuMeanMs": 2.232142857142857,
+          "cpuP95Ms": 2,
+          "cpuMeanMs": 0.5535714285714286,
           "samples": 7,
           "batch": 8
         }
@@ -534,40 +772,40 @@
       "beforeAfter": {
         "captureAndEncode": {
           "before": {
-            "medianMs": 1.046974999999975,
-            "p95Ms": 1.187349999999924,
-            "cpuMedianMs": 0,
-            "cpuP95Ms": 3.875,
-            "cpuMeanMs": 1.1071428571428572,
+            "medianMs": 0.9587875000001986,
+            "p95Ms": 1.0980875000000196,
+            "cpuMedianMs": 2,
+            "cpuP95Ms": 2,
+            "cpuMeanMs": 1.1428571428571428,
             "samples": 7,
             "batch": 8
           },
           "after": {
-            "medianMs": 0.8124625000000378,
-            "p95Ms": 1.208549999999832,
+            "medianMs": 0.6870874999999614,
+            "p95Ms": 0.848712500000147,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 9.75,
-            "cpuMeanMs": 1.9642857142857142,
+            "cpuP95Ms": 1.875,
+            "cpuMeanMs": 0.5357142857142857,
             "samples": 7,
             "batch": 8
           }
         },
         "decodeAndApply": {
           "before": {
-            "medianMs": 0.8205125000001772,
-            "p95Ms": 1.2286249999999654,
+            "medianMs": 0.7700999999997293,
+            "p95Ms": 1.3038250000004155,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 2,
-            "cpuMeanMs": 0.8392857142857143,
+            "cpuP95Ms": 9.75,
+            "cpuMeanMs": 2.232142857142857,
             "samples": 7,
             "batch": 8
           },
           "after": {
-            "medianMs": 0.6022625000000517,
-            "p95Ms": 0.8755750000000262,
+            "medianMs": 0.5485624999996617,
+            "p95Ms": 0.7567749999998341,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 7.875,
-            "cpuMeanMs": 1.9464285714285714,
+            "cpuP95Ms": 4,
+            "cpuMeanMs": 1.125,
             "samples": 7,
             "batch": 8
           }
@@ -587,8 +825,8 @@
       "packetGzipBytes": 4206,
       "captureAndEncode": {
         "full": {
-          "medianMs": 0.03132666666667016,
-          "p95Ms": 0.03897333333334245,
+          "medianMs": 0.043269999999999226,
+          "p95Ms": 0.05202000000002348,
           "cpuMedianMs": 0,
           "cpuP95Ms": 0,
           "cpuMeanMs": 0,
@@ -596,19 +834,19 @@
           "batch": 30
         },
         "delta": {
-          "medianMs": 0.06317333333330073,
-          "p95Ms": 0.07107333333333372,
+          "medianMs": 0.09190000000004754,
+          "p95Ms": 0.0977133333333768,
           "cpuMedianMs": 0,
-          "cpuP95Ms": 1.0333333333333334,
-          "cpuMeanMs": 0.14761904761904762,
+          "cpuP95Ms": 0.5333333333333333,
+          "cpuMeanMs": 0.1476190476190476,
           "samples": 7,
           "batch": 30
         }
       },
       "decodeAndApply": {
         "full": {
-          "medianMs": 0.014089999999972255,
-          "p95Ms": 0.03109999999996944,
+          "medianMs": 0.02114000000001397,
+          "p95Ms": 0.028756666666716533,
           "cpuMedianMs": 0,
           "cpuP95Ms": 0,
           "cpuMeanMs": 0,
@@ -616,8 +854,8 @@
           "batch": 30
         },
         "delta": {
-          "medianMs": 0.024020000000018627,
-          "p95Ms": 0.04202000000004773,
+          "medianMs": 0.036883333333268334,
+          "p95Ms": 0.04147999999998622,
           "cpuMedianMs": 0,
           "cpuP95Ms": 0.5333333333333333,
           "cpuMeanMs": 0.07619047619047618,
@@ -628,40 +866,40 @@
       "beforeAfter": {
         "captureAndEncode": {
           "before": {
-            "medianMs": 0.0864266666666784,
-            "p95Ms": 0.10212333333329297,
+            "medianMs": 0.0831866666667338,
+            "p95Ms": 0.09215000000003784,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 0.5333333333333333,
-            "cpuMeanMs": 0.07619047619047618,
+            "cpuP95Ms": 1.0333333333333334,
+            "cpuMeanMs": 0.14761904761904762,
             "samples": 7,
             "batch": 30
           },
           "after": {
-            "medianMs": 0.07842666666668568,
-            "p95Ms": 0.08920333333335292,
+            "medianMs": 0.07785333333328405,
+            "p95Ms": 0.08360666666667385,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 1.0333333333333334,
-            "cpuMeanMs": 0.14761904761904762,
+            "cpuP95Ms": 0.5333333333333333,
+            "cpuMeanMs": 0.07619047619047618,
             "samples": 7,
             "batch": 30
           }
         },
         "decodeAndApply": {
           "before": {
-            "medianMs": 0.026070000000011837,
-            "p95Ms": 0.04178999999997662,
+            "medianMs": 0.032886666666672684,
+            "p95Ms": 0.04912333333340939,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 0.5,
-            "cpuMeanMs": 0.07142857142857142,
+            "cpuP95Ms": 0,
+            "cpuMeanMs": 0,
             "samples": 7,
             "batch": 30
           },
           "after": {
-            "medianMs": 0.02070666666665299,
-            "p95Ms": 0.028489999999995536,
+            "medianMs": 0.03387666666664397,
+            "p95Ms": 0.03518666666665619,
             "cpuMedianMs": 0,
-            "cpuP95Ms": 0.5333333333333333,
-            "cpuMeanMs": 0.07619047619047618,
+            "cpuP95Ms": 0.5,
+            "cpuMeanMs": 0.07142857142857142,
             "samples": 7,
             "batch": 30
           }
@@ -673,6 +911,7 @@
   "gates": {
     "exactParity": true,
     "neverLarger": true,
+    "uniformStreamExact": true,
     "windDeltaSmaller": true
   }
 }

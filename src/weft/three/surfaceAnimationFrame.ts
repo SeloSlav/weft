@@ -11,7 +11,7 @@ export type SurfaceAnimationTarget = {
   setAnimationUniforms?: (uniforms: SurfaceAnimationUniforms) => void
 }
 type AttributeFrame = { name: string; itemSize: number; normalized: boolean; instanced: boolean; meshPerAttribute: number; words: SurfaceFrameWords }
-type UniformFrame = { name: string; scalar: boolean; bits: number[] }
+export type UniformFrame = { name: string; scalar: boolean; bits: number[] }
 export type SurfaceAnimationFrame = {
   version: 1
   transform: SurfaceTransformFrame
@@ -56,7 +56,7 @@ function attributesFor(mesh: THREE.Mesh, count: number, copy: boolean): Attribut
     return {...data,words:copy ? Array.from(words) : words}
   })
 }
-function readUniforms(target: SurfaceAnimationTarget): UniformFrame[] {
+export function readUniforms(target: SurfaceAnimationTarget): UniformFrame[] {
   const values=target.getAnimationUniforms?.() ?? {}
   return Object.keys(values).sort().map(name=>{
     const value=values[name]!, scalar=typeof value==='number'

@@ -7,6 +7,9 @@ export type { SurfaceAnimationFrame, SurfaceAnimationTarget, SurfaceAnimationUni
 export { captureSurfaceAnimationBinary, applySurfaceAnimationBinary } from './surfaceAnimationBinary.ts'
 export { encodeSurfaceAnimationDelta, decodeSurfaceAnimationDelta, applySurfaceAnimationDelta } from './surfaceAnimationDelta.ts'
 export type { SurfaceAnimationDeltaOptions } from './surfaceAnimationDelta.ts'
+export { createSurfaceAnimationUniformEncoder, createSurfaceAnimationUniformDecoder,
+  SurfaceAnimationKeyframeRequiredError } from './surfaceAnimationUniformStream.ts'
+export type { SurfaceAnimationUniformEncoder, SurfaceAnimationUniformDecoder } from './surfaceAnimationUniformStream.ts'
 
 export { LANDSCAPE_PRESETS } from './presets/landscapePresets.ts'
 export type { LandscapePreset, LandscapePresetId } from './presets/landscapePresets.ts'

@@ -15,7 +15,9 @@ console.log('Measuring full frames and paired baseline/current verified deltasâ€
 const child=spawnSync(process.execPath,['--expose-gc','tests/animation-delta-bench-worker.mjs',bundle,baselineBundle],{encoding:'utf8',maxBuffer:4*1024*1024})
 if(child.status!==0)throw Error((child.stderr||child.error?.message||`Worker exited ${child.status}`).slice(0,4000))
 const measured=JSON.parse(child.stdout)
+const windStream=measured.results.find(r=>r.name==='grass-wind-default')?.uniformStream
 const gates={exactParity:measured.results.every(r=>r.parity && r.beforeAfter.packetParity),neverLarger:measured.results.every(r=>r.packetBytes<=r.fullBytes),
+  uniformStreamExact:Boolean(windStream && windStream.uniformParity && windStream.noBufferWrites && windStream.disturbanceRekey.changeDetected),
   windDeltaSmaller:measured.results.find(r=>r.name==='grass-wind-default').packetBytes<measured.results.find(r=>r.name==='grass-wind-default').fullBytes}
 const report={generatedAt:new Date().toISOString(),environment:{node:measured.node,platform:measured.platform,arch:measured.arch},
   baseline:{source:baselineSource,sha256:createHash('sha256').update(await readFile(baselineSource)).digest('hex')},
@@ -29,5 +31,17 @@ console.log('Mean process CPU per operation (user + system; coarse timer resolut
 console.table(measured.results.map(r=>({fixture:r.name,encodeCpuBefore:r.beforeAfter.captureAndEncode.before.cpuMeanMs.toFixed(2),
   encodeCpuAfter:r.beforeAfter.captureAndEncode.after.cpuMeanMs.toFixed(2),replayCpuBefore:r.beforeAfter.decodeAndApply.before.cpuMeanMs.toFixed(2),
   replayCpuAfter:r.beforeAfter.decodeAndApply.after.cpuMeanMs.toFixed(2)})))
+console.table(measured.results.filter(r=>r.uniformStream).map(r=>({fixture:r.name,packetBytes:r.uniformStream.packetBytes,
+  previousEncodeMs:r.uniformStream.captureAndEncode.previous.medianMs.toFixed(3),streamEncodeMs:r.uniformStream.captureAndEncode.stream.medianMs.toFixed(3),
+  previousReplayMs:r.uniformStream.decodeAndApply.previous.medianMs.toFixed(3),streamReplayMs:r.uniformStream.decodeAndApply.stream.medianMs.toFixed(3),
+  noBufferWrites:r.uniformStream.noBufferWrites})))
+console.table(measured.results.filter(r=>r.uniformStream).map(r=>({fixture:r.name,
+  previousEncodeCpuMs:r.uniformStream.captureAndEncode.previous.cpuMeanMs.toFixed(3),streamEncodeCpuMs:r.uniformStream.batchedCpu.encode.cpuMeanMs.toFixed(3),
+  previousReplayCpuMs:r.uniformStream.decodeAndApply.previous.cpuMeanMs.toFixed(3),streamReplayCpuMs:r.uniformStream.batchedCpu.replay.cpuMeanMs.toFixed(3)})))
+console.table(measured.results.filter(r=>r.uniformStream).map(r=>({fixture:r.name,
+  keyframeMB:(r.uniformStream.disturbanceRekey.keyframeBytes/1e6).toFixed(2),
+  rekeyEncodeMs:r.uniformStream.disturbanceRekey.encoder.medianMs.toFixed(2),
+  rekeyReplayMs:r.uniformStream.disturbanceRekey.decoder.medianMs.toFixed(2),
+  disturbanceDetected:r.uniformStream.disturbanceRekey.changeDetected})))
 console.log('Regression gates:',gates,'Report:',output)
 if(Object.values(gates).some(value=>!value))process.exitCode=1
