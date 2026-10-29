@@ -16,9 +16,16 @@ const API_GROUPS = [
     items: [
       'createSurfaceSource()',
       'createSurfaceEffect()',
+      'createSurfaceRuntime()',
       'createInstancedMesh()',
       'threeInstancedMeshRenderer()',
     ],
+  },
+  {
+    title: 'Core cache lifecycle',
+    description: 'Bound source retention, replace definitions safely, and inspect deterministic layout work.',
+    items: ['configureSurfaceCaches()', 'getSurfaceCacheStats()', 'releaseSurfaceSource()',
+      'clearSurfaceCaches()', 'clearSeedCursorCache()', 'getSeedCursorStats()'],
   },
   {
     title: 'Terrain and culling helpers',
@@ -656,8 +663,27 @@ const emberEffect = createSurfaceEffect({
   ],
 })
 
-// From here, your own module can project/update this config
-// with a custom shader, material system, or runtime wrapper.`,
+const runtime = emberEffect.createRuntime({
+  spanMin: -16,
+  spanMax: 16,
+  lineCoordAtRow: row => row - 10,
+  getMaxWidth: slot => slot.spanSize * 32,
+  projectGlyph({ slot, glyphIndex, glyphCount }, { transform }) {
+    transform.position.set(
+      slot.spanStart + (glyphIndex + 0.5) / glyphCount * slot.spanSize,
+      0.2,
+      slot.lineCoord,
+    )
+  },
+  disposeResources: true,
+})
+scene.add(runtime.group)
+// Call before rendering each frame. Idle transforms stay cached.
+runtime.update(elapsedSeconds)
+runtime.addImpact(0, 0)
+// After changing one row's authored inputs:
+runtime.invalidateRows(8, 9)
+// On teardown: runtime.dispose()`,
   },
 ] as const
 

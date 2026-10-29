@@ -1,5 +1,6 @@
 import { layoutNextLine, type LayoutCursor, type PreparedTextWithSegments } from '@chenglou/pretext'
 import { graphemesOf } from '../../samples/graphemes'
+import { BoundedCache } from './cache'
 import type {
   PreparedSurfaceSource,
   ResolvedSurfaceGlyph,
@@ -13,7 +14,7 @@ type SurfaceLayoutBandOptions<TokenId extends string = string, Meta = unknown> =
   seedCursor: SeedCursorFactory
 }
 
-type SurfaceLayoutDriverOptions<TokenId extends string = string, Meta = unknown> =
+export type SurfaceLayoutDriverOptions<TokenId extends string = string, Meta = unknown> =
   SurfaceLayoutBandOptions<TokenId, Meta> & {
     sectors: number
     staggerFactor?: number
@@ -44,20 +45,37 @@ export type SurfaceLayoutLine<TokenId extends string = string, Meta = unknown> =
   cursorEnd: LayoutCursor
 }
 
-type LayoutTraversalOptions<TokenId extends string = string, Meta = unknown> = {
+export type LayoutTraversalOptions<TokenId extends string = string, Meta = unknown> = {
   spanMin: number
   spanMax: number
   lineCoordAtRow: (row: number) => number
   rowOffsetAt?: (row: number, sectorStep: number) => number
   getMaxWidth: (slot: SurfaceLayoutSlot) => number
-  /** Skip layout work for slots that fail this test (e.g. camera distance culling). */
+  /** Suppress output/decoding only. Width and cursor advancement remain independent of visibility. */
   shouldVisitSlot?: (slot: SurfaceLayoutSlot) => boolean
+  /** Optional row interval [rowStart, rowEnd), for dependency-safe incremental updates. */
+  rowStart?: number
+  rowEnd?: number
   onLine: (line: SurfaceLayoutLine<TokenId, Meta>) => void
 }
 
 const ROOT_CURSOR: LayoutCursor = { segmentIndex: 0, graphemeIndex: 0 }
 const MAX_LINE_CACHE = 2048
 const MAX_GLYPH_CACHE = 512
+
+export type SurfaceLayoutStats = {
+  slotsVisited: number
+  lineLayouts: number
+  lineCacheHits: number
+  slotCacheHits: number
+  glyphDecodes: number
+  glyphCacheHits: number
+  emittedLines: number
+}
+const newStats = (): SurfaceLayoutStats => ({ slotsVisited: 0, lineLayouts: 0, lineCacheHits: 0,
+  slotCacheHits: 0, glyphDecodes: 0, glyphCacheHits: 0, emittedLines: 0 })
+type LineTransition = { segmentIndex: number; graphemeIndex: number; maxWidth: number;
+  result: ReturnType<typeof layoutNextLineOrRewind> }
 
 function cloneCursor(cursor: LayoutCursor): LayoutCursor {
   return { segmentIndex: cursor.segmentIndex, graphemeIndex: cursor.graphemeIndex }
@@ -101,12 +119,16 @@ export class SurfaceLayoutDriver<TokenId extends string = string, Meta = unknown
   private readonly minLayoutWidth: number
   private readonly bandSeeds: LayoutCursor[]
   // Exact widths and cursors only: damage must never be quantized to a cached width.
-  private readonly lineCache = new Map<string, ReturnType<typeof layoutNextLineOrRewind>>()
-  private readonly glyphCache = new Map<string, {
+  private readonly lineCache = new BoundedCache<string, ReturnType<typeof layoutNextLineOrRewind>>(MAX_LINE_CACHE)
+  // One last transition per authored slot avoids LRU thrashing on stable surfaces larger than 2048 slots.
+  private readonly slotTransitions: (LineTransition | undefined)[] = []
+  private readonly glyphCache = new BoundedCache<string, {
     glyphs: string[]
     resolvedGlyphs: ResolvedSurfaceGlyph<TokenId, Meta>[]
     tokenLineKey: string
-  }>()
+  }>(MAX_GLYPH_CACHE)
+  private stats = newStats()
+  private disposed = false
 
   constructor({
     surface,
@@ -118,6 +140,8 @@ export class SurfaceLayoutDriver<TokenId extends string = string, Meta = unknown
     minSpanFactor = 0.33,
     minLayoutWidth = 8,
   }: SurfaceLayoutDriverOptions<TokenId, Meta>) {
+    if (!Number.isSafeInteger(rows) || rows < 0 || !Number.isSafeInteger(sectors) || sectors <= 0 ||
+      !Number.isSafeInteger(rows * sectors)) throw new RangeError('Layout rows/sectors must form a finite integer grid')
     this.surface = surface
     this.prepared = surface.prepared
     this.rows = rows
@@ -128,6 +152,15 @@ export class SurfaceLayoutDriver<TokenId extends string = string, Meta = unknown
     this.bandSeeds = createBandSeeds({ surface, rows, advanceForRow, seedCursor })
   }
 
+  getStats(): SurfaceLayoutStats { return { ...this.stats } }
+  resetStats(): void { this.stats = newStats() }
+  clearCache(): void {
+    this.lineCache.clear()
+    this.glyphCache.clear()
+    this.slotTransitions.length = 0
+  }
+  dispose(): void { this.clearCache(); this.disposed = true }
+
   forEachLaidOutLine({
     spanMin,
     spanMax,
@@ -135,11 +168,15 @@ export class SurfaceLayoutDriver<TokenId extends string = string, Meta = unknown
     rowOffsetAt,
     getMaxWidth,
     shouldVisitSlot,
+    rowStart = 0,
+    rowEnd = this.rows,
     onLine,
   }: LayoutTraversalOptions<TokenId, Meta>): void {
+    if (this.disposed) throw new Error('Cannot traverse a disposed SurfaceLayoutDriver')
+    if (!Number.isFinite(rowStart) || !Number.isFinite(rowEnd)) throw new RangeError('Row interval must be finite')
     const sectorStep = (spanMax - spanMin) / this.sectors
 
-    for (let row = 0; row < this.rows; row++) {
+    for (let row = Math.max(0, Math.ceil(rowStart)); row < Math.min(this.rows, rowEnd); row++) {
       const lineCoord = lineCoordAtRow(row)
       const rowOffset = rowOffsetAt
         ? rowOffsetAt(row, sectorStep)
@@ -166,24 +203,38 @@ export class SurfaceLayoutDriver<TokenId extends string = string, Meta = unknown
           rowOffset,
         }
 
-        if (shouldVisitSlot && !shouldVisitSlot(slot)) continue
-
+        this.stats.slotsVisited++
         const requestedWidth = getMaxWidth(slot)
+        if (!Number.isFinite(requestedWidth)) throw new RangeError('Layout width must be finite')
         if (requestedWidth <= 0) continue
         const maxWidth = Math.max(this.minLayoutWidth, requestedWidth)
         const cursorStart = cloneCursor(cursor)
-        const cacheKey = `${cursorStart.segmentIndex}:${cursorStart.graphemeIndex}:${maxWidth}`
-        let laidOut = this.lineCache.get(cacheKey)
-        if (laidOut === undefined) {
-          laidOut = layoutNextLineOrRewind(this.prepared, cursorStart, maxWidth)
-          if (this.lineCache.size >= MAX_LINE_CACHE) this.lineCache.delete(this.lineCache.keys().next().value!)
-          this.lineCache.set(cacheKey, laidOut)
+        const slotIndex = row * this.sectors + sector
+        const transition = this.slotTransitions[slotIndex]
+        let laidOut: ReturnType<typeof layoutNextLineOrRewind>
+        if (transition && transition.segmentIndex === cursorStart.segmentIndex &&
+          transition.graphemeIndex === cursorStart.graphemeIndex && transition.maxWidth === maxWidth) {
+          this.stats.slotCacheHits++
+          laidOut = transition.result
+        } else {
+          const cacheKey = `${cursorStart.segmentIndex}:${cursorStart.graphemeIndex}:${maxWidth}`
+          const cached = this.lineCache.get(cacheKey)
+          if (cached !== undefined) { this.stats.lineCacheHits++; laidOut = cached }
+          else {
+            this.stats.lineLayouts++
+            laidOut = layoutNextLineOrRewind(this.prepared, cursorStart, maxWidth)
+            this.lineCache.set(cacheKey, laidOut)
+          }
+          this.slotTransitions[slotIndex] = { segmentIndex: cursorStart.segmentIndex,
+            graphemeIndex: cursorStart.graphemeIndex, maxWidth, result: laidOut }
         }
         if (laidOut === null) continue
 
         cursor = cloneCursor(laidOut.cursorEnd)
+        if (shouldVisitSlot && !shouldVisitSlot(slot)) continue
         let decoded = this.glyphCache.get(laidOut.line.text)
         if (!decoded) {
+          this.stats.glyphDecodes++
           const glyphs = graphemesOf(laidOut.line.text).filter((glyph) => !/^\s+$/.test(glyph))
           if (glyphs.length === 0) continue
           const resolvedGlyphs = glyphs
@@ -191,10 +242,10 @@ export class SurfaceLayoutDriver<TokenId extends string = string, Meta = unknown
             .filter((glyph): glyph is ResolvedSurfaceGlyph<TokenId, Meta> => glyph !== undefined)
           if (resolvedGlyphs.length !== glyphs.length) continue
           decoded = { glyphs, resolvedGlyphs, tokenLineKey: resolvedGlyphs.map((glyph) => glyph.id).join('|') }
-          if (this.glyphCache.size >= MAX_GLYPH_CACHE) this.glyphCache.delete(this.glyphCache.keys().next().value!)
           this.glyphCache.set(laidOut.line.text, decoded)
-        }
+        } else this.stats.glyphCacheHits++
 
+        this.stats.emittedLines++
         onLine({
           slot,
           lineText: laidOut.line.text,

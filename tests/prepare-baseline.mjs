@@ -1,4 +1,4 @@
-import { build } from 'esbuild'
+import { build } from './build-tools.mjs'
 import { execFileSync } from 'node:child_process'
 import { mkdir } from 'node:fs/promises'
 import path from 'node:path'

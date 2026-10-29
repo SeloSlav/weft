@@ -153,6 +153,94 @@ const trees = createTreeFieldEffect({
 })
 ```
 
+## Shared runtime for custom effects
+
+`createSurfaceEffect()` retains its source/layout configuration and now provides
+`createRuntime()`. Custom effects can use the same layout cache, dirty-row updates,
+visibility handling, recoverable damage and partial instance uploads:
+
+```ts
+import * as THREE from 'three'
+import {
+  createSurfaceEffect, createSurfaceSource, fieldLayout,
+  recoverableDamage, threeInstancedMeshRenderer,
+} from 'weft-sdk/three'
+
+const definition = createSurfaceEffect({
+  id: 'custom-ground',
+  source: createSurfaceSource({ cacheKey: 'custom-ground', units: ['|', '/', '\\'], repeat: 40 }),
+  layout: fieldLayout({ rows: 32, sectors: 32, advanceForRow: row => row * 13 + 5 }),
+  renderer: threeInstancedMeshRenderer({
+    geometry: new THREE.BoxGeometry(0.08, 0.4, 0.08),
+    material: new THREE.MeshBasicMaterial({ color: '#74a87b' }),
+    maxInstances: 8000,
+  }),
+  behaviors: [recoverableDamage({ radius: 2, recoveryRate: 0.5 })],
+})
+const effect = definition.createRuntime({
+  spanMin: -16,
+  spanMax: 16,
+  lineCoordAtRow: row => row - 16,
+  getMaxWidth: slot => slot.spanSize * 32,
+  projectGlyph({ slot, glyphIndex, glyphCount }, { transform }) {
+    transform.position.set(
+      slot.spanStart + (glyphIndex + 0.5) / glyphCount * slot.spanSize,
+      0.2,
+      slot.lineCoord,
+    )
+  },
+  disposeResources: true,
+})
+scene.add(effect.group)
+effect.update(elapsedSeconds) // Call before rendering; idle poses stay cached.
+effect.addImpact(0, 0)        // Span/line coordinates, before world projection.
+effect.invalidateRows(8, 10) // Rebuild rows [8, 10) after changing authored inputs.
+// effect.dispose() when removing it from the scene.
+```
+
+Use `invalidate()` after changing inputs for the whole surface, or
+`invalidateRows(start, end)` for a row interval. Width changes can reflow later
+sectors, so a complete row is the dependency unit. A visibility predicate is
+checked every update without changing authored glyph identities. Shader uniforms
+can advance through `onFrame(time, delta)` while poses remain cached; time-driven
+CPU poses need explicit invalidation. `getStats()` and `getLayoutStats()` expose
+work counts. Capacity overflow throws rather than silently dropping cells.
+
+Meshes and instance buffers belong to the runtime. Geometry/material are borrowed
+unless `disposeResources: true`; textures remain caller-owned. The runtime currently
+executes `recoverableDamage`; other behavior descriptors produce an explicit error.
+
+## Core cache lifecycle
+
+Prepared sources replace an existing cache entry when glyph definitions, weights,
+font, repeat count or metadata identity changes. Cached palette definitions are
+snapshotted; metadata is caller-owned. Each source/text cache defaults to 128 entries
+and 1,000,000 UTF-16 text units. This is a retention budget, not a heap-byte estimate.
+
+```ts
+import {
+  configureSurfaceCaches, getSurfaceCacheStats,
+  releaseSurfaceSource, clearSurfaceCaches,
+} from 'weft-sdk/core'
+
+configureSurfaceCaches({ maxEntries: 64, maxTextUnits: 500_000 })
+console.log(getSurfaceCacheStats())
+releaseSurfaceSource('custom-ground')
+clearSurfaceCaches()
+// After fonts change, optionally also clear shared Pretext measurement caches:
+clearSurfaceCaches({ measurements: true })
+```
+
+Eviction/release never invalidates handles held by live effects. Replace metadata
+objects or release the key when revising definitions; existing prepared handles
+keep their authored layout. Built-in cursor seeds use weakly owned, bounded
+checkpoints and detect the source's rewind period. Custom seed callbacks retain
+their original invocation semantics.
+
+Motion and accelerating recovery integrate the full delta instead of dropping
+time above 50 ms. `motion.sampleInto(x, z, target)` avoids allocating a sample
+object in hot loops; `sample()` remains available.
+
 ## Learn more
 
 - For full preset/API detail, use the SDK docs page powered by `src/Docs.tsx`.
@@ -183,6 +271,20 @@ attributes. Low tree/shrub densities also thin the population below one glyph pe
 For reproducible browser checks, open `/tests/browser.html` with the dev server
 running. See [performance validation](./tests/PERFORMANCE.md) for measured CPU
 costs, comparison setup, and limitations.
+
+Core verification is independent of the game scenes:
+
+```bash
+npm run check:core
+# Optional: save a benchmark report or compare a different local Git revision.
+npm run bench:core -- --output validation.local/core-benchmark.json
+npm run bench:core -- --baseline <old-commit>
+```
+
+The benchmark uses isolated Node processes and deterministic test font metrics.
+It reports median/p95 CPU timings plus stable work/memory regression gates. Open
+`/tests/core-browser.html` for the same correctness suite with native browser
+measurement and a real WebGPU draw. See [core benchmark notes](./tests/CORE.md).
 
 ## Credits
 

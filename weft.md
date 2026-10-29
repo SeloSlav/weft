@@ -111,6 +111,7 @@ Primary Three.js-facing entrypoint:
 
 - `createSurfaceSource()`
 - `createSurfaceEffect()`
+- `createSurfaceRuntime()` / `SurfaceEffectRuntime`
 - `fieldLayout()`
 - `wallLayout()`
 - `skyLayout()`
@@ -230,6 +231,9 @@ Lower-level source preparation and layout tools:
 - `seedCursor`
 - `WEFT_TEXT_FONT`
 - `SurfaceLayoutDriver`
+- `configureSurfaceCaches()`, `getSurfaceCacheStats()`
+- `releaseSurfaceSource()`, `clearSurfaceCaches()`
+- `clearSeedCursorCache()`, `getSeedCursorStats()`
 - `createBandSeeds`
 - `createWorldField`
 - `createFbmField`
@@ -340,6 +344,67 @@ not quantize gameplay widths. Returned arrays and cursors are isolated from the 
 If a requested effect is close to one of these, adapt the preset before proposing a fully custom effect architecture.
 
 ## Preset Customization Guidance
+
+### Executing custom effects
+
+`createSurfaceEffect(config)` preserves the configuration fields used by existing
+preset factories and adds a lazy `.createRuntime(options)` method. This allocates
+the Three.js group/mesh and shares the SDK's cached layout, projection, visibility,
+damage, dirty rows and partial buffer writes. Use it for new custom effects rather
+than rebuilding the execution layer. `createSurfaceRuntime(config, options)` is
+also exported for direct construction.
+
+Runtime options supply `spanMin`, `spanMax`, `lineCoordAtRow`, `getMaxWidth` and
+`projectGlyph(context, target)`. The context contains the resolved glyph, slot,
+glyph index/count and current elapsed time. Fill `target.transform` (Object3D)
+and optional `target.color`; the runtime handles matrices and uploads. Projection
+targets are reused and reset before each glyph; copy data if retaining it.
+
+Call `runtime.update(elapsedSeconds)` before rendering. Projection is cached:
+changes to captured authoring inputs require `invalidate()` or
+`invalidateRows(start, end)` (end-exclusive). Width changes can reflow downstream
+sectors, so dirty rows preserve cursor dependencies. `onFrame(time, delta)` runs
+even when poses stay cached, for uniform animation. Time-dependent CPU transforms
+must invalidate their rows. `shouldVisitSlot` is a visibility predicate evaluated
+on every update; it does not change authored glyphs. Use `getStats()`,
+`getLayoutStats()`, `needsUpdate()` and `getInstanceIdentity(instanceId)` for
+scheduling, diagnostics and interaction. A visibility predicate or onFrame hook
+keeps `needsUpdate()` true because external state can change every frame.
+
+The runtime currently executes one `recoverableDamage()` descriptor via
+`addImpact(spanCoord, lineCoord, { radius?, strength? })` and `clearImpacts()`.
+Distances are in layout coordinates; custom projection/world transforms do not
+change this damage space. Unsupported descriptors throw instead of doing nothing.
+Impacts are capped at 64 by default (`maxImpacts` can override); overflow retires
+the oldest impact and invalidates its affected rows. Instance-capacity overflow
+throws. Geometry/material are borrowed unless `disposeResources: true`; textures
+remain caller-owned. Always call `dispose()` for runtime-owned buffers.
+
+### Core correctness and cache ownership
+
+`SurfaceLayoutDriver.shouldVisitSlot` suppresses emission and glyph decoding.
+It still evaluates widths and advances cursors in hidden slots, so visibility
+cannot change the remaining authored sequence. Return zero from `getMaxWidth`
+for intentional semantic removal/reflow. It supports `rowStart`/`rowEnd` intervals,
+`getStats()`, `resetStats()`, `clearCache()` and `dispose()`. A last exact transition
+per slot prevents stable large grids from thrashing the shared 2,048-line LRU;
+decoded lines use a 512-entry LRU. No width quantization is performed.
+
+Source/text caches each default to 128 entries / 1,000,000 UTF-16 text units.
+Configure both with `configureSurfaceCaches({ maxEntries, maxTextUnits })`;
+zero disables retention. Use `releaseSurfaceSource(key)`, `clearSurfaceCaches()`
+and `getSurfaceCacheStats()` for lifecycle/diagnostics. Key reuse compares font,
+repeat, glyph definitions, weights and metadata identity before returning a source.
+Token definitions are snapshotted; metadata itself remains caller-owned. Live
+prepared handles survive eviction/release. Clearing Pretext's shared measurement
+cache is opt-in with `clearSurfaceCaches({ measurements: true })`, useful after
+fonts load/change; recreate the affected prepared handles afterwards.
+
+Built-in seeding reuses bounded weakly owned checkpoints and detected rewind
+periods. Custom seed callbacks are still invoked per row. Motion fields and
+accelerating strength recovery account for the full elapsed delta, including slow
+update cadences. `sampleInto(x, z, target)` provides an allocation-free motion
+sample API alongside `sample()`.
 
 When a shipped preset is already close to the desired result, customize the preset before dropping to `createSurfaceEffect()`.
 

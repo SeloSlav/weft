@@ -15,6 +15,7 @@ import {
 } from '../runtime'
 import { fieldLayout, skyLayout, wallLayout } from './helpers/layouts'
 import { threeInstancedMeshRenderer } from './helpers/instancing'
+import { createSurfaceRuntime, type SurfaceEffectRuntime, type SurfaceRuntimeOptions } from './surfaceRuntime'
 
 type SurfaceSourceOptions<TokenId extends string = string, Meta = unknown> =
   | {
@@ -89,8 +90,17 @@ export type SurfaceEffectConfig = {
   seedCursor?: SeedCursorFactory
 }
 
-export function createSurfaceEffect<TConfig extends SurfaceEffectConfig>(config: TConfig): TConfig {
-  return config
+type SourceToken<T> = T extends PreparedSurfaceSource<infer TokenId, any> ? TokenId : string
+type SourceMeta<T> = T extends PreparedSurfaceSource<any, infer Meta> ? Meta : unknown
+export type SurfaceEffectDefinition<TConfig extends SurfaceEffectConfig> = TConfig & {
+  createRuntime(options: SurfaceRuntimeOptions<SourceToken<TConfig['source']>, SourceMeta<TConfig['source']>>):
+    SurfaceEffectRuntime<SourceToken<TConfig['source']>, SourceMeta<TConfig['source']>>
+}
+
+export function createSurfaceEffect<TConfig extends SurfaceEffectConfig>(config: TConfig): SurfaceEffectDefinition<TConfig> {
+  // Existing factories continue reading config.source/layout. Runtime resources are allocated only on demand.
+  const definition = { ...config, createRuntime: (options: SurfaceRuntimeOptions<any, any>) => createSurfaceRuntime(definition, options) }
+  return definition as SurfaceEffectDefinition<TConfig>
 }
 
 export {

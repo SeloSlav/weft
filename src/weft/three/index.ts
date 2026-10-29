@@ -20,7 +20,12 @@ export {
 export type {
   RecoverableDamageConfig,
   SurfaceEffectConfig,
+  SurfaceEffectDefinition,
 } from './api.ts'
+
+export { createSurfaceRuntime, SurfaceEffectRuntime } from './surfaceRuntime.ts'
+export type { SurfaceRuntimeConfig, SurfaceRuntimeOptions, SurfaceRuntimeStats,
+  SurfaceProjectionContext, SurfaceProjectionTarget } from './surfaceRuntime.ts'
 
 export { createInstancedMesh } from './helpers/instancing.ts'
 export type { ThreeInstancedMeshRendererConfig } from './helpers/instancing.ts'

@@ -40,6 +40,8 @@ export type SurfaceMotionField = {
   getOptions(): Required<SurfaceMotionFieldOptions>
   hasActivity(): boolean
   sample(x: number, z: number): SurfaceMotionFieldSample
+  sampleInto(x: number, z: number, target: SurfaceMotionFieldSample): SurfaceMotionFieldSample
+  getStats(): { packets: number; samples: number; packetTests: number; simulatedSeconds: number }
   update(delta: number): void
   writeImpulse(x: number, z: number, options: SurfaceMotionImpulseOptions): void
 }
@@ -93,8 +95,17 @@ export function createSurfaceMotionField(
   options: SurfaceMotionFieldOptions = {},
 ): SurfaceMotionField {
   const config = { ...DEFAULT_OPTIONS, ...options }
+  for (const [key, value] of Object.entries(config)) {
+    if (value < 0 || (!Number.isFinite(value) && !(key === 'maxOffset' && value === Infinity))) {
+      throw new RangeError(`Motion option ${key} must be finite and non-negative (maxOffset may be Infinity)`)
+    }
+  }
   const packets: MotionPacket[] = []
   let active = false
+  let samples = 0
+  let packetTests = 0
+  let simulatedSeconds = 0
+  const impulseSample: SurfaceMotionFieldSample = { offsetX: 0, offsetZ: 0, flowX: 0, flowZ: 0, occupancy: 0, angular: 0 }
 
   const clampOffset = (packet: MotionPacket): void => {
     if (!Number.isFinite(config.maxOffset)) return
@@ -133,7 +144,8 @@ export function createSurfaceMotionField(
     )
   }
 
-  const sampleAt = (x: number, z: number): SurfaceMotionFieldSample => {
+  const sampleAt = (x: number, z: number, target: SurfaceMotionFieldSample): SurfaceMotionFieldSample => {
+    samples++
     let offsetX = 0
     let offsetZ = 0
     let flowX = 0
@@ -143,10 +155,12 @@ export function createSurfaceMotionField(
     let totalWeight = 0
 
     for (const packet of packets) {
+      packetTests++
       const dx = x - packet.x
       const dz = z - packet.z
-      const distance = length2(dx, dz)
-      if (distance > packet.radius) continue
+      const distSq = dx * dx + dz * dz
+      if (distSq > packet.radius * packet.radius) continue
+      const distance = Math.sqrt(distSq)
       const falloff = 1 - smoothstep(distance, 0, packet.radius)
       const weight = falloff * falloff
       offsetX += packet.offsetX * weight
@@ -159,25 +173,18 @@ export function createSurfaceMotionField(
     }
 
     if (totalWeight <= 1e-5) {
-      return {
-        offsetX: 0,
-        offsetZ: 0,
-        flowX: 0,
-        flowZ: 0,
-        occupancy: 0,
-        angular: 0,
-      }
+      target.offsetX = target.offsetZ = target.flowX = target.flowZ = target.occupancy = target.angular = 0
+      return target
     }
 
     const normalization = totalWeight > 1 ? 1 / totalWeight : 1
-    return {
-      offsetX: offsetX * normalization,
-      offsetZ: offsetZ * normalization,
-      flowX: flowX * normalization,
-      flowZ: flowZ * normalization,
-      occupancy,
-      angular: angular * normalization,
-    }
+    target.offsetX = offsetX * normalization
+    target.offsetZ = offsetZ * normalization
+    target.flowX = flowX * normalization
+    target.flowZ = flowZ * normalization
+    target.occupancy = occupancy
+    target.angular = angular * normalization
+    return target
   }
 
   return {
@@ -189,7 +196,7 @@ export function createSurfaceMotionField(
     },
 
     getOptions() {
-      return config
+      return { ...config }
     },
 
     hasActivity() {
@@ -197,13 +204,20 @@ export function createSurfaceMotionField(
     },
 
     sample(x, z) {
-      return sampleAt(x, z)
+      return sampleAt(x, z, { offsetX: 0, offsetZ: 0, flowX: 0, flowZ: 0, occupancy: 0, angular: 0 })
     },
 
+    sampleInto: sampleAt,
+    getStats: () => ({ packets: packets.length, samples, packetTests, simulatedSeconds }),
+
     update(delta) {
+      if (!Number.isFinite(delta)) throw new RangeError('Motion delta must be finite')
       if (delta <= 0) return
-      const dt = Math.min(0.05, Math.max(0, delta))
+      const dt = delta
+      simulatedSeconds += dt
       const dragFactor = Math.exp(-config.drag * dt)
+      // Exact integration of dv/dt = -drag*v. No discarded time or frame-size-dependent Euler drift.
+      const travelFactor = config.drag > 0 ? -Math.expm1(-config.drag * dt) / config.drag : dt
       const spinFactor = Math.exp(-config.spinDrag * dt)
       const occupancyFactor = Math.exp(-config.occupancyDecay * dt)
       const diffusionScale = Math.max(0, config.diffusion) * dt * 0.22
@@ -211,10 +225,16 @@ export function createSurfaceMotionField(
       let stillActive = false
       for (let i = packets.length - 1; i >= 0; i--) {
         const packet = packets[i]!
-        packet.x += packet.flowX * dt
-        packet.z += packet.flowZ * dt
-        packet.offsetX += packet.flowX * dt
-        packet.offsetZ += packet.flowZ * dt
+        const initialSpeed = length2(packet.flowX, packet.flowZ)
+        if (initialSpeed > config.maxSpeed) {
+          const scale = config.maxSpeed / initialSpeed
+          packet.flowX *= scale
+          packet.flowZ *= scale
+        }
+        packet.x += packet.flowX * travelFactor
+        packet.z += packet.flowZ * travelFactor
+        packet.offsetX += packet.flowX * travelFactor
+        packet.offsetZ += packet.flowZ * travelFactor
         clampOffset(packet)
 
         const vx = packet.flowX * dragFactor
@@ -225,7 +245,7 @@ export function createSurfaceMotionField(
         packet.flowZ = vz * speedScale
         packet.angular *= spinFactor
         packet.occupancy = clamp(packet.occupancy * occupancyFactor, 0, 1)
-        packet.radius = Math.min(packet.radius + diffusionScale, packet.radius * 1.3 + config.cellSize * 0.35)
+        packet.radius += diffusionScale
 
         const score =
           length2(packet.flowX, packet.flowZ) +
@@ -255,7 +275,7 @@ export function createSurfaceMotionField(
       let dirX = baseDirX
       let dirZ = baseDirZ
       if (!hasProvidedDirection) {
-        const sampled = sampleAt(x, z)
+        const sampled = sampleAt(x, z, impulseSample)
         const sampledLength = length2(sampled.flowX, sampled.flowZ)
         if (sampledLength > 1e-6) {
           dirX = sampled.flowX / sampledLength

@@ -1,5 +1,11 @@
 export {
   buildRepeatedUnitStream,
+  clearSeedCursorCache,
+  clearSurfaceCaches,
+  configureSurfaceCaches,
+  getSeedCursorStats,
+  getSurfaceCacheStats,
+  releaseSurfaceSource,
   buildWeightedPaletteStream,
   normalizeSurfacePalette,
   prepareCachedSurfaceText,
@@ -15,10 +21,12 @@ export type {
   SurfaceGlyphUnits,
   SurfacePaletteEntry,
   SurfaceShorthandMeta,
+  SurfaceCacheOptions,
 } from './text'
 
 export { SurfaceLayoutDriver, createBandSeeds } from './layout'
-export type { SurfaceLayoutLine, SurfaceLayoutSlot } from './layout'
+export type { LayoutTraversalOptions, SurfaceLayoutDriverOptions, SurfaceLayoutStats, SurfaceLayoutLine, SurfaceLayoutSlot } from './layout'
+export type { CacheStats } from './cache'
 
 export {
   createFbmField,

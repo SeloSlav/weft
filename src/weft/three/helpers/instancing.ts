@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { SurfaceRendererAdapter } from '../../runtime'
+import { trackInstanceUploads } from './bufferUpdates'
 
 export type ThreeInstancedMeshRendererConfig = {
   geometry: THREE.BufferGeometry
@@ -20,6 +21,7 @@ export function threeInstancedMeshRenderer(
 export function createInstancedMesh(config: ThreeInstancedMeshRendererConfig): THREE.InstancedMesh {
   const mesh = new THREE.InstancedMesh(config.geometry, config.material, config.maxInstances)
   mesh.frustumCulled = false
+  trackInstanceUploads(mesh)
   if (config.dynamic !== false) {
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
   }

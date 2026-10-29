@@ -1,0 +1,359 @@
+{
+  "baselineRevision": "27dad3cc9cafbaecdff3f36140261e2e3a0ff562",
+  "generatedAt": "2026-10-29T19:19:11.818Z",
+  "before": {
+    "backend": "deterministic OffscreenCanvas stub (UTF-16/grapheme fixtures)",
+    "node": "v24.22.1",
+    "platform": "win32",
+    "arch": "x64",
+    "seeding": [
+      {
+        "fixture": "periodic-short",
+        "rows": 64,
+        "medianMs": 21.693700000000035,
+        "p95Ms": 25.569600000000037,
+        "samples": 7,
+        "layoutSteps": 26528
+      },
+      {
+        "fixture": "periodic-short",
+        "rows": 128,
+        "medianMs": 84.29449999999997,
+        "p95Ms": 93.68190000000004,
+        "samples": 7,
+        "layoutSteps": 106304
+      },
+      {
+        "fixture": "periodic-short",
+        "rows": 256,
+        "medianMs": 370.4454999999998,
+        "p95Ms": 398.0214000000001,
+        "samples": 7,
+        "layoutSteps": 425600
+      },
+      {
+        "fixture": "periodic-short",
+        "rows": 512,
+        "medianMs": 1560.0161000000007,
+        "p95Ms": 1623.2354000000005,
+        "samples": 7,
+        "layoutSteps": 1703168
+      },
+      {
+        "fixture": "long-stream",
+        "rows": 64,
+        "medianMs": 24.53060000000187,
+        "p95Ms": 27.04080000000249,
+        "samples": 7,
+        "layoutSteps": 26528
+      },
+      {
+        "fixture": "long-stream",
+        "rows": 128,
+        "medianMs": 99.52639999999883,
+        "p95Ms": 102.45809999999983,
+        "samples": 7,
+        "layoutSteps": 106304
+      },
+      {
+        "fixture": "long-stream",
+        "rows": 256,
+        "medianMs": 396.6664000000019,
+        "p95Ms": 407.3798999999999,
+        "samples": 7,
+        "layoutSteps": 425600
+      },
+      {
+        "fixture": "long-stream",
+        "rows": 512,
+        "medianMs": 1579.480300000003,
+        "p95Ms": 1633.832699999999,
+        "samples": 7,
+        "layoutSteps": 1703168
+      }
+    ],
+    "preparation": {
+      "uncachedSource": {
+        "medianMs": 6.942799999999977,
+        "p95Ms": 10.435299999999984,
+        "samples": 15
+      },
+      "cachedSourceLookups": {
+        "medianMs": 7.063500000000033,
+        "p95Ms": 11.702699999999993,
+        "samples": 15
+      },
+      "note": "Uncached handles with shared warm font metrics; hot lookup is a batch of 1000 calls. Current hot lookups validate inputs; the baseline only trusted the key."
+    },
+    "traversal": {
+      "medianMs": 10.955400000006193,
+      "p95Ms": 18.387399999999616,
+      "samples": 15,
+      "slots": 4096,
+      "stats": null
+    },
+    "sampling": {
+      "medianMs": 14.394499999994878,
+      "p95Ms": 16.77230000000418,
+      "samples": 15,
+      "samplesPerBatch": 10000,
+      "packets": 64,
+      "mode": "allocating sample()",
+      "resultObjectsPerBatch": 10000
+    },
+    "cache": {
+      "medianMs": 165.42250000000058,
+      "p95Ms": 165.42250000000058,
+      "samples": 1,
+      "requestedSources": 2048,
+      "retainedHeapDeltaBytes": 13184688,
+      "retainedRequestedSources": 2048,
+      "stats": null,
+      "note": "Heap delta includes dependency/runtime caches; deterministic entry/text caps are the memory regression gate."
+    },
+    "execution": {
+      "note": "Baseline has no shared execution runtime; compare current dirty-row work with current full invalidation."
+    },
+    "checksum": 2206550.7564832196
+  },
+  "after": {
+    "backend": "deterministic OffscreenCanvas stub (UTF-16/grapheme fixtures)",
+    "node": "v24.22.1",
+    "platform": "win32",
+    "arch": "x64",
+    "seeding": [
+      {
+        "fixture": "periodic-short",
+        "rows": 64,
+        "medianMs": 0.1714000000000624,
+        "p95Ms": 0.29369999999994434,
+        "samples": 7,
+        "layoutSteps": 26
+      },
+      {
+        "fixture": "periodic-short",
+        "rows": 128,
+        "medianMs": 0.06039999999995871,
+        "p95Ms": 0.11029999999993834,
+        "samples": 7,
+        "layoutSteps": 26
+      },
+      {
+        "fixture": "periodic-short",
+        "rows": 256,
+        "medianMs": 0.12429999999994834,
+        "p95Ms": 0.17179999999996198,
+        "samples": 7,
+        "layoutSteps": 26
+      },
+      {
+        "fixture": "periodic-short",
+        "rows": 512,
+        "medianMs": 0.08219999999994343,
+        "p95Ms": 0.09930000000008476,
+        "samples": 7,
+        "layoutSteps": 26
+      },
+      {
+        "fixture": "long-stream",
+        "rows": 64,
+        "medianMs": 1.2022999999999229,
+        "p95Ms": 1.7116999999999507,
+        "samples": 7,
+        "layoutSteps": 824
+      },
+      {
+        "fixture": "long-stream",
+        "rows": 128,
+        "medianMs": 2.15319999999997,
+        "p95Ms": 2.787400000000048,
+        "samples": 7,
+        "layoutSteps": 1656
+      },
+      {
+        "fixture": "long-stream",
+        "rows": 256,
+        "medianMs": 4.420099999999934,
+        "p95Ms": 5.886600000000044,
+        "samples": 7,
+        "layoutSteps": 3493
+      },
+      {
+        "fixture": "long-stream",
+        "rows": 512,
+        "medianMs": 6.768399999999929,
+        "p95Ms": 7.651100000000042,
+        "samples": 7,
+        "layoutSteps": 7434
+      }
+    ],
+    "preparation": {
+      "uncachedSource": {
+        "medianMs": 6.945699999999988,
+        "p95Ms": 16.424800000000005,
+        "samples": 15
+      },
+      "cachedSourceLookups": {
+        "medianMs": 8.938399999999945,
+        "p95Ms": 11.409199999999998,
+        "samples": 15
+      },
+      "note": "Uncached handles with shared warm font metrics; hot lookup is a batch of 1000 calls. Current hot lookups validate inputs; the baseline only trusted the key."
+    },
+    "traversal": {
+      "medianMs": 1.9539000000000897,
+      "p95Ms": 4.090400000000045,
+      "samples": 15,
+      "slots": 4096,
+      "stats": {
+        "slotsVisited": 73728,
+        "lineLayouts": 0,
+        "lineCacheHits": 0,
+        "slotCacheHits": 73728,
+        "glyphDecodes": 0,
+        "glyphCacheHits": 73728,
+        "emittedLines": 73728
+      }
+    },
+    "sampling": {
+      "medianMs": 2.3973000000000866,
+      "p95Ms": 3.102800000000002,
+      "samples": 15,
+      "samplesPerBatch": 10000,
+      "packets": 64,
+      "mode": "caller-owned sampleInto target",
+      "resultObjectsPerBatch": 0
+    },
+    "cache": {
+      "medianMs": 115.12060000000008,
+      "p95Ms": 115.12060000000008,
+      "samples": 1,
+      "requestedSources": 2048,
+      "retainedHeapDeltaBytes": 992328,
+      "retainedRequestedSources": 128,
+      "stats": {
+        "text": {
+          "entries": 128,
+          "weight": 6144,
+          "maxEntries": 128,
+          "maxWeight": 1000000,
+          "hits": 0,
+          "misses": 2048,
+          "evictions": 1920
+        },
+        "sources": {
+          "entries": 128,
+          "weight": 6144,
+          "maxEntries": 128,
+          "maxWeight": 1000000,
+          "hits": 0,
+          "misses": 2048,
+          "evictions": 1920
+        }
+      },
+      "note": "Heap delta includes dependency/runtime caches; deterministic entry/text caps are the memory regression gate."
+    },
+    "execution": {
+      "idle": {
+        "medianMs": 0.0004000000000132786,
+        "p95Ms": 0.0007000000000516593,
+        "samples": 50,
+        "projectedInstances": 0,
+        "bufferWrites": 0
+      },
+      "dirtyRow": {
+        "medianMs": 0.362700000000018,
+        "p95Ms": 0.7110999999999876,
+        "samples": 30,
+        "projectedInstancesPerUpdate": 96
+      },
+      "fullInvalidation": {
+        "medianMs": 3.2215000000001055,
+        "p95Ms": 4.488499999999931,
+        "samples": 15,
+        "projectedInstancesPerUpdate": 6144
+      },
+      "visibleInstances": 6144,
+      "layoutStats": {
+        "slotsVisited": 39968,
+        "lineLayouts": 64,
+        "lineCacheHits": 1984,
+        "slotCacheHits": 37920,
+        "glyphDecodes": 10,
+        "glyphCacheHits": 39958,
+        "emittedLines": 39968
+      }
+    },
+    "checksum": 2206550.910165414
+  },
+  "comparisons": [
+    {
+      "case": "periodic-short seed 64 rows",
+      "beforeMs": 21.693700000000035,
+      "afterMs": 0.1714000000000624,
+      "speedup": 126.56767794627852
+    },
+    {
+      "case": "periodic-short seed 128 rows",
+      "beforeMs": 84.29449999999997,
+      "afterMs": 0.06039999999995871,
+      "speedup": 1395.6043046367151
+    },
+    {
+      "case": "periodic-short seed 256 rows",
+      "beforeMs": 370.4454999999998,
+      "afterMs": 0.12429999999994834,
+      "speedup": 2980.2534191484615
+    },
+    {
+      "case": "periodic-short seed 512 rows",
+      "beforeMs": 1560.0161000000007,
+      "afterMs": 0.08219999999994343,
+      "speedup": 18978.29805354105
+    },
+    {
+      "case": "long-stream seed 64 rows",
+      "beforeMs": 24.53060000000187,
+      "afterMs": 1.2022999999999229,
+      "speedup": 20.40306080013594
+    },
+    {
+      "case": "long-stream seed 128 rows",
+      "beforeMs": 99.52639999999883,
+      "afterMs": 2.15319999999997,
+      "speedup": 46.222552480029826
+    },
+    {
+      "case": "long-stream seed 256 rows",
+      "beforeMs": 396.6664000000019,
+      "afterMs": 4.420099999999934,
+      "speedup": 89.74149906110898
+    },
+    {
+      "case": "long-stream seed 512 rows",
+      "beforeMs": 1579.480300000003,
+      "afterMs": 6.768399999999929,
+      "speedup": 233.36095679924642
+    },
+    {
+      "case": "traversal",
+      "beforeMs": 10.955400000006193,
+      "afterMs": 1.9539000000000897,
+      "speedup": 5.606939966224315
+    },
+    {
+      "case": "sampling",
+      "beforeMs": 14.394499999994878,
+      "afterMs": 2.3973000000000866,
+      "speedup": 6.004463354604913
+    }
+  ],
+  "gates": {
+    "boundedCaches": true,
+    "warmLayoutNoLineBreaking": true,
+    "idleNoProjectionOrUpload": true,
+    "dirtyRowProportional": true,
+    "seedWorkBounded": true
+  },
+  "note": "CPU-only core benchmarks using deterministic test metrics, not native browser fonts or GPU timings. Timing ratios are observations; deterministic work/memory gates determine pass/fail."
+}
