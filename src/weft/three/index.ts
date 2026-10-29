@@ -10,6 +10,8 @@ export type { SurfaceAnimationDeltaOptions } from './surfaceAnimationDelta.ts'
 export { createSurfaceAnimationUniformEncoder, createSurfaceAnimationUniformDecoder,
   SurfaceAnimationKeyframeRequiredError } from './surfaceAnimationUniformStream.ts'
 export type { SurfaceAnimationUniformEncoder, SurfaceAnimationUniformDecoder } from './surfaceAnimationUniformStream.ts'
+export { createSurfaceAnimationPatchEncoder, createSurfaceAnimationPatchDecoder } from './surfaceAnimationPatchStream.ts'
+export type { SurfaceAnimationPatchEncoder, SurfaceAnimationPatchDecoder } from './surfaceAnimationPatchStream.ts'
 
 export { LANDSCAPE_PRESETS } from './presets/landscapePresets.ts'
 export type { LandscapePreset, LandscapePresetId } from './presets/landscapePresets.ts'

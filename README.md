@@ -267,10 +267,49 @@ transforms remain the application's responsibility.
 This fast path is for stable render buffers, such as shader-only wind. A burn,
 disturbance, terrain edit, buffer upload or transform change requires a fresh
 keyframe; it is not a low-cost solution for continuous changing geometry. You can
-instead stop the uniform stream and use the verified full-state delta path for
-active changes. A new stream must begin from an acknowledged keyframe. The
-[benchmark notes](tests/ANIMATION-DELTAS.md) report steady-state, active and
-keyframe costs separately.
+instead use the patch stream below for active buffer changes. A new stream must
+begin from an acknowledged keyframe.
+
+For interactions that change instance or geometry buffers, the patch stream
+keeps a private copy of the authority's live buffer words and sends changed
+chunks. It applies those chunks directly to the replica:
+
+```ts
+import { createSurfaceAnimationPatchEncoder, createSurfaceAnimationPatchDecoder,
+  SurfaceAnimationKeyframeRequiredError } from 'weft-sdk/three'
+
+// Deliver and acknowledge the keyframe and stream ID before sending patches.
+const { encoder, keyframe, streamId } = await createSurfaceAnimationPatchEncoder(authorityEffect, tick)
+const decoder = await createSurfaceAnimationPatchDecoder(replicaEffect, keyframe, streamId)
+
+// Process each stream sequentially. After advancing the authority:
+try {
+  const packet = await encoder.capture(nextTick)
+  // Send packet. On the receiver, await decoder.apply(packet).
+} catch (error) {
+  if (!(error instanceof SurfaceAnimationKeyframeRequiredError)) throw error
+  // Replace the stream with a new keyframe and stream ID on both sides.
+}
+```
+
+Both sides must also replace the stream if `decoder.apply` reports
+`SurfaceAnimationKeyframeRequiredError`: patches depend on earlier buffer
+revisions. A lost uniform-only packet can be skipped, but a lost buffer patch
+cannot; use ordered delivery and request a keyframe on a missing revision.
+Stale packets, corrupt packets and wrong stream IDs or keyframes are rejected.
+Only one capture or apply may be in flight per stream. Packet SHA-256 checks
+are not authentication; protect the transport. The decoder defaults to a
+256 MiB keyframe limit, adjustable with `{ maxFrameBytes }`; packets are limited
+to 256 MiB. Creating a stream copies live buffer data on the sender and takes a
+full keyframe, so it consumes additional memory and has a setup cost.
+
+The mutation and replica ownership rules above also apply to patch streams.
+Changed Float32 buffers must be marked with `needsUpdate`, even if the renderer
+has already cleared their update ranges. A changed hierarchy, transform, count,
+buffer identity, geometry index or uniform schema requires a new keyframe.
+Unmarked changes and material, texture, gameplay or external ancestor changes
+are outside the stream contract. The [benchmark notes](tests/ANIMATION-DELTAS.md)
+show active sender and receiver timings, packet sizes and excluded work.
 
 ## Package layers
 

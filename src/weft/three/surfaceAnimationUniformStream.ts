@@ -11,15 +11,15 @@ const encoder=new TextEncoder(),decoder=new TextDecoder('utf-8',{fatal:true})
 export class SurfaceAnimationKeyframeRequiredError extends Error {
   constructor(message='Animation state changed; create a new uniform stream and keyframe') {super(message);this.name='SurfaceAnimationKeyframeRequiredError'}
 }
-function assertBytes(bytes:Uint8Array):void {
+export function assertBytes(bytes:Uint8Array):void {
   if(!(bytes instanceof Uint8Array) || (typeof SharedArrayBuffer!=='undefined' && bytes.buffer instanceof SharedArrayBuffer)) throw new TypeError('Uniform stream packets must be non-shared Uint8Array data')
 }
-async function digest(bytes:Uint8Array):Promise<Uint8Array> {
+export async function digest(bytes:Uint8Array):Promise<Uint8Array> {
   if(!globalThis.crypto?.subtle)throw new Error('Uniform streams require Web Crypto SHA-256 in a secure context')
   return new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256',bytes as Uint8Array<ArrayBuffer>))
 }
-function equal(a:Uint8Array,b:Uint8Array):boolean {let mismatch=a.length^b.length;for(let i=0;i<Math.min(a.length,b.length);i++)mismatch|=a[i]!^b[i]!;return mismatch===0}
-function tickOf(frame:Uint8Array):number {
+export function equal(a:Uint8Array,b:Uint8Array):boolean {let mismatch=a.length^b.length;for(let i=0;i<Math.min(a.length,b.length);i++)mismatch|=a[i]!^b[i]!;return mismatch===0}
+export function tickOf(frame:Uint8Array):number {
   assertBytes(frame)
   if(frame.length<8 || frame[0]!==87 || frame[1]!==70 || frame[2]!==65 || frame[3]!==49)throw new TypeError('Expected a WFA1 keyframe')
   const length=new DataView(frame.buffer,frame.byteOffset,frame.byteLength).getUint32(4,true)
@@ -58,10 +58,10 @@ function renderState(target:SurfaceAnimationTarget):unknown[] {
   return state
 }
 function unchanged(a:unknown[],b:unknown[]):boolean {return a.length===b.length && a.every((v,i)=>Object.is(v,b[i]))}
-function sameSchema(a:UniformFrame[],b:UniformFrame[]):boolean {
+export function sameSchema(a:UniformFrame[],b:UniformFrame[]):boolean {
   return a.length===b.length && a.every((u,i)=>u.name===b[i]?.name && u.scalar===b[i]?.scalar && u.bits.length===b[i]?.bits.length)
 }
-function decodeUniforms(actual:unknown,expected:UniformFrame[]):Record<string,number|number[]> {
+export function decodeUniforms(actual:unknown,expected:UniformFrame[]):Record<string,number|number[]> {
   if(!Array.isArray(actual) || actual.length!==expected.length)throw new Error('Uniform stream schema differs')
   const values:Record<string,number|number[]>=Object.create(null)
   for(let i=0;i<expected.length;i++){

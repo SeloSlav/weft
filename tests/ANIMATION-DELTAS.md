@@ -2,6 +2,22 @@
 
 Run `npm run bench:animation-deltas` to compare complete binary frames, stateless verified deltas, and the stateful uniform fast path. Pass `-- --output <path>` to save the report elsewhere. The [full sample](./benchmarks/animation-delta-results.json) includes p95 and process CPU measurements; [three independent runs](./benchmarks/animation-uniform-stream-results.json) record the uniform fast path and active grass costs. The earlier [delta CPU comparison](./benchmarks/animation-delta-cpu-results.json) is retained.
 
+## Active interaction patch stream
+
+Run `npm run bench:animation-patches -- --output tests/benchmarks/animation-patch-results.json` to repeat the [three-run report](./benchmarks/animation-patch-results.json). Each run advances an actual grass disturbance for 35 consecutive frames; five are warmup. Both codecs observe the same source states. Exact full-frame bytes are checked against both replicas every five frames. Source update and codec times are measured independently, and replay order alternates. Timing is informational, not a test gate.
+
+For default grass, 128,298 instances, Windows x64 and Node v24.22.1:
+
+| Work | Stateless WFD1 median | Stateful patch median |
+| --- | ---: | ---: |
+| Capture and encode | 10.60–10.90 ms | 2.92–3.20 ms |
+| Verify and apply | 11.60–11.73 ms | 1.17–1.23 ms |
+| Packet | 509.2 KiB | 646.7 KiB |
+
+The patch format trades more bytes for less work: it compares only attributes marked as changed, copies changed 512-word chunks, and applies those chunks directly. Sender simulation plus patch capture/encoding took 7.97–8.62 ms median; p95 ranged 11.32–13.53 ms and the worst of 90 measured samples was 16.80 ms. Receiver patch replay p95 was 1.66–1.99 ms. The sender and receiver are separate paths and should not automatically be added as one frame's work.
+
+**This does not establish a 60 fps application.** One sender sample exceeded the whole 16.67 ms budget and the test excludes transport, other game work, rendering and GPU uploads. Applying a keyframe, allocating sender snapshots, and acknowledging the stream are also outside steady-state measurements. Keyframes still contain 11,380,500 bytes in this scenario. The patch encoder retains a copy of live buffer data; patches can be larger than WFD1 (646.7 KiB per packet is about 38 MiB/s at 60 packets per second before transport overhead), and a missed buffer revision or a topology/transform change requires a new keyframe. The benchmark does not cover browser or GPU performance.
+
 ## Wind-only fast path
 
 Three sequential paired runs used 128,298 default grass instances. The keyframe had already been applied and acknowledged. Each stateless sample captured a full frame and encoded a verified WFD1 delta; each fast-path sample captured an absolute uniform update, checked tracked render state and encoded a verified WUS1 packet. Both advanced shader wind; stream ticks increased for each packet. On receive, the prior path verified, reconstructed and applied the full state, while the stream verified and applied uniforms only. Timings exclude effect update, rendering, transport and keyframe setup.
@@ -13,7 +29,7 @@ Three sequential paired runs used 128,298 default grass instances. The keyframe 
 
 Uniform packets were 304 bytes; the stateless WFD1 wind packet was 3,328 bytes. Both paths delivered matching uniform state, and the stream caused no instance-matrix, color or geometry-attribute version changes. The fast path's sample p95 ranged from 0.25–0.34 ms for encoding and 0.24–0.30 ms for replay. These are batched CPU-side observations on one Windows x64 / Node v24.22.1 machine, not a 60 fps or GPU guarantee. Process CPU is reported in the JSON; a separate 512-operation batch measured 0.04–0.05 ms per encode and 0.04–0.05 ms per replay, but Windows accounting is coarse and subject to GC and background worker noise.
 
-The fast path applies only while tracked geometry, transforms and buffer versions stay unchanged. The benchmark applies a disturbance and confirms the stream requests a new keyframe. In these runs, rebuilding a stream required an 11,380,500-byte keyframe, 8.70–9.06 ms to create and 9.32–9.92 ms to install, excluding network. Continuous interactive deformation can require frequent rekeys; this is not a viable per-frame fast path in that situation. Applications can use the existing stateless delta protocol instead, but its default-density active disturbance still took 12.23–13.14 ms to capture/encode and 12.11–12.90 ms to replay in these runs (521,596 raw bytes). Further incremental geometry work or off-thread processing is needed for tight frame budgets.
+The fast path applies only while tracked geometry, transforms and buffer versions stay unchanged. The benchmark applies a disturbance and confirms the stream requests a new keyframe. In these runs, rebuilding a stream required an 11,380,500-byte keyframe, 8.70–9.06 ms to create and 9.32–9.92 ms to install, excluding network. Continuous interactive deformation can require frequent rekeys, so use the patch stream above for that workload. The older stateless delta path took 12.23–13.14 ms to capture/encode and 12.11–12.90 ms to replay in these runs (521,596 raw bytes).
 
 ## Full frame and stateless delta
 
