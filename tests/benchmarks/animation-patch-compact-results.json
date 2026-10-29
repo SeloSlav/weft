@@ -1,0 +1,351 @@
+{
+  "generatedAt": "2026-10-29T22:38:56.587Z",
+  "note": "Each run advances a real disturbance over 30 sequential frames after five warmup frames. One source supplies both codecs; update, old full capture + WFD1 encode, and patch capture + encode are timed separately. Replicas apply the corresponding packets in order and full frame bytes are checked every five frames. Sender total is update plus patch capture/encode; receiver replay is a separate machine/path. Keyframe setup, transport, other game logic, rendering and GPU upload are excluded. Timings are informational and do not prove an overall 60 fps frame.",
+  "runs": [
+    {
+      "node": "v24.22.1",
+      "platform": "win32",
+      "arch": "x64",
+      "cases": [
+        {
+          "name": "grass-active-low",
+          "instances": 21216,
+          "keyframeBytes": 1957276,
+          "parity": true,
+          "update": {
+            "median": 0.634900000000016,
+            "p95": 0.9094000000000051,
+            "max": 1.0740999999999872,
+            "samples": 30
+          },
+          "deltaEncode": {
+            "median": 2.3853000000000293,
+            "p95": 2.7368000000000166,
+            "max": 2.8577000000000226,
+            "samples": 30
+          },
+          "patchEncode": {
+            "median": 0.6311000000000035,
+            "p95": 0.9662000000000148,
+            "max": 1.0430999999999813,
+            "samples": 30
+          },
+          "sender": {
+            "median": 1.3921000000000276,
+            "p95": 1.8909999999999627,
+            "max": 2.039600000000007,
+            "samples": 30
+          },
+          "deltaReplay": {
+            "median": 2.4510999999999967,
+            "p95": 3.1982000000000426,
+            "max": 3.2239000000000146,
+            "samples": 30
+          },
+          "patchReplay": {
+            "median": 0.39859999999998763,
+            "p95": 0.7703999999999951,
+            "max": 0.7906999999999584,
+            "samples": 30
+          },
+          "patchBytes": {
+            "median": 50940,
+            "p95": 51268,
+            "max": 51268,
+            "samples": 30
+          },
+          "deltaBytes": {
+            "median": 90492,
+            "p95": 90516,
+            "max": 90528,
+            "samples": 30
+          }
+        },
+        {
+          "name": "grass-active-default",
+          "instances": 128298,
+          "keyframeBytes": 11380500,
+          "parity": true,
+          "update": {
+            "median": 3.09900000000016,
+            "p95": 8.48219999999992,
+            "max": 8.703800000000001,
+            "samples": 30
+          },
+          "deltaEncode": {
+            "median": 10.200800000000072,
+            "p95": 11.562199999999848,
+            "max": 19.73239999999987,
+            "samples": 30
+          },
+          "patchEncode": {
+            "median": 2.9832000000001244,
+            "p95": 18.9063000000001,
+            "max": 19.08270000000016,
+            "samples": 30
+          },
+          "sender": {
+            "median": 6.908199999999852,
+            "p95": 22.01570000000015,
+            "max": 22.231199999999944,
+            "samples": 30
+          },
+          "deltaReplay": {
+            "median": 11.312800000000152,
+            "p95": 28.88130000000001,
+            "max": 28.957200000000057,
+            "samples": 30
+          },
+          "patchReplay": {
+            "median": 1.5290999999999713,
+            "p95": 2.522399999999834,
+            "max": 2.7454999999999927,
+            "samples": 30
+          },
+          "patchBytes": {
+            "median": 275160,
+            "p95": 276656,
+            "max": 276916,
+            "samples": 30
+          },
+          "deltaBytes": {
+            "median": 521452,
+            "p95": 521504,
+            "max": 521520,
+            "samples": 30
+          }
+        }
+      ]
+    },
+    {
+      "node": "v24.22.1",
+      "platform": "win32",
+      "arch": "x64",
+      "cases": [
+        {
+          "name": "grass-active-low",
+          "instances": 21216,
+          "keyframeBytes": 1957276,
+          "parity": true,
+          "update": {
+            "median": 0.6637999999999806,
+            "p95": 1.0371999999999844,
+            "max": 1.1163999999999987,
+            "samples": 30
+          },
+          "deltaEncode": {
+            "median": 2.268199999999979,
+            "p95": 2.763500000000022,
+            "max": 2.775800000000004,
+            "samples": 30
+          },
+          "patchEncode": {
+            "median": 0.6288000000000125,
+            "p95": 0.9597999999999729,
+            "max": 0.976099999999974,
+            "samples": 30
+          },
+          "sender": {
+            "median": 1.343999999999994,
+            "p95": 1.9852999999999952,
+            "max": 1.994799999999998,
+            "samples": 30
+          },
+          "deltaReplay": {
+            "median": 2.5132999999999583,
+            "p95": 2.9114999999999327,
+            "max": 3.2216999999999985,
+            "samples": 30
+          },
+          "patchReplay": {
+            "median": 0.39229999999997744,
+            "p95": 0.8221000000000345,
+            "max": 0.8372999999999138,
+            "samples": 30
+          },
+          "patchBytes": {
+            "median": 50940,
+            "p95": 51268,
+            "max": 51268,
+            "samples": 30
+          },
+          "deltaBytes": {
+            "median": 90492,
+            "p95": 90516,
+            "max": 90528,
+            "samples": 30
+          }
+        },
+        {
+          "name": "grass-active-default",
+          "instances": 128298,
+          "keyframeBytes": 11380500,
+          "parity": true,
+          "update": {
+            "median": 3.4875999999999294,
+            "p95": 8.409900000000107,
+            "max": 8.668499999999767,
+            "samples": 30
+          },
+          "deltaEncode": {
+            "median": 10.265199999999822,
+            "p95": 11.977100000000064,
+            "max": 40.96140000000014,
+            "samples": 30
+          },
+          "patchEncode": {
+            "median": 3.161600000000135,
+            "p95": 16.453700000000026,
+            "max": 18.429800000000114,
+            "samples": 30
+          },
+          "sender": {
+            "median": 8.478000000000065,
+            "p95": 19.891399999999976,
+            "max": 21.092200000000048,
+            "samples": 30
+          },
+          "deltaReplay": {
+            "median": 11.289800000000014,
+            "p95": 29.440799999999854,
+            "max": 51.5800999999999,
+            "samples": 30
+          },
+          "patchReplay": {
+            "median": 1.6072999999996682,
+            "p95": 2.3494000000000597,
+            "max": 2.6193000000000666,
+            "samples": 30
+          },
+          "patchBytes": {
+            "median": 275160,
+            "p95": 276656,
+            "max": 276916,
+            "samples": 30
+          },
+          "deltaBytes": {
+            "median": 521452,
+            "p95": 521504,
+            "max": 521520,
+            "samples": 30
+          }
+        }
+      ]
+    },
+    {
+      "node": "v24.22.1",
+      "platform": "win32",
+      "arch": "x64",
+      "cases": [
+        {
+          "name": "grass-active-low",
+          "instances": 21216,
+          "keyframeBytes": 1957276,
+          "parity": true,
+          "update": {
+            "median": 0.5869000000000142,
+            "p95": 0.8401999999999816,
+            "max": 0.9035000000000082,
+            "samples": 30
+          },
+          "deltaEncode": {
+            "median": 2.38250000000005,
+            "p95": 2.671299999999974,
+            "max": 2.932800000000043,
+            "samples": 30
+          },
+          "patchEncode": {
+            "median": 0.7250000000000227,
+            "p95": 3.01339999999999,
+            "max": 3.051400000000001,
+            "samples": 30
+          },
+          "sender": {
+            "median": 1.3787000000000944,
+            "p95": 3.6123999999999796,
+            "max": 3.84699999999998,
+            "samples": 30
+          },
+          "deltaReplay": {
+            "median": 2.6107000000000085,
+            "p95": 3.4195000000000277,
+            "max": 4.062599999999975,
+            "samples": 30
+          },
+          "patchReplay": {
+            "median": 0.3845999999999776,
+            "p95": 0.8333999999999833,
+            "max": 1.3810000000000286,
+            "samples": 30
+          },
+          "patchBytes": {
+            "median": 50940,
+            "p95": 51268,
+            "max": 51268,
+            "samples": 30
+          },
+          "deltaBytes": {
+            "median": 90492,
+            "p95": 90516,
+            "max": 90528,
+            "samples": 30
+          }
+        },
+        {
+          "name": "grass-active-default",
+          "instances": 128298,
+          "keyframeBytes": 11380500,
+          "parity": true,
+          "update": {
+            "median": 4.857899999999972,
+            "p95": 8.605999999999995,
+            "max": 9.42710000000011,
+            "samples": 30
+          },
+          "deltaEncode": {
+            "median": 10.256599999999935,
+            "p95": 35.86460000000011,
+            "max": 56.3735999999999,
+            "samples": 30
+          },
+          "patchEncode": {
+            "median": 3.155499999999847,
+            "p95": 19.113099999999804,
+            "max": 23.06490000000008,
+            "samples": 30
+          },
+          "sender": {
+            "median": 8.692700000000059,
+            "p95": 22.012499999999818,
+            "max": 25.757000000000062,
+            "samples": 30
+          },
+          "deltaReplay": {
+            "median": 11.376199999999926,
+            "p95": 12.839899999999943,
+            "max": 13.47770000000014,
+            "samples": 30
+          },
+          "patchReplay": {
+            "median": 1.7182000000000244,
+            "p95": 2.287599999999884,
+            "max": 2.6181000000001404,
+            "samples": 30
+          },
+          "patchBytes": {
+            "median": 275160,
+            "p95": 276656,
+            "max": 276916,
+            "samples": 30
+          },
+          "deltaBytes": {
+            "median": 521452,
+            "p95": 521504,
+            "max": 521520,
+            "samples": 30
+          }
+        }
+      ]
+    }
+  ]
+}

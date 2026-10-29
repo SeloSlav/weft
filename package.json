@@ -75,7 +75,8 @@
     "bench:animation-frames": "node tests/bench-animation-frames.mjs",
     "bench:animation-deltas": "node tests/bench-animation-deltas.mjs",
     "test:animation-patches": "node tests/test-animation-patches.mjs",
-    "bench:animation-patches": "node tests/bench-animation-patches.mjs"
+    "bench:animation-patches": "node tests/bench-animation-patches.mjs",
+    "bench:animation-patches-paired": "node tests/bench-animation-patches-paired.mjs"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

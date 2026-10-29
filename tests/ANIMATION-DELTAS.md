@@ -2,6 +2,19 @@
 
 Run `npm run bench:animation-deltas` to compare complete binary frames, stateless verified deltas, and the stateful uniform fast path. Pass `-- --output <path>` to save the report elsewhere. The [full sample](./benchmarks/animation-delta-results.json) includes p95 and process CPU measurements; [three independent runs](./benchmarks/animation-uniform-stream-results.json) record the uniform fast path and active grass costs. The earlier [delta CPU comparison](./benchmarks/animation-delta-cpu-results.json) is retained.
 
+## Compact patches and sustained interactions
+
+Run `npm run bench:animation-patches-paired -- --output tests/benchmarks/animation-patch-paired-results.json` for the [paired report](./benchmarks/animation-patch-paired-results.json). Three independent, alternating-order runs compare the frozen WPS1 encoder and decoder with the current codec on the same current grass simulation. Each mode runs in its own Node process. After 20 warmup frames, it measures 180 consecutive frames of a recovering disturbance and 180 frames of a moving disturbance on 128,298 grass instances. Sender time includes updating the effect and capturing the patch; replay is a separate receiver operation. End-state bytes match both the authoritative state and the paired run.
+
+| Scenario | WPS1 median packet | Current median packet | Current sender median | Current sender p95 | Current sender maximum |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Recovering | 646.7 KiB | 249.6 KiB | 4.99–5.15 ms | 5.97–6.71 ms | 7.58–9.12 ms |
+| Moving | 648.7 KiB | 304.6 KiB | 5.11–5.47 ms | 5.82–6.40 ms | 6.66–8.57 ms |
+
+All 1,080 measured sender frames in these runs were below 16.67 ms. This is a headless Windows x64 / Node v24.22.1 result, not a guarantee for an application frame: it excludes other game logic, network, rendering, GPU uploads, stream setup and keyframe recovery. It also does not cover every disturbance pattern or machine. The separate [original comparison benchmark rerun](./benchmarks/animation-patch-compact-results.json), which also runs full-frame delta capture and replay between patch operations, had default-grass sender p95 values of 19.89–22.02 ms and a 25.76 ms maximum. Its sender figure adds two separately measured spans, and the extra full-frame work can affect garbage collection and scheduling; it demonstrates that the isolated result does not hold under all memory pressure. The corresponding current replay medians were 0.92–0.96 ms and 1.12–1.15 ms. The frozen WPS1 sender medians were 4.97–4.99 ms and 4.72–4.85 ms, so the smaller packets have a modest CPU cost in this workload. At 60 packets/s their median raw bandwidth is still about 14.6 MiB/s and 17.8 MiB/s respectively, before transport overhead.
+
+Current packets use bitmasks for changed words, and when smaller, losslessly encode XOR differences against the previous state. The encoder selects absolute sparse words or full blocks when either is smaller. New decoders accept WPS1, WPS2 and WPS3; older WPS1-only decoders cannot read the new formats. Grass records a bounded journal of touched instance blocks; a version gap, unsupported producer, or expired hint forces a complete comparison rather than risking missed changes. The benchmark's frozen WPS1 codec uses the current simulation, so this paired comparison isolates the codec and does not quantify the grass simulation changes.
+
 ## Active interaction patch stream
 
 Run `npm run bench:animation-patches -- --output tests/benchmarks/animation-patch-results.json` to repeat the [three-run report](./benchmarks/animation-patch-results.json). Each run advances an actual grass disturbance for 35 consecutive frames; five are warmup. Both codecs observe the same source states. Exact full-frame bytes are checked against both replicas every five frames. Source update and codec times are measured independently, and replay order alternates. Timing is informational, not a test gate.

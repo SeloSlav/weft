@@ -271,8 +271,8 @@ instead use the patch stream below for active buffer changes. A new stream must
 begin from an acknowledged keyframe.
 
 For interactions that change instance or geometry buffers, the patch stream
-keeps a private copy of the authority's live buffer words and sends changed
-chunks. It applies those chunks directly to the replica:
+keeps a private copy of the authority's live buffer words and sends lossless
+sparse changes. It applies those changes directly to the replica:
 
 ```ts
 import { createSurfaceAnimationPatchEncoder, createSurfaceAnimationPatchDecoder,
@@ -297,7 +297,9 @@ Both sides must also replace the stream if `decoder.apply` reports
 revisions. A lost uniform-only packet can be skipped, but a lost buffer patch
 cannot; use ordered delivery and request a keyframe on a missing revision.
 Stale packets, corrupt packets and wrong stream IDs or keyframes are rejected.
-Only one capture or apply may be in flight per stream. Packet SHA-256 checks
+Only one capture or apply may be in flight per stream. New encoders can emit WPS2
+or WPS3 packets; update receivers before senders because older decoders only
+accept WPS1. Current decoders also accept WPS1. Packet SHA-256 checks
 are not authentication; protect the transport. The decoder defaults to a
 256 MiB keyframe limit, adjustable with `{ maxFrameBytes }`; packets are limited
 to 256 MiB. Creating a stream copies live buffer data on the sender and takes a
@@ -305,7 +307,9 @@ full keyframe, so it consumes additional memory and has a setup cost.
 
 The mutation and replica ownership rules above also apply to patch streams.
 Changed Float32 buffers must be marked with `needsUpdate`, even if the renderer
-has already cleared their update ranges. A changed hierarchy, transform, count,
+has already cleared their update ranges. Built-in grass records bounded dirty
+instance hints so the patch stream can skip untouched regions; missing hints or
+intervening untracked revisions fall back to a full comparison. A changed hierarchy, transform, count,
 buffer identity, geometry index or uniform schema requires a new keyframe.
 Unmarked changes and material, texture, gameplay or external ancestor changes
 are outside the stream contract. The [benchmark notes](tests/ANIMATION-DELTAS.md)

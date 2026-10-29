@@ -3,16 +3,24 @@ import { captureSurfaceAnimationBinary, applySurfaceAnimationBinary } from './su
 import { readUniforms, type SurfaceAnimationTarget, type UniformFrame } from './surfaceAnimationFrame'
 import { nodesOf } from './surfaceTransformFrame'
 import { trackInstanceUploads, updateAttributeSpan } from './helpers/bufferUpdates'
+import { animationDirtyInstances, DIRTY_INSTANCE_BLOCK } from './helpers/animationDirtyInstances'
 import { assertBytes, digest, equal, tickOf, sameSchema, decodeUniforms, SurfaceAnimationKeyframeRequiredError } from './surfaceAnimationUniformStream'
 
 const MAGIC=[87,80,83,49] as const // WPS1
+const SPARSE_MAGIC=[87,80,83,50] as const // WPS2
+const XOR_MAGIC=[87,80,83,51] as const // WPS3
 const HEADER=80, HASH=32, MAX_PACKET=256*1024*1024, CHUNK=512
 const textEncoder=new TextEncoder(), textDecoder=new TextDecoder('utf-8',{fatal:true})
 const littleEndian=new Uint8Array(new Uint32Array([1]).buffer)[0]===1
 
 type Tracked={attribute:THREE.BufferAttribute; words:Uint32Array; snapshot?:Uint32Array; version:number; mesh:THREE.Mesh; matrix:boolean}
 type State={shape:unknown[]; buffers:Tracked[]; aliases:number[]}
+// WPS1 carries whole word blocks. WPS2 carries one changed-bit mask per
+// 32 words followed by absolute changed words. WPS3 adds two-bit XOR-byte
+// lengths for each word, followed by little-endian XOR bytes and zero padding.
+// Each format shares the same stream/revision header and checksum.
 type Run={index:number; start:number; length:number}
+type SparseRun=Run & { masks:Uint32Array; codes:Uint32Array; changed:number; xorBytes:number }
 function stateOf(target:SurfaceAnimationTarget, copy:boolean):State {
   const shape:unknown[]=[], buffers:Tracked[]=[], aliases:number[]=[], seen=new Map<THREE.BufferAttribute,number>(), arrays=new Map<ArrayLike<number>,THREE.BufferAttribute>()
   const add=(attribute:THREE.BufferAttribute, length:number, mesh:THREE.Mesh, matrix=false)=>{
@@ -89,40 +97,104 @@ export class SurfaceAnimationPatchEncoder {
     const uniforms=readUniforms(this.target)
     if(!sameSchema(this.schema,uniforms))throw new SurfaceAnimationKeyframeRequiredError('Animation uniform schema changed')
     if(!stable(current,stateOf(this.target,false)))throw new SurfaceAnimationKeyframeRequiredError('Render state changed during capture')
-    const runs:Run[]=[]
+    const runs:SparseRun[]=[]
     for(let k=0;k<current.buffers.length;k++){
       const buffer=current.buffers[k]!,old=this.state.buffers[k]!
       if(buffer.version===old.version)continue
-      const a=buffer.words,b=old.snapshot!
+      const a=buffer.words,b=old.snapshot!,itemSize=buffer.attribute.itemSize
+      const hints=animationDirtyInstances(buffer.attribute,old.version,buffer.version,a.length/itemSize)
       for(let start=0;start<a.length;start+=CHUNK){
-        const end=Math.min(start+CHUNK,a.length);let i=start
+        const end=Math.min(start+CHUNK,a.length)
+        if(hints){
+          const first=Math.floor(start/itemSize/DIRTY_INSTANCE_BLOCK),last=Math.floor((end-1)/itemSize/DIRTY_INSTANCE_BLOCK)
+          let relevant=false
+          for(const blocks of hints){for(let i=first;i<=last;i++)if(blocks[i]){relevant=true;break}if(relevant)break}
+          if(!relevant)continue
+        }
+        let i=start
         while(i+8<=end && a[i]===b[i] && a[i+1]===b[i+1] && a[i+2]===b[i+2] && a[i+3]===b[i+3] &&
           a[i+4]===b[i+4] && a[i+5]===b[i+5] && a[i+6]===b[i+6] && a[i+7]===b[i+7])i+=8
         while(i<end && a[i]===b[i])i++
         if(i===end)continue
-        const previous=runs[runs.length-1]
-        if(previous && previous.index===k && previous.start+previous.length===start)previous.length+=end-start
-        else runs.push({index:k,start,length:end-start})
+        const masks=new Uint32Array(Math.ceil((end-start)/32)),codes=new Uint32Array(masks.length*2);let changed=0,xorBytes=0
+        for(let base=start;base<end;base+=32){
+          let mask=0;const stop=Math.min(base+32,end)
+          for(let j=base;j<stop;j++)if(a[j]!==b[j]){
+            const bit=j-base,xor=(a[j]!^b[j]!)>>>0,bytes=Math.ceil((32-Math.clz32(xor))/8)
+            mask|=1<<bit;changed++;xorBytes+=bytes
+            codes[((base-start)>>>5)*2+(bit>>>4)]! |= (bytes-1)<<((bit&15)*2)
+          }
+          masks[(base-start)>>>5]=mask>>>0
+        }
+        runs.push({index:k,start,length:end-start,masks,codes,changed,xorBytes})
       }
     }
     const uniformBytes=textEncoder.encode(JSON.stringify(uniforms))
     // Pad JSON so every word block remains aligned.
     const padded=(uniformBytes.length+3)&~3
-    let size=HEADER+padded+HASH
-    for(const run of runs)size+=12+run.length*4
+    let sparseSize=HEADER+padded+HASH,xorSize=sparseSize,fullSize=sparseSize
+    for(const run of runs){
+      sparseSize+=16+run.masks.length*4+run.changed*4
+      xorSize+=16+run.masks.length*12+Math.ceil(run.xorBytes/4)*4
+      fullSize+=12+run.length*4
+    }
+    const useFull=fullSize<=sparseSize && fullSize<=xorSize
+    const useXor=!useFull && xorSize<sparseSize,size=useFull?fullSize:useXor?xorSize:sparseSize
     if(size>MAX_PACKET)throw new SurfaceAnimationKeyframeRequiredError('Patch packet exceeds limit')
     const packet=new Uint8Array(size),view=new DataView(packet.buffer)
-    packet.set(MAGIC);view.setUint32(4,this.sequence+1,true);view.setFloat64(8,tick,true)
+    packet.set(useFull?MAGIC:useXor?XOR_MAGIC:SPARSE_MAGIC);view.setUint32(4,this.sequence+1,true);view.setFloat64(8,tick,true)
     packet.set(this.hash,16);packet.set(this.id,48)
     view.setUint32(64,this.revision,true);view.setUint32(68,this.revision+(runs.length?1:0),true)
     view.setUint32(72,uniformBytes.length,true);view.setUint32(76,runs.length,true);packet.set(uniformBytes,HEADER)
     let pos=HEADER+padded
-    for(const run of runs){view.setUint32(pos,run.index,true);view.setUint32(pos+4,run.start,true);view.setUint32(pos+8,run.length,true);pos+=12;writeWords(packet,pos,current.buffers[run.index]!.words,run.start,run.length);pos+=run.length*4}
+    for(const run of runs){
+      view.setUint32(pos,run.index,true);view.setUint32(pos+4,run.start,true);view.setUint32(pos+8,run.length,true)
+      if(useFull){pos+=12;writeWords(packet,pos,current.buffers[run.index]!.words,run.start,run.length);pos+=run.length*4;continue}
+      view.setUint32(pos+12,useXor?run.xorBytes:run.changed,true);pos+=16
+      writeWords(packet,pos,run.masks,0,run.masks.length);pos+=run.masks.length*4
+      if(useXor){writeWords(packet,pos,run.codes,0,run.codes.length);pos+=run.codes.length*4}
+      const words=current.buffers[run.index]!.words,previous=this.state.buffers[run.index]!.snapshot!
+      for(let m=0;m<run.masks.length;m++){
+        let mask=run.masks[m]!
+        while(mask){
+          const bit=31-Math.clz32(mask & -mask),index=run.start+m*32+bit
+          if(useXor){
+            const value=(words[index]!^previous[index]!)>>>0,bytes=1+((run.codes[m*2+(bit>>>4)]!>>>((bit&15)*2))&3)
+            packet[pos++]=value&255
+            if(bytes>1)packet[pos++]=(value>>>8)&255
+            if(bytes>2)packet[pos++]=(value>>>16)&255
+            if(bytes>3)packet[pos++]=value>>>24
+          }else {view.setUint32(pos,words[index]!,true);pos+=4}
+          mask=(mask & (mask-1))>>>0
+        }
+      }
+      if(useXor)pos=(pos+3)&~3
+    }
     this.busy=true
     try{
       packet.set(await digest(packet.subarray(0,size-HASH)),size-HASH)
       pos=HEADER+padded
-      for(const run of runs){pos+=12;this.state.buffers[run.index]!.snapshot!.set(readWords(packet,pos,run.length),run.start);pos+=run.length*4}
+      for(const run of runs){
+        const snapshot=this.state.buffers[run.index]!.snapshot!
+        if(useFull){pos+=12;snapshot.set(readWords(packet,pos,run.length),run.start);pos+=run.length*4;continue}
+        pos+=16+run.masks.length*(useXor?12:4)
+        for(let m=0;m<run.masks.length;m++){
+          let mask=run.masks[m]!
+          while(mask){
+            const bit=31-Math.clz32(mask & -mask),index=run.start+m*32+bit
+            if(useXor){
+              const bytes=1+((run.codes[m*2+(bit>>>4)]!>>>((bit&15)*2))&3);let value=0
+              value=packet[pos++]!
+              if(bytes>1)value|=packet[pos++]!<<8
+              if(bytes>2)value|=packet[pos++]!<<16
+              if(bytes>3)value|=packet[pos++]!<<24
+              snapshot[index]=(snapshot[index]!^value)>>>0
+            }else {snapshot[index]=view.getUint32(pos,true);pos+=4}
+            mask=(mask & (mask-1))>>>0
+          }
+        }
+        if(useXor)pos=(pos+3)&~3
+      }
       for(let i=0;i<current.buffers.length;i++)this.state.buffers[i]!.version=current.buffers[i]!.version
       this.sequence++;this.revision+=runs.length?1:0;this.tick=tick
       return packet
@@ -141,7 +213,8 @@ export class SurfaceAnimationPatchDecoder {
   async apply(input:Uint8Array):Promise<number>{
     if(this.busy)throw new Error('Patch stream apply is already in progress')
     assertBytes(input)
-    if(input.length<HEADER+HASH || input.length>MAX_PACKET || MAGIC.some((v,i)=>input[i]!==v))throw new TypeError('Invalid patch stream packet')
+    const xor=XOR_MAGIC.every((v,i)=>input[i]===v),sparse=xor || SPARSE_MAGIC.every((v,i)=>input[i]===v)
+    if(input.length<HEADER+HASH || input.length>MAX_PACKET || (!sparse && MAGIC.some((v,i)=>input[i]!==v)))throw new TypeError('Invalid patch stream packet')
     const packet=new Uint8Array(input),view=new DataView(packet.buffer), sequence=view.getUint32(4,true),tick=view.getFloat64(8,true)
     const base=view.getUint32(64,true),next=view.getUint32(68,true),length=view.getUint32(72,true),count=view.getUint32(76,true)
     if(!sequence||sequence<=this.sequence||!Number.isSafeInteger(tick)||tick<=this.tick)throw new Error('Stale or invalid patch packet')
@@ -153,13 +226,30 @@ export class SurfaceAnimationPatchDecoder {
     for(let i=HEADER+length;i<HEADER+padded;i++)if(packet[i]!==0)throw new Error('Invalid patch padding')
     const values=decodeUniforms(JSON.parse(textDecoder.decode(packet.subarray(HEADER,HEADER+length))),this.schema)
     if(!this.target.setAnimationUniforms)throw new Error('Patch stream target cannot apply uniforms')
-    const runs:Array<Run & {pos:number}>=[];let pos=HEADER+padded,lastIndex=-1,lastEnd=0
+    const runs:Array<Run & {pos:number; maskPos:number; codePos:number}>=[];let pos=HEADER+padded,lastIndex=-1,lastEnd=0
     for(let i=0;i<count;i++){
-      if(pos+12>packet.length-HASH)throw new RangeError('Truncated patch record')
-      const index=view.getUint32(pos,true),start=view.getUint32(pos+4,true),n=view.getUint32(pos+8,true);pos+=12
-      const buffer=this.state.buffers[index]
-      if(!buffer || !n || start+n>buffer.words.length || pos+n*4>packet.length-HASH || index<lastIndex || (index===lastIndex && start<lastEnd))throw new Error('Invalid patch record')
-      runs.push({index,start,length:n,pos});pos+=n*4;lastIndex=index;lastEnd=start+n
+      if(pos+(sparse?16:12)>packet.length-HASH)throw new RangeError('Truncated patch record')
+      const index=view.getUint32(pos,true),start=view.getUint32(pos+4,true),n=view.getUint32(pos+8,true)
+      const amount=sparse?view.getUint32(pos+12,true):n;pos+=sparse?16:12
+      const buffer=this.state.buffers[index],maskPos=pos,maskWords=sparse?Math.ceil(n/32):0,codePos=pos+maskWords*4
+      if(!buffer || !n || start+n>buffer.words.length || index<lastIndex || (index===lastIndex && start<lastEnd) || (!xor && amount>n))throw new Error('Invalid patch record')
+      const dataStart=pos+maskWords*(xor?12:4),dataBytes=xor?amount:amount*4,dataEnd=dataStart+dataBytes,paddedEnd=xor?Math.ceil(dataEnd/4)*4:dataEnd
+      if(paddedEnd>packet.length-HASH)throw new Error('Invalid patch record length')
+      if(sparse){
+        let bits=0,bytes=0
+        for(let m=0;m<maskWords;m++){
+          let mask=view.getUint32(maskPos+m*4,true)
+          if(m===maskWords-1 && n%32 && (mask >>> (n%32))!==0)throw new Error('Invalid patch mask')
+          while(mask){
+            const bit=31-Math.clz32(mask & -mask);bits++
+            if(xor)bytes+=1+((view.getUint32(codePos+(m*2+(bit>>>4))*4,true)>>>((bit&15)*2))&3)
+            mask=(mask & (mask-1))>>>0
+          }
+        }
+        if(!bits || (xor?bytes!==amount:bits!==amount))throw new Error('Invalid patch mask count')
+        for(let j=dataEnd;j<paddedEnd;j++)if(packet[j]!==0)throw new Error('Invalid patch record padding')
+      }
+      runs.push({index,start,length:n,pos:dataStart,maskPos,codePos});pos=paddedEnd;lastIndex=index;lastEnd=start+n
     }
     if(pos!==packet.length-HASH)throw new Error('Patch stream has trailing data')
     if(!stable(this.state,stateOf(this.target,false)))throw new SurfaceAnimationKeyframeRequiredError('Replica render state changed')
@@ -180,7 +270,26 @@ export class SurfaceAnimationPatchDecoder {
       }
       for(const run of runs){
         if(run.index!==index){flush();index=run.index;first=run.start;end=run.start+run.length}else end=run.start+run.length
-        this.state.buffers[index]!.words.set(readWords(packet,run.pos,run.length),run.start)
+        const words=this.state.buffers[index]!.words
+        if(!sparse)words.set(readWords(packet,run.pos,run.length),run.start)
+        else {
+          let source=run.pos
+          for(let m=0;m<Math.ceil(run.length/32);m++){
+            let mask=view.getUint32(run.maskPos+m*4,true)
+            while(mask){
+              const bit=31-Math.clz32(mask & -mask),index=run.start+m*32+bit
+              if(xor){
+                const bytes=1+((view.getUint32(run.codePos+(m*2+(bit>>>4))*4,true)>>>((bit&15)*2))&3);let value=0
+                value=packet[source++]!
+                if(bytes>1)value|=packet[source++]!<<8
+                if(bytes>2)value|=packet[source++]!<<16
+                if(bytes>3)value|=packet[source++]!<<24
+                words[index]=(words[index]!^value)>>>0
+              }else {words[index]=view.getUint32(source,true);source+=4}
+              mask=(mask & (mask-1))>>>0
+            }
+          }
+        }
       }
       flush();this.target.setAnimationUniforms(values);this.sequence=sequence;this.revision=next;this.tick=tick
       return tick

@@ -1,3 +1,4 @@
+import { DIRTY_INSTANCE_BLOCK, recordAnimationDirtyInstances } from '../helpers/animationDirtyInstances'
 import { SpatialCandidateSet } from '../../runtime'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import * as THREE from 'three'
@@ -557,7 +558,8 @@ export class GrassFieldEffect {
   private readonly previousActiveCellKeys = new Set<number>()
   private previousUsedCull = false
   private readonly renderedBladeIndices = new Int32Array(MAX_INSTANCES).fill(-1)
-  private readonly reactionBlades = new Set<number>()
+  private readonly reactionBlades = new SpatialCandidateSet(MAX_INSTANCES)
+  private readonly disturbanceScratch = { disturbance: 0, awayX: 0, awayZ: 1 }
   private readonly reactionCandidates = new SpatialCandidateSet(MAX_INSTANCES)
   private readonly reactionCellKeys = new Set<number>()
   private bladeRestMatrices = new Float32Array(0)
@@ -940,8 +942,10 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     awayX: number
     awayZ: number
   } {
+    const target = this.disturbanceScratch
     if (this.disturbances.length === 0) {
-      return { disturbance: 0, awayX: 0, awayZ: 1 }
+      target.disturbance = 0; target.awayX = 0; target.awayZ = 1
+      return target
     }
     let disturbance = 0
     let awayX = 0
@@ -963,11 +967,9 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
         awayZ = dz
       }
     }
-    return {
-      disturbance: THREE.MathUtils.clamp(disturbance, 0, 1),
-      awayX,
-      awayZ,
-    }
+    target.disturbance = THREE.MathUtils.clamp(disturbance, 0, 1)
+    target.awayX = awayX; target.awayZ = awayZ
+    return target
   }
 
   /** Charred body + crisp front + presence cull in one pass over active burns. */
@@ -1196,7 +1198,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
       ? activeCellKeys.size === this.previousActiveCellKeys.size &&
         [...activeCellKeys].every((key) => this.previousActiveCellKeys.has(key))
       : this.previousActiveCellKeys.size === 0)
-    if (!needsDynamicBladeColor && this.reactionBlades.size === 0 && !this.baseBladeColorsDirty && sameCells) return
+    if (!needsDynamicBladeColor && this.reactionBlades.values.length === 0 && !this.baseBladeColorsDirty && sameCells) return
     const incremental = sameCells && !this.baseBladeColorsDirty
     this.previousActiveCellKeys.clear()
     this.previousUsedCull = Boolean(cull)
@@ -1205,7 +1207,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     this.reactionCandidates.reset()
     if (incremental) {
       const candidates = this.reactionCandidates
-      for (const i of this.reactionBlades) candidates.add(i)
+      for (const i of this.reactionBlades.values) candidates.add(i)
       this.reactionCellKeys.clear()
       // Only blades inside the actual influence can change. Previously reacted
       // blades are retained above so shrinking/cleared effects still restore them.
@@ -1241,12 +1243,15 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     } else {
       this.renderedBladeIndices.fill(-1)
     }
-    this.reactionBlades.clear()
+    this.reactionBlades.reset()
 
     const windArr = this.bladeWindPhaseAttr.array as Float32Array
     let instanceIndex = 0
     let firstChanged = Infinity
     let lastChanged = -1
+    // This owned bitmap describes exactly which stable output slots were
+    // touched. It is retained by the animation journal after this update.
+    const dirtyBlocks = incremental ? new Uint8Array(Math.ceil(this.bladeMesh.count / DIRTY_INSTANCE_BLOCK)) : null
 
     const processBlade = (i: number, targetIndex?: number): void => {
       const blade = this.cachedBlades[i]!
@@ -1268,6 +1273,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
       }
       const outputIndex = targetIndex ?? instanceIndex++
       this.renderedBladeIndices[i] = outputIndex
+      if (dirtyBlocks) dirtyBlocks[Math.floor(outputIndex / DIRTY_INSTANCE_BLOCK)] = 1
       firstChanged = Math.min(firstChanged, outputIndex)
       lastChanged = Math.max(lastChanged, outputIndex)
       let hidden = false
@@ -1387,9 +1393,16 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     }
     if (lastChanged >= firstChanged) {
       const count = lastChanged - firstChanged + 1
-      updateAttributeSpan(this.bladeMesh.instanceMatrix, firstChanged, count)
-      updateAttributeSpan(this.bladeBurnRimAttr, firstChanged, count)
-      if (this.bladeMesh.instanceColor) updateAttributeSpan(this.bladeMesh.instanceColor, firstChanged, count)
+      const matrix = this.bladeMesh.instanceMatrix, rim = this.bladeBurnRimAttr, color = this.bladeMesh.instanceColor
+      const matrixVersion = matrix.version, rimVersion = rim.version, colorVersion = color?.version
+      updateAttributeSpan(matrix, firstChanged, count)
+      updateAttributeSpan(rim, firstChanged, count)
+      if (color) updateAttributeSpan(color, firstChanged, count)
+      if (dirtyBlocks) {
+        recordAnimationDirtyInstances(matrix, matrixVersion, dirtyBlocks, this.bladeMesh.count)
+        recordAnimationDirtyInstances(rim, rimVersion, dirtyBlocks, this.bladeMesh.count)
+        if (color && colorVersion !== undefined) recordAnimationDirtyInstances(color, colorVersion, dirtyBlocks, this.bladeMesh.count)
+      }
     }
     this.baseBladeColorsDirty = false
   }

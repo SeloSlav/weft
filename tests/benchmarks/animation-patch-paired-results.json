@@ -1,0 +1,610 @@
+{
+  "generatedAt": "2026-10-29T22:38:46.027Z",
+  "baseline": {
+    "source": "tests/fixtures/animationPatchBaseline.ts",
+    "sha256": "e0e7252eea3cc5d05dacaaa76027ff09c80217a2d743aca088ba47477b309390"
+  },
+  "note": "Each mode runs in its own Node process on identically seeded default grass, with the same current simulation and real recovering and moving disturbances. After 20 warmup ticks, 180 consecutive ticks time source update and capture together, then time receiver apply separately. Source and replica full-frame bytes are compared at the end. Runs alternate baseline/optimized order. Keyframe setup, network, other game logic, rendering and GPU uploads are excluded. Wall times include async Web Crypto and scheduling; this is not a 60 fps application guarantee. Baseline compares the prior WPS1 codec using the current simulation, so it does not measure the grass simulation optimization.",
+  "runs": [
+    {
+      "baseline": {
+        "node": "v24.22.1",
+        "platform": "win32",
+        "arch": "x64",
+        "cases": [
+          {
+            "scenario": "recovering",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "1350f1a41225e0ba8100c34ad988cf670c3d3181d184cfb6a5fdf15f3f426800",
+            "parity": true,
+            "update": {
+              "median": 2.8887999999999465,
+              "p95": 3.702199999999948,
+              "p99": 4.3740999999999985,
+              "max": 4.492999999999938,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "encode": {
+              "median": 2.0620999999999867,
+              "p95": 2.4179000000000315,
+              "p99": 2.809199999999919,
+              "max": 3.7965999999998985,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "sender": {
+              "median": 4.970400000000041,
+              "p95": 5.807800000000043,
+              "p99": 6.518499999999904,
+              "max": 6.862599999999929,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "replay": {
+              "median": 0.7138999999999669,
+              "p95": 1.1398000000001502,
+              "p99": 1.3891000000000986,
+              "max": 1.5126000000000204,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 662216,
+              "p95": 662216,
+              "p99": 662216,
+              "max": 662216,
+              "samples": 180
+            }
+          },
+          {
+            "scenario": "moving",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "303ca97573f13e8faea6a73372dbf2cc3d539f2f93317e7588312c9280f26ce6",
+            "parity": true,
+            "update": {
+              "median": 2.7026999999998225,
+              "p95": 3.252599999999802,
+              "p99": 3.541200000000117,
+              "max": 3.605199999999968,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "encode": {
+              "median": 1.9864000000002306,
+              "p95": 2.283700000000408,
+              "p99": 2.7078999999998814,
+              "max": 2.7355999999999767,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "sender": {
+              "median": 4.716199999999844,
+              "p95": 5.3697000000001935,
+              "p99": 5.630900000000111,
+              "max": 5.988199999999779,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "replay": {
+              "median": 0.6621000000000095,
+              "p95": 0.9692999999997483,
+              "p99": 1.4402000000000044,
+              "max": 1.8910000000000764,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 664228,
+              "p95": 670372,
+              "p99": 672420,
+              "max": 672420,
+              "samples": 180
+            }
+          }
+        ]
+      },
+      "optimized": {
+        "node": "v24.22.1",
+        "platform": "win32",
+        "arch": "x64",
+        "cases": [
+          {
+            "scenario": "recovering",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "1350f1a41225e0ba8100c34ad988cf670c3d3181d184cfb6a5fdf15f3f426800",
+            "parity": true,
+            "update": {
+              "median": 2.98700000000008,
+              "p95": 4.008699999999976,
+              "p99": 4.404700000000048,
+              "max": 5.733300000000099,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "encode": {
+              "median": 2.014599999999973,
+              "p95": 2.8839000000000397,
+              "p99": 3.613299999999981,
+              "max": 5.438099999999963,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "sender": {
+              "median": 5.106499999999869,
+              "p95": 6.709400000000187,
+              "p99": 7.666100000000142,
+              "max": 9.119599999999991,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "replay": {
+              "median": 0.9523999999998978,
+              "p95": 1.3110000000000355,
+              "p99": 1.4938999999999396,
+              "max": 1.5582999999999174,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 255636,
+              "p95": 257124,
+              "p99": 257352,
+              "max": 257408,
+              "samples": 180
+            }
+          },
+          {
+            "scenario": "moving",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "303ca97573f13e8faea6a73372dbf2cc3d539f2f93317e7588312c9280f26ce6",
+            "parity": true,
+            "update": {
+              "median": 2.7284999999997126,
+              "p95": 3.218399999999747,
+              "p99": 3.6579000000001543,
+              "max": 3.807800000000043,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "encode": {
+              "median": 2.3698999999996886,
+              "p95": 2.99120000000039,
+              "p99": 3.3206999999997606,
+              "max": 3.3551000000002205,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "sender": {
+              "median": 5.107600000000275,
+              "p95": 6.048200000000179,
+              "p99": 6.573499999999967,
+              "max": 6.6580000000003565,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "replay": {
+              "median": 1.1236999999996442,
+              "p95": 1.5317000000000007,
+              "p99": 1.8029999999998836,
+              "max": 1.8885000000000218,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 311940,
+              "p95": 321140,
+              "p99": 321452,
+              "max": 321600,
+              "samples": 180
+            }
+          }
+        ]
+      }
+    },
+    {
+      "optimized": {
+        "node": "v24.22.1",
+        "platform": "win32",
+        "arch": "x64",
+        "cases": [
+          {
+            "scenario": "recovering",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "1350f1a41225e0ba8100c34ad988cf670c3d3181d184cfb6a5fdf15f3f426800",
+            "parity": true,
+            "update": {
+              "median": 2.971599999999853,
+              "p95": 4.0294999999999845,
+              "p99": 4.523800000000051,
+              "max": 4.602499999999964,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "encode": {
+              "median": 2.0545999999999367,
+              "p95": 2.6901000000000295,
+              "p99": 3.0679000000000087,
+              "max": 4.121700000000033,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "sender": {
+              "median": 5.147799999999961,
+              "p95": 6.385000000000105,
+              "p99": 7.518400000000042,
+              "max": 7.835300000000075,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "replay": {
+              "median": 0.9609000000000378,
+              "p95": 1.341799999999921,
+              "p99": 3.233799999999974,
+              "max": 4.163099999999986,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 255636,
+              "p95": 257124,
+              "p99": 257352,
+              "max": 257408,
+              "samples": 180
+            }
+          },
+          {
+            "scenario": "moving",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "303ca97573f13e8faea6a73372dbf2cc3d539f2f93317e7588312c9280f26ce6",
+            "parity": true,
+            "update": {
+              "median": 2.689400000000205,
+              "p95": 3.1906000000003587,
+              "p99": 3.3995999999997366,
+              "max": 5.992099999999937,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "encode": {
+              "median": 2.3670999999999367,
+              "p95": 2.964499999999589,
+              "p99": 3.180499999999938,
+              "max": 3.334599999999682,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "sender": {
+              "median": 5.1197000000001935,
+              "p95": 5.820799999999963,
+              "p99": 6.362599999999929,
+              "max": 8.565200000000004,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "replay": {
+              "median": 1.1311000000000604,
+              "p95": 1.4933999999998377,
+              "p99": 1.7188999999998487,
+              "max": 1.8263999999999214,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 311940,
+              "p95": 321140,
+              "p99": 321452,
+              "max": 321600,
+              "samples": 180
+            }
+          }
+        ]
+      },
+      "baseline": {
+        "node": "v24.22.1",
+        "platform": "win32",
+        "arch": "x64",
+        "cases": [
+          {
+            "scenario": "recovering",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "1350f1a41225e0ba8100c34ad988cf670c3d3181d184cfb6a5fdf15f3f426800",
+            "parity": true,
+            "update": {
+              "median": 2.795400000000086,
+              "p95": 3.436000000000149,
+              "p99": 3.6294999999998936,
+              "max": 3.996499999999969,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "encode": {
+              "median": 2.1532000000000835,
+              "p95": 2.5027999999999793,
+              "p99": 2.7072999999999183,
+              "max": 2.7454999999999927,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "sender": {
+              "median": 4.992600000000039,
+              "p95": 5.70270000000005,
+              "p99": 6.038299999999936,
+              "max": 6.374000000000024,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "replay": {
+              "median": 0.7028999999999996,
+              "p95": 1.1006999999999607,
+              "p99": 1.3374999999999773,
+              "max": 1.3768999999999778,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 662216,
+              "p95": 662216,
+              "p99": 662216,
+              "max": 662216,
+              "samples": 180
+            }
+          },
+          {
+            "scenario": "moving",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "303ca97573f13e8faea6a73372dbf2cc3d539f2f93317e7588312c9280f26ce6",
+            "parity": true,
+            "update": {
+              "median": 2.720900000000256,
+              "p95": 4.995899999999892,
+              "p99": 18.784900000000107,
+              "max": 32.20779999999968,
+              "overBudget": 2,
+              "samples": 180
+            },
+            "encode": {
+              "median": 2.1042999999999665,
+              "p95": 4.293600000000424,
+              "p99": 20.648800000000392,
+              "max": 31.364599999999882,
+              "overBudget": 2,
+              "samples": 180
+            },
+            "sender": {
+              "median": 4.840899999999692,
+              "p95": 10.660199999999804,
+              "p99": 36.5014000000001,
+              "max": 37.809600000000046,
+              "overBudget": 5,
+              "samples": 180
+            },
+            "replay": {
+              "median": 0.6880000000001019,
+              "p95": 1.244199999999637,
+              "p99": 16.77300000000014,
+              "max": 29.67910000000029,
+              "overBudget": 2,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 664228,
+              "p95": 670372,
+              "p99": 672420,
+              "max": 672420,
+              "samples": 180
+            }
+          }
+        ]
+      }
+    },
+    {
+      "baseline": {
+        "node": "v24.22.1",
+        "platform": "win32",
+        "arch": "x64",
+        "cases": [
+          {
+            "scenario": "recovering",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "1350f1a41225e0ba8100c34ad988cf670c3d3181d184cfb6a5fdf15f3f426800",
+            "parity": true,
+            "update": {
+              "median": 2.777499999999918,
+              "p95": 3.3370000000001028,
+              "p99": 3.669499999999971,
+              "max": 4.495100000000093,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "encode": {
+              "median": 2.1510000000000673,
+              "p95": 2.6528999999999314,
+              "p99": 3.3500000000000227,
+              "max": 3.475599999999986,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "sender": {
+              "median": 4.973600000000033,
+              "p95": 5.811500000000024,
+              "p99": 6.481800000000021,
+              "max": 6.745700000000056,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "replay": {
+              "median": 0.7088999999999714,
+              "p95": 1.1445999999999685,
+              "p99": 1.3058000000000902,
+              "max": 1.3300999999999021,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 662216,
+              "p95": 662216,
+              "p99": 662216,
+              "max": 662216,
+              "samples": 180
+            }
+          },
+          {
+            "scenario": "moving",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "303ca97573f13e8faea6a73372dbf2cc3d539f2f93317e7588312c9280f26ce6",
+            "parity": true,
+            "update": {
+              "median": 2.787500000000364,
+              "p95": 3.2944000000002234,
+              "p99": 3.6759000000001834,
+              "max": 3.7352999999998246,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "encode": {
+              "median": 2.060699999999997,
+              "p95": 2.397699999999986,
+              "p99": 2.6260999999999513,
+              "max": 2.6784999999999854,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "sender": {
+              "median": 4.845699999999852,
+              "p95": 5.37310000000025,
+              "p99": 5.892699999999877,
+              "max": 6.07990000000018,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "replay": {
+              "median": 0.7234000000003107,
+              "p95": 1.1660999999999149,
+              "p99": 1.6770000000001346,
+              "max": 1.698699999999917,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 664228,
+              "p95": 670372,
+              "p99": 672420,
+              "max": 672420,
+              "samples": 180
+            }
+          }
+        ]
+      },
+      "optimized": {
+        "node": "v24.22.1",
+        "platform": "win32",
+        "arch": "x64",
+        "cases": [
+          {
+            "scenario": "recovering",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "1350f1a41225e0ba8100c34ad988cf670c3d3181d184cfb6a5fdf15f3f426800",
+            "parity": true,
+            "update": {
+              "median": 2.8706000000000813,
+              "p95": 3.69399999999996,
+              "p99": 4.304300000000012,
+              "max": 5.209099999999921,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "encode": {
+              "median": 2.0243000000000393,
+              "p95": 2.726599999999962,
+              "p99": 3.0758999999998196,
+              "max": 3.758299999999963,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "sender": {
+              "median": 4.992200000000139,
+              "p95": 5.970299999999952,
+              "p99": 7.564899999999966,
+              "max": 7.579399999999964,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "replay": {
+              "median": 0.9175999999999931,
+              "p95": 1.2252999999998337,
+              "p99": 1.4507000000000971,
+              "max": 1.5065000000001874,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 255636,
+              "p95": 257124,
+              "p99": 257352,
+              "max": 257408,
+              "samples": 180
+            }
+          },
+          {
+            "scenario": "moving",
+            "instances": 128298,
+            "keyframeBytes": 11380500,
+            "endStateHash": "303ca97573f13e8faea6a73372dbf2cc3d539f2f93317e7588312c9280f26ce6",
+            "parity": true,
+            "update": {
+              "median": 2.861499999999978,
+              "p95": 3.4956999999999425,
+              "p99": 3.9764000000000124,
+              "max": 3.9954999999999927,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "encode": {
+              "median": 2.5281999999997424,
+              "p95": 3.2128999999999905,
+              "p99": 3.6114000000002306,
+              "max": 4.209799999999632,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "sender": {
+              "median": 5.473199999999906,
+              "p95": 6.402999999999793,
+              "p99": 7.38110000000006,
+              "max": 7.491399999999885,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "replay": {
+              "median": 1.1498000000001412,
+              "p95": 1.5280000000002474,
+              "p99": 1.7464999999997417,
+              "max": 1.7733000000002903,
+              "overBudget": 0,
+              "samples": 180
+            },
+            "packetBytes": {
+              "median": 311940,
+              "p95": 321140,
+              "p99": 321452,
+              "max": 321600,
+              "samples": 180
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
