@@ -70,7 +70,11 @@ export function runCoreChecks(): Check[] {
     const group=new THREE.Group(),geometry=new THREE.PlaneGeometry(),material=new THREE.MeshBasicMaterial()
     let buffers=0,assets=0
     geometry.addEventListener('dispose',()=>assets++);material.addEventListener('dispose',()=>assets++)
-    for(let i=0;i<3;i++) {const mesh=new THREE.InstancedMesh(geometry,material,2);mesh.addEventListener('dispose',()=>buffers++);group.add(mesh)}
+    for(let i=0;i<3;i++) {
+      const mesh=new THREE.InstancedMesh(geometry,material,2)
+      mesh.addEventListener('dispose',()=>{buffers++;group.remove(mesh);runtime.dispose(group)})
+      group.add(mesh)
+    }
     runtime.dispose(group);runtime.dispose(group)
     assert(buffers===3 && assets===0)
     throws(()=>runtime.run('pose',[],()=>{}))

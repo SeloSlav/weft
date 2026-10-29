@@ -1,11 +1,11 @@
 {
   "baselineRevision": "035a56bb4a8f7cb7bcf8ecdc2baf269e7e359d6e",
-  "generatedAt": "2026-10-29T19:50:15.868Z",
+  "generatedAt": "2026-10-29T19:56:32.600Z",
   "environment": {
     "node": "v24.22.1",
     "platform": "win32",
     "arch": "x64",
-    "backend": "CPU only; deterministic measurement and no-op texture canvas"
+    "backend": "CPU only; deterministic measurement and no-op texture canvas; paired AB/BA samples in one process"
   },
   "cases": [
     {
@@ -18,18 +18,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 20,
-        "replayedRows": 720,
-        "emittedLines": 20720,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 800,
+        "emittedLines": 22960,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 20
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 864,
+      "beforeIdleUploadVersionDelta": 1030,
       "parity": {
         "initial": true,
         "idle": true,
@@ -41,63 +41,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.617999999999995,
-            "p95Ms": 1.617999999999995,
+            "medianMs": 4.7012,
+            "p95Ms": 4.7012,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.4914999999999878,
-            "p95Ms": 1.4914999999999878,
+            "medianMs": 2.2487000000000137,
+            "p95Ms": 2.2487000000000137,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.0848139456922616
+          "speedup": 2.0906301418597284
         },
         "idle": {
           "before": {
-            "medianMs": 0.23486500000000063,
-            "p95Ms": 0.3192399999999992,
-            "samples": 21,
+            "medianMs": 0.2315799999999996,
+            "p95Ms": 0.3543949999999995,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00018999999999991246,
-            "p95Ms": 0.0006000000000000227,
-            "samples": 21,
+            "medianMs": 0.0003950000000003229,
+            "p95Ms": 0.0017399999999994976,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 1236.1315789479413
+          "speedup": 586.278481012178
         },
         "refresh": {
           "before": {
-            "medianMs": 0.21659999999999968,
-            "p95Ms": 0.377900000000011,
-            "samples": 21,
+            "medianMs": 0.22739999999998872,
+            "p95Ms": 0.4257999999999811,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.22719999999998208,
-            "p95Ms": 0.2913000000000068,
-            "samples": 21,
+            "medianMs": 0.1875,
+            "p95Ms": 0.26720000000000255,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.953345070422609
+          "speedup": 1.21279999999994
         },
         "active": {
           "before": {
-            "medianMs": 0.22419999999999618,
-            "p95Ms": 0.3476999999999748,
-            "samples": 21,
+            "medianMs": 0.2167999999999779,
+            "p95Ms": 0.39910000000003265,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.00029999999998153726,
-            "p95Ms": 0.0016999999999995907,
-            "samples": 21,
+            "medianMs": 0.0004999999999881766,
+            "p95Ms": 0.0024999999999977263,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 747.3333333793133
+          "speedup": 433.6000000102091
         }
       }
     },
@@ -111,18 +111,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 20,
-        "replayedRows": 720,
-        "emittedLines": 20720,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 800,
+        "emittedLines": 22960,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 20
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 864,
+      "beforeIdleUploadVersionDelta": 1030,
       "parity": {
         "initial": true,
         "idle": true,
@@ -134,63 +134,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.9662999999999897,
-            "p95Ms": 0.9662999999999897,
+            "medianMs": 0.7872999999999593,
+            "p95Ms": 0.7872999999999593,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.8310999999999922,
-            "p95Ms": 0.8310999999999922,
+            "medianMs": 0.5944000000000074,
+            "p95Ms": 0.5944000000000074,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.162675971603897
+          "speedup": 1.324528936742849
         },
         "idle": {
           "before": {
-            "medianMs": 0.22121000000000207,
-            "p95Ms": 0.2897799999999989,
-            "samples": 21,
+            "medianMs": 0.22378000000000214,
+            "p95Ms": 0.2769299999999987,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0001300000000000523,
-            "p95Ms": 0.00014500000000055023,
-            "samples": 21,
+            "medianMs": 0.0003599999999977399,
+            "p95Ms": 0.0004999999999995453,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 1701.615384614716
+          "speedup": 621.6111111150196
         },
         "refresh": {
           "before": {
-            "medianMs": 0.21009999999995443,
-            "p95Ms": 0.23619999999999663,
-            "samples": 21,
+            "medianMs": 0.21709999999995944,
+            "p95Ms": 0.3217000000000212,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.261099999999999,
-            "p95Ms": 0.38649999999998386,
-            "samples": 21,
+            "medianMs": 0.17259999999998854,
+            "p95Ms": 0.242999999999995,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.8046725392568183
+          "speedup": 1.2578215527229075
         },
         "active": {
           "before": {
-            "medianMs": 0.20519999999999072,
-            "p95Ms": 0.345799999999997,
-            "samples": 21,
+            "medianMs": 0.21170000000000755,
+            "p95Ms": 0.2722999999999729,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.0002000000000066393,
-            "p95Ms": 0.0004000000000132786,
-            "samples": 21,
+            "medianMs": 0.0003000000000383807,
+            "p95Ms": 0.004399999999975535,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1025.999999965894
+          "speedup": 705.6666665764119
         }
       }
     },
@@ -204,18 +204,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 20,
-        "replayedRows": 720,
-        "emittedLines": 20720,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 800,
+        "emittedLines": 22960,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 20
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 864,
+      "beforeIdleUploadVersionDelta": 1030,
       "parity": {
         "initial": true,
         "idle": true,
@@ -227,63 +227,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.5770999999999731,
-            "p95Ms": 0.5770999999999731,
+            "medianMs": 0.5874000000000024,
+            "p95Ms": 0.5874000000000024,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.8756999999999948,
-            "p95Ms": 0.8756999999999948,
+            "medianMs": 0.6591999999999985,
+            "p95Ms": 0.6591999999999985,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 0.6590156446271286
+          "speedup": 0.8910800970873843
         },
         "idle": {
           "before": {
-            "medianMs": 0.22083500000000242,
-            "p95Ms": 0.3407900000000012,
-            "samples": 21,
+            "medianMs": 0.21236499999999978,
+            "p95Ms": 0.33451499999999895,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00015500000000088222,
-            "p95Ms": 0.00030500000000017736,
-            "samples": 21,
+            "medianMs": 0.00014500000000339242,
+            "p95Ms": 0.00020999999999844477,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 1424.7419354757774
+          "speedup": 1464.5862068622848
         },
         "refresh": {
           "before": {
-            "medianMs": 0.20680000000004384,
-            "p95Ms": 0.33539999999993597,
-            "samples": 21,
+            "medianMs": 0.21070000000008804,
+            "p95Ms": 0.3301999999999907,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.21539999999998827,
-            "p95Ms": 0.2353999999999985,
-            "samples": 21,
+            "medianMs": 0.21300000000007913,
+            "p95Ms": 0.3591000000000122,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.960074280408798
+          "speedup": 0.9892018779343181
         },
         "active": {
           "before": {
-            "medianMs": 0.2035999999999376,
-            "p95Ms": 0.31979999999998654,
-            "samples": 21,
+            "medianMs": 0.20390000000008968,
+            "p95Ms": 0.29139999999995325,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.0002000000000066393,
-            "p95Ms": 0.0002000000000066393,
-            "samples": 21,
+            "medianMs": 0.00020000000006348273,
+            "p95Ms": 0.0004000000000132786,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1017.999999965894
+          "speedup": 1019.4999996768452
         }
       }
     },
@@ -298,18 +298,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 71,
+        "traversals": 82,
         "rebuiltRows": 16,
-        "replayedRows": 1120,
-        "emittedLines": 31808,
-        "projectionPasses": 120,
-        "skippedPasses": 314,
+        "replayedRows": 1296,
+        "emittedLines": 36736,
+        "projectionPasses": 138,
+        "skippedPasses": 396,
         "cachedRows": 16
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 314,
+      "beforeIdleUploadVersionDelta": 396,
       "parity": {
         "initial": true,
         "idle": true,
@@ -321,63 +321,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 2.4932000000000016,
-            "p95Ms": 2.4932000000000016,
+            "medianMs": 1.652400000000057,
+            "p95Ms": 1.652400000000057,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.807200000000023,
-            "p95Ms": 1.807200000000023,
+            "medianMs": 1.4341999999999189,
+            "p95Ms": 1.4341999999999189,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.3795927401504924
+          "speedup": 1.1521405661693978
         },
         "idle": {
           "before": {
-            "medianMs": 0.23773500000000353,
-            "p95Ms": 0.35846000000000233,
-            "samples": 21,
+            "medianMs": 0.23860500000000115,
+            "p95Ms": 0.3339750000000038,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0006000000000000227,
-            "p95Ms": 0.0008400000000008845,
-            "samples": 21,
+            "medianMs": 0.0010949999999979808,
+            "p95Ms": 0.0020699999999976627,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 396.22499999999087
+          "speedup": 217.90410958944395
         },
         "refresh": {
           "before": {
-            "medianMs": 0.5914999999999964,
-            "p95Ms": 0.9610999999999876,
-            "samples": 21,
+            "medianMs": 0.4735000000000582,
+            "p95Ms": 1.0937000000000126,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.38769999999999527,
-            "p95Ms": 0.5746000000000038,
-            "samples": 21,
+            "medianMs": 0.3267999999999347,
+            "p95Ms": 0.6377999999999702,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.5256641733299035
+          "speedup": 1.448898408813197
         },
         "active": {
           "before": {
-            "medianMs": 0.5744999999999436,
-            "p95Ms": 0.831600000000094,
-            "samples": 21,
+            "medianMs": 0.4375999999999749,
+            "p95Ms": 0.7230999999999312,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.2849999999999966,
-            "p95Ms": 0.5677000000000021,
-            "samples": 21,
+            "medianMs": 0.2726999999999862,
+            "p95Ms": 0.544399999999996,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 2.0157894736840367
+          "speedup": 1.604693802713594
         }
       }
     },
@@ -392,18 +392,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 71,
+        "traversals": 82,
         "rebuiltRows": 16,
-        "replayedRows": 1120,
-        "emittedLines": 31808,
-        "projectionPasses": 120,
-        "skippedPasses": 314,
+        "replayedRows": 1296,
+        "emittedLines": 36736,
+        "projectionPasses": 138,
+        "skippedPasses": 396,
         "cachedRows": 16
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 314,
+      "beforeIdleUploadVersionDelta": 396,
       "parity": {
         "initial": true,
         "idle": true,
@@ -415,63 +415,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.0374000000000478,
-            "p95Ms": 1.0374000000000478,
+            "medianMs": 0.9970999999999322,
+            "p95Ms": 0.9970999999999322,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.0132000000000119,
-            "p95Ms": 1.0132000000000119,
+            "medianMs": 0.8974000000000615,
+            "p95Ms": 0.8974000000000615,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.0238847216739397
+          "speedup": 1.1110987296633206
         },
         "idle": {
           "before": {
-            "medianMs": 0.2568200000000047,
-            "p95Ms": 0.3757249999999999,
-            "samples": 21,
+            "medianMs": 0.23540500000000292,
+            "p95Ms": 0.34102000000000315,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.002205000000000723,
-            "p95Ms": 0.0029650000000003727,
-            "samples": 21,
+            "medianMs": 0.0019549999999981084,
+            "p95Ms": 0.003350000000000364,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 116.47165532876214
+          "speedup": 120.41176470600035
         },
         "refresh": {
           "before": {
-            "medianMs": 0.4797999999999547,
-            "p95Ms": 0.6718000000000757,
-            "samples": 21,
+            "medianMs": 0.462099999999964,
+            "p95Ms": 0.7200000000000273,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.3608999999999867,
-            "p95Ms": 0.7399000000000058,
-            "samples": 21,
+            "medianMs": 0.30950000000007094,
+            "p95Ms": 0.5036999999999807,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.329454142421647
+          "speedup": 1.4930533117927562
         },
         "active": {
           "before": {
-            "medianMs": 0.4561999999999671,
-            "p95Ms": 0.7011999999999716,
-            "samples": 21,
+            "medianMs": 0.41079999999988104,
+            "p95Ms": 0.6701000000000477,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.2655000000000314,
-            "p95Ms": 0.5331000000000472,
-            "samples": 21,
+            "medianMs": 0.24530000000004293,
+            "p95Ms": 0.5137999999999465,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.718267419962008
+          "speedup": 1.6746840603335065
         }
       }
     },
@@ -486,18 +486,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 71,
+        "traversals": 82,
         "rebuiltRows": 16,
-        "replayedRows": 1120,
-        "emittedLines": 31808,
-        "projectionPasses": 120,
-        "skippedPasses": 314,
+        "replayedRows": 1296,
+        "emittedLines": 36736,
+        "projectionPasses": 138,
+        "skippedPasses": 396,
         "cachedRows": 16
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 314,
+      "beforeIdleUploadVersionDelta": 396,
       "parity": {
         "initial": true,
         "idle": true,
@@ -509,63 +509,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.5369000000000597,
-            "p95Ms": 1.5369000000000597,
+            "medianMs": 1.70049999999992,
+            "p95Ms": 1.70049999999992,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.0631999999999948,
-            "p95Ms": 1.0631999999999948,
+            "medianMs": 1.5692000000001372,
+            "p95Ms": 1.5692000000001372,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.4455417607224108
+          "speedup": 1.0836732092784676
         },
         "idle": {
           "before": {
-            "medianMs": 0.2632000000000005,
-            "p95Ms": 0.3973799999999983,
-            "samples": 21,
+            "medianMs": 0.23611999999999397,
+            "p95Ms": 0.3244799999999941,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0011449999999996407,
-            "p95Ms": 0.0038050000000026786,
-            "samples": 21,
+            "medianMs": 0.0010350000000016735,
+            "p95Ms": 0.0019300000000043837,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 229.86899563326034
+          "speedup": 228.1352657001084
         },
         "refresh": {
           "before": {
-            "medianMs": 0.5404000000000906,
-            "p95Ms": 0.9322999999999411,
-            "samples": 21,
+            "medianMs": 0.4636000000000422,
+            "p95Ms": 0.6849999999999454,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.35019999999997253,
-            "p95Ms": 0.6646000000000072,
-            "samples": 21,
+            "medianMs": 0.30979999999999563,
+            "p95Ms": 0.5433000000000447,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.5431182181614305
+          "speedup": 1.4964493221434756
         },
         "active": {
           "before": {
-            "medianMs": 0.5839999999998327,
-            "p95Ms": 0.9857999999999265,
-            "samples": 21,
+            "medianMs": 0.42689999999993233,
+            "p95Ms": 0.6814999999999145,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.2563999999999851,
-            "p95Ms": 0.5135999999999967,
-            "samples": 21,
+            "medianMs": 0.24969999999984793,
+            "p95Ms": 0.5144000000000233,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 2.277691107643786
+          "speedup": 1.709651581899048
         }
       }
     },
@@ -580,18 +580,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 47,
+        "traversals": 52,
         "rebuiltRows": 16,
-        "replayedRows": 736,
-        "emittedLines": 21056,
-        "projectionPasses": 94,
-        "skippedPasses": 314,
+        "replayedRows": 816,
+        "emittedLines": 23296,
+        "projectionPasses": 104,
+        "skippedPasses": 396,
         "cachedRows": 16
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 314,
+      "beforeIdleUploadVersionDelta": 396,
       "parity": {
         "initial": true,
         "idle": true,
@@ -603,63 +603,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.0303000000001248,
-            "p95Ms": 1.0303000000001248,
+            "medianMs": 0.7461000000000695,
+            "p95Ms": 0.7461000000000695,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.9286999999999921,
-            "p95Ms": 0.9286999999999921,
+            "medianMs": 0.7191000000000258,
+            "p95Ms": 0.7191000000000258,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.1094002368904206
+          "speedup": 1.0375469336671432
         },
         "idle": {
           "before": {
-            "medianMs": 0.10232999999999493,
-            "p95Ms": 0.15031999999999926,
-            "samples": 21,
+            "medianMs": 0.10000999999999749,
+            "p95Ms": 0.15075500000000375,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0006249999999994316,
-            "p95Ms": 0.0015150000000005547,
-            "samples": 21,
+            "medianMs": 0.0008950000000027103,
+            "p95Ms": 0.0020099999999956706,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 163.72800000014078
+          "speedup": 111.74301675943535
         },
         "refresh": {
           "before": {
-            "medianMs": 0.34120000000007167,
-            "p95Ms": 1.018199999999979,
-            "samples": 21,
+            "medianMs": 0.20470000000000255,
+            "p95Ms": 0.2700999999999567,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.198599999999999,
-            "p95Ms": 0.23850000000004457,
-            "samples": 21,
+            "medianMs": 0.18870000000015352,
+            "p95Ms": 0.22850000000016735,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.7180261832833503
+          "speedup": 1.084790673025098
         },
         "active": {
           "before": {
-            "medianMs": 0.01089999999999236,
-            "p95Ms": 0.6374000000000706,
-            "samples": 21,
+            "medianMs": 0.0018000000000029104,
+            "p95Ms": 0.2536999999999807,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.0024000000000228283,
-            "p95Ms": 0.23849999999998772,
-            "samples": 21,
+            "medianMs": 0.0018999999999778083,
+            "p95Ms": 0.1993999999999687,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 4.541666666620284
+          "speedup": 0.9473684210652284
         }
       }
     },
@@ -674,18 +674,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 49,
+        "traversals": 56,
         "rebuiltRows": 0,
         "replayedRows": 0,
-        "emittedLines": 21952,
-        "projectionPasses": 98,
-        "skippedPasses": 314,
+        "emittedLines": 25088,
+        "projectionPasses": 112,
+        "skippedPasses": 396,
         "cachedRows": 0
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 314,
+      "beforeIdleUploadVersionDelta": 396,
       "parity": {
         "initial": true,
         "idle": true,
@@ -697,63 +697,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.9488000000001193,
-            "p95Ms": 1.9488000000001193,
+            "medianMs": 1.1377999999999702,
+            "p95Ms": 1.1377999999999702,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.5027000000000044,
-            "p95Ms": 1.5027000000000044,
+            "medianMs": 1.1940999999999349,
+            "p95Ms": 1.1940999999999349,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.2968656418447553
+          "speedup": 0.9528515199732286
         },
         "idle": {
           "before": {
-            "medianMs": 0.18106000000000222,
-            "p95Ms": 0.25671999999999573,
-            "samples": 21,
+            "medianMs": 0.15072999999999864,
+            "p95Ms": 0.19538499999999887,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0005200000000002092,
-            "p95Ms": 0.0005800000000022009,
-            "samples": 21,
+            "medianMs": 0.0009249999999951797,
+            "p95Ms": 0.002039999999999509,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 348.1923076921719
+          "speedup": 162.95135135219905
         },
         "refresh": {
           "before": {
-            "medianMs": 1.2359999999998763,
-            "p95Ms": 2.343399999999974,
-            "samples": 21,
+            "medianMs": 1.1411000000000513,
+            "p95Ms": 1.606800000000021,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.0863999999999692,
-            "p95Ms": 1.8729000000000156,
-            "samples": 21,
+            "medianMs": 1.1239999999997963,
+            "p95Ms": 2.292899999999918,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.1377025036818036
+          "speedup": 1.0152135231319022
         },
         "active": {
           "before": {
-            "medianMs": 0.010300000000142973,
-            "p95Ms": 1.5746000000001459,
-            "samples": 21,
+            "medianMs": 0.005499999999983629,
+            "p95Ms": 1.3994000000000142,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.00529999999997699,
-            "p95Ms": 1.1940000000000168,
-            "samples": 21,
+            "medianMs": 0.0047000000001844455,
+            "p95Ms": 1.4008000000001175,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.9433962264505076
+          "speedup": 1.1702127659080401
         }
       }
     },
@@ -767,18 +767,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 70,
+        "traversals": 81,
         "rebuiltRows": 20,
-        "replayedRows": 1380,
-        "emittedLines": 39200,
-        "projectionPasses": 70,
-        "skippedPasses": 436,
+        "replayedRows": 1600,
+        "emittedLines": 45360,
+        "projectionPasses": 81,
+        "skippedPasses": 519,
         "cachedRows": 20
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 1296,
+      "beforeIdleUploadVersionDelta": 1545,
       "parity": {
         "initial": true,
         "idle": true,
@@ -790,63 +790,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.134800000000041,
-            "p95Ms": 1.134800000000041,
+            "medianMs": 0.8421000000000731,
+            "p95Ms": 0.8421000000000731,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.1277999999999793,
-            "p95Ms": 1.1277999999999793,
+            "medianMs": 1.1001000000001113,
+            "p95Ms": 1.1001000000001113,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.0062067742508087
+          "speedup": 0.7654758658303681
         },
         "idle": {
           "before": {
-            "medianMs": 0.12755499999999528,
-            "p95Ms": 0.28678499999999757,
-            "samples": 21,
+            "medianMs": 0.08445000000000391,
+            "p95Ms": 0.16294500000000198,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0002800000000007685,
-            "p95Ms": 0.0002999999999985903,
-            "samples": 21,
+            "medianMs": 0.0004699999999957072,
+            "p95Ms": 0.0013200000000097134,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 455.55357142730423
+          "speedup": 179.68085106547926
         },
         "refresh": {
           "before": {
-            "medianMs": 0.09239999999999782,
-            "p95Ms": 0.15380000000004657,
-            "samples": 21,
+            "medianMs": 0.09010000000012042,
+            "p95Ms": 0.1350999999999658,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.0775000000000432,
-            "p95Ms": 0.08729999999997062,
-            "samples": 21,
+            "medianMs": 0.07650000000012369,
+            "p95Ms": 0.10140000000001237,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.1922580645154364
+          "speedup": 1.1777777777774476
         },
         "active": {
           "before": {
-            "medianMs": 0.10439999999994143,
-            "p95Ms": 0.1994000000001961,
-            "samples": 21,
+            "medianMs": 0.08819999999991524,
+            "p95Ms": 0.1834000000001197,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.07980000000003429,
-            "p95Ms": 0.09250000000002956,
-            "samples": 21,
+            "medianMs": 0.044000000000096406,
+            "p95Ms": 0.07769999999982247,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.3082706766904333
+          "speedup": 2.004545454539136
         }
       }
     },
@@ -860,18 +860,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 70,
+        "traversals": 81,
         "rebuiltRows": 20,
-        "replayedRows": 1380,
-        "emittedLines": 33600,
-        "projectionPasses": 70,
-        "skippedPasses": 436,
+        "replayedRows": 1600,
+        "emittedLines": 38880,
+        "projectionPasses": 81,
+        "skippedPasses": 519,
         "cachedRows": 20
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 864,
+      "beforeIdleUploadVersionDelta": 1030,
       "parity": {
         "initial": true,
         "idle": true,
@@ -883,63 +883,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.4777000000001408,
-            "p95Ms": 1.4777000000001408,
+            "medianMs": 1.486699999999928,
+            "p95Ms": 1.486699999999928,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.8272000000000048,
-            "p95Ms": 1.8272000000000048,
+            "medianMs": 1.6932999999999083,
+            "p95Ms": 1.6932999999999083,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 0.8087237302977982
+          "speedup": 0.8779897242071745
         },
         "idle": {
           "before": {
-            "medianMs": 0.3773500000000013,
-            "p95Ms": 0.5514900000000011,
-            "samples": 21,
+            "medianMs": 0.3178499999999985,
+            "p95Ms": 0.390504999999996,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0003200000000020964,
-            "p95Ms": 0.000380000000001246,
-            "samples": 21,
+            "medianMs": 0.0006700000000023465,
+            "p95Ms": 0.0021299999999996543,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 1179.2187499922788
+          "speedup": 474.40298507296325
         },
         "refresh": {
           "before": {
-            "medianMs": 0.322400000000016,
-            "p95Ms": 0.3573999999998705,
-            "samples": 21,
+            "medianMs": 0.3186000000000604,
+            "p95Ms": 0.4934000000000651,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.3487999999999829,
-            "p95Ms": 0.5498999999999796,
-            "samples": 21,
+            "medianMs": 0.26139999999986685,
+            "p95Ms": 0.49159999999983484,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.9243119266055958
+          "speedup": 1.2188217291515788
         },
         "active": {
           "before": {
-            "medianMs": 0.46280000000001564,
-            "p95Ms": 0.848700000000008,
-            "samples": 21,
+            "medianMs": 0.44219999999995707,
+            "p95Ms": 1.0024000000000797,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.37360000000001037,
-            "p95Ms": 1.047300000000007,
-            "samples": 21,
+            "medianMs": 0.37400000000002365,
+            "p95Ms": 0.6612999999999829,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.2387580299785943
+          "speedup": 1.182352941176281
         }
       }
     },
@@ -953,18 +953,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 70,
+        "traversals": 81,
         "rebuiltRows": 22,
-        "replayedRows": 1518,
-        "emittedLines": 46200,
-        "projectionPasses": 70,
-        "skippedPasses": 436,
+        "replayedRows": 1760,
+        "emittedLines": 53460,
+        "projectionPasses": 81,
+        "skippedPasses": 519,
         "cachedRows": 22
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 1296,
+      "beforeIdleUploadVersionDelta": 1545,
       "parity": {
         "initial": true,
         "idle": true,
@@ -976,63 +976,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 2.5107000000000426,
-            "p95Ms": 2.5107000000000426,
+            "medianMs": 1.9543000000003303,
+            "p95Ms": 1.9543000000003303,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.9273000000000025,
-            "p95Ms": 1.9273000000000025,
+            "medianMs": 2.402099999999791,
+            "p95Ms": 2.402099999999791,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.3027032636330822
+          "speedup": 0.813579784355564
         },
         "idle": {
           "before": {
-            "medianMs": 0.36756500000000186,
-            "p95Ms": 0.5190650000000006,
-            "samples": 21,
+            "medianMs": 0.3411800000000085,
+            "p95Ms": 0.5057450000000017,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0003000000000014325,
-            "p95Ms": 0.00032500000000084127,
-            "samples": 21,
+            "medianMs": 0.0010849999999891224,
+            "p95Ms": 0.0025699999999915235,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 1225.2166666608225
+          "speedup": 314.4516129063861
         },
         "refresh": {
           "before": {
-            "medianMs": 0.4157000000000153,
-            "p95Ms": 0.5266999999998916,
-            "samples": 21,
+            "medianMs": 0.3369999999999891,
+            "p95Ms": 0.4173999999998159,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.3593999999999937,
-            "p95Ms": 0.5015999999999963,
-            "samples": 21,
+            "medianMs": 0.3571999999999207,
+            "p95Ms": 1.0498999999999796,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.1566499721759114
+          "speedup": 0.9434490481524745
         },
         "active": {
           "before": {
-            "medianMs": 0.47929999999996653,
-            "p95Ms": 0.7860000000000582,
-            "samples": 21,
+            "medianMs": 0.4070999999999003,
+            "p95Ms": 0.45790000000033615,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.42799999999999727,
-            "p95Ms": 0.6492999999999824,
-            "samples": 21,
+            "medianMs": 0.3374000000003434,
+            "p95Ms": 0.4436000000000604,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.1198598130840411
+          "speedup": 1.2065797273250918
         }
       }
     },
@@ -1049,12 +1049,12 @@
       "idleProjectionPasses": 0,
       "stats": {
         "traversals": 1,
-        "rebuiltRows": 52,
+        "rebuiltRows": 0,
         "replayedRows": 0,
         "emittedLines": 3536,
         "projectionPasses": 1,
-        "skippedPasses": 505,
-        "cachedRows": 52
+        "skippedPasses": 0,
+        "cachedRows": 0
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
@@ -1071,63 +1071,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 92.10230000000001,
-            "p95Ms": 92.10230000000001,
+            "medianMs": 90.04980000000023,
+            "p95Ms": 90.04980000000023,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 88.85990000000004,
-            "p95Ms": 88.85990000000004,
+            "medianMs": 84.50819999999976,
+            "p95Ms": 84.50819999999976,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.0364888999424935
+          "speedup": 1.0655747016265935
         },
         "idle": {
           "before": {
-            "medianMs": 0.00045500000001084116,
-            "p95Ms": 0.0006399999999985084,
-            "samples": 21,
+            "medianMs": 0.00040500000000065484,
+            "p95Ms": 0.0012399999999843203,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0005049999999982901,
-            "p95Ms": 0.0011099999999999,
-            "samples": 21,
+            "medianMs": 0.00038500000000567524,
+            "p95Ms": 0.0007149999999910506,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.9009900990344193
+          "speedup": 1.0519480519342461
         },
         "refresh": {
           "before": {
-            "medianMs": 0.001099999999951251,
-            "p95Ms": 0.0012000000001535227,
-            "samples": 21,
+            "medianMs": 0.0010000000002037268,
+            "p95Ms": 0.0018999999997504347,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.001100000000064938,
-            "p95Ms": 0.002200000000016189,
-            "samples": 21,
+            "medianMs": 0.0012000000001535227,
+            "p95Ms": 0.0015999999995983671,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.9999999998966483
+          "speedup": 0.8333333333964927
         },
         "active": {
           "before": {
-            "medianMs": 3.3596999999999753,
-            "p95Ms": 4.4823999999998705,
-            "samples": 21,
+            "medianMs": 3.3445999999999003,
+            "p95Ms": 5.258900000000267,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 3.468499999999949,
-            "p95Ms": 3.9873000000000047,
-            "samples": 21,
+            "medianMs": 3.56479999999965,
+            "p95Ms": 5.062600000000202,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.968631973475573
+          "speedup": 0.938229353680495
         }
       }
     },
@@ -1142,12 +1142,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 38,
+        "traversals": 42,
         "rebuiltRows": 18,
-        "replayedRows": 666,
-        "emittedLines": 15048,
-        "projectionPasses": 38,
-        "skippedPasses": 468,
+        "replayedRows": 738,
+        "emittedLines": 16632,
+        "projectionPasses": 42,
+        "skippedPasses": 558,
         "cachedRows": 18
       },
       "ownedMeshes": 2,
@@ -1165,63 +1165,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.2156999999997424,
-            "p95Ms": 1.2156999999997424,
+            "medianMs": 1.6093999999998232,
+            "p95Ms": 1.6093999999998232,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.5505000000000564,
-            "p95Ms": 1.5505000000000564,
+            "medianMs": 2.1140999999997803,
+            "p95Ms": 2.1140999999997803,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 0.7840696549498215
+          "speedup": 0.7612695709758245
         },
         "idle": {
           "before": {
-            "medianMs": 0.00009000000000014552,
-            "p95Ms": 0.0000950000000102591,
-            "samples": 21,
+            "medianMs": 0.00015499999999519788,
+            "p95Ms": 0.00210500000000593,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0001699999999971169,
-            "p95Ms": 0.00018000000000029104,
-            "samples": 21,
+            "medianMs": 0.0003249999999979991,
+            "p95Ms": 0.00040500000000065484,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.5294117647157168
+          "speedup": 0.4769230769112374
         },
         "refresh": {
           "before": {
-            "medianMs": 0.47870000000011714,
-            "p95Ms": 0.6302000000000589,
-            "samples": 21,
+            "medianMs": 0.49020000000018626,
+            "p95Ms": 0.7964000000001761,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.40980000000001837,
-            "p95Ms": 0.7524000000000797,
-            "samples": 21,
+            "medianMs": 0.3878999999997177,
+            "p95Ms": 0.8125,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.1681307955102385
+          "speedup": 1.2637277648892575
         },
         "active": {
           "before": {
-            "medianMs": 0.010500000000320142,
-            "p95Ms": 0.019099999999980355,
-            "samples": 21,
+            "medianMs": 0.007300000000213913,
+            "p95Ms": 0.03469999999970241,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.019800000000032014,
-            "p95Ms": 0.04919999999992797,
-            "samples": 21,
+            "medianMs": 0.007399999999961437,
+            "p95Ms": 0.02290000000039072,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.5303030303183417
+          "speedup": 0.9864864865205344
         }
       }
     },
@@ -1235,12 +1235,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 14,
-        "replayedRows": 504,
-        "emittedLines": 8029,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 560,
+        "emittedLines": 8897,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 14
       },
       "ownedMeshes": 1,
@@ -1258,63 +1258,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.7630999999996675,
-            "p95Ms": 1.7630999999996675,
+            "medianMs": 1.999699999999848,
+            "p95Ms": 1.999699999999848,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.4823000000000093,
-            "p95Ms": 1.4823000000000093,
+            "medianMs": 1.611199999999826,
+            "p95Ms": 1.611199999999826,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.1894353369760888
+          "speedup": 1.2411246276067922
         },
         "idle": {
           "before": {
-            "medianMs": 0.00008999999997740815,
-            "p95Ms": 0.0000950000000102591,
-            "samples": 21,
+            "medianMs": 0.00007000000000516593,
+            "p95Ms": 0.0000750000000152795,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00016499999999837202,
-            "p95Ms": 0.00018000000000029104,
-            "samples": 21,
+            "medianMs": 0.00017000000000280124,
+            "p95Ms": 0.00017500000001291482,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.5454545453230069
+          "speedup": 0.41176470590595576
         },
         "refresh": {
           "before": {
-            "medianMs": 0.6653999999998632,
-            "p95Ms": 0.729399999999714,
-            "samples": 21,
+            "medianMs": 0.9765999999999622,
+            "p95Ms": 1.101799999999912,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.6299999999998818,
-            "p95Ms": 0.8173999999999069,
-            "samples": 21,
+            "medianMs": 0.9490000000000691,
+            "p95Ms": 1.0533000000000357,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.0561904761904573
+          "speedup": 1.029083245521487
         },
         "active": {
           "before": {
-            "medianMs": 0.0363999999999578,
-            "p95Ms": 0.054799999999886495,
-            "samples": 21,
+            "medianMs": 0.05429999999978463,
+            "p95Ms": 0.07140000000026703,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.03350000000000364,
-            "p95Ms": 0.034099999999853026,
-            "samples": 21,
+            "medianMs": 0.05490000000008877,
+            "p95Ms": 0.0751999999997679,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.0865671641777268
+          "speedup": 0.989071038245844
         }
       }
     },
@@ -1328,12 +1328,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 17,
-        "replayedRows": 612,
-        "emittedLines": 11951,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 680,
+        "emittedLines": 13243,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 17
       },
       "ownedMeshes": 1,
@@ -1351,63 +1351,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 2.5763999999999214,
-            "p95Ms": 2.5763999999999214,
+            "medianMs": 3.07320000000027,
+            "p95Ms": 3.07320000000027,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 2.31230000000005,
-            "p95Ms": 2.31230000000005,
+            "medianMs": 3.2310999999999694,
+            "p95Ms": 3.2310999999999694,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.1142152834839187
+          "speedup": 0.9511311937112126
         },
         "idle": {
           "before": {
-            "medianMs": 0.00008499999999003193,
-            "p95Ms": 0.0000850000000127693,
-            "samples": 21,
+            "medianMs": 0.0001499999999850843,
+            "p95Ms": 0.0002099999999927604,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00017000000000280124,
-            "p95Ms": 0.00018000000000029104,
-            "samples": 21,
+            "medianMs": 0.00030499999998028214,
+            "p95Ms": 0.00036500000001069564,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.4999999999331254
+          "speedup": 0.4918032786714151
         },
         "refresh": {
           "before": {
-            "medianMs": 0.9131000000002132,
-            "p95Ms": 1.1003999999998086,
-            "samples": 21,
+            "medianMs": 1.0574000000001433,
+            "p95Ms": 1.4234000000001288,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.8508999999999105,
-            "p95Ms": 1.0248999999998887,
-            "samples": 21,
+            "medianMs": 0.9838999999997213,
+            "p95Ms": 1.4776999999999134,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.0730990715716409
+          "speedup": 1.0747027136908658
         },
         "active": {
           "before": {
-            "medianMs": 0.044200000000273576,
-            "p95Ms": 0.08019999999987704,
-            "samples": 21,
+            "medianMs": 0.04890000000023065,
+            "p95Ms": 0.1433999999999287,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.03300000000012915,
-            "p95Ms": 0.04320000000006985,
-            "samples": 21,
+            "medianMs": 0.05079999999998108,
+            "p95Ms": 0.10609999999996944,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.3393939393969878
+          "speedup": 0.9625984252017492
         }
       }
     },
@@ -1422,12 +1422,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 22,
-        "replayedRows": 792,
-        "emittedLines": 22792,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 880,
+        "emittedLines": 25256,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 22
       },
       "ownedMeshes": 2,
@@ -1445,63 +1445,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.3578000000002248,
-            "p95Ms": 1.3578000000002248,
+            "medianMs": 1.727400000000216,
+            "p95Ms": 1.727400000000216,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.3669999999999618,
-            "p95Ms": 1.3669999999999618,
+            "medianMs": 1.8816000000001623,
+            "p95Ms": 1.8816000000001623,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 0.9932699341625917
+          "speedup": 0.9180484693877908
         },
         "idle": {
           "before": {
-            "medianMs": 0.0000850000000127693,
-            "p95Ms": 0.00018000000000029104,
-            "samples": 21,
+            "medianMs": 0.00014499999999770808,
+            "p95Ms": 0.0002750000000105501,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00013999999999896317,
-            "p95Ms": 0.0002950000000055297,
-            "samples": 21,
+            "medianMs": 0.0003400000000056025,
+            "p95Ms": 0.0007700000000113505,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.607142857238563
+          "speedup": 0.42647058822152584
         },
         "refresh": {
           "before": {
-            "medianMs": 0.501299999999901,
-            "p95Ms": 0.6555999999995947,
-            "samples": 21,
+            "medianMs": 0.5509999999999309,
+            "p95Ms": 0.8008999999997286,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.4621999999999389,
-            "p95Ms": 0.5383999999999105,
-            "samples": 21,
+            "medianMs": 0.5036000000000058,
+            "p95Ms": 0.9104999999999563,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.0845954132409505
+          "speedup": 1.0941223193008827
         },
         "active": {
           "before": {
-            "medianMs": 0.07069999999976062,
-            "p95Ms": 0.0805000000000291,
-            "samples": 21,
+            "medianMs": 0.12089999999989232,
+            "p95Ms": 0.15099999999983993,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.06909999999993488,
-            "p95Ms": 0.07809999999994943,
-            "samples": 21,
+            "medianMs": 0.12879999999995562,
+            "p95Ms": 0.18060000000014043,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.0231548480438097
+          "speedup": 0.9386645962727793
         }
       }
     },
@@ -1517,12 +1517,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 20,
-        "replayedRows": 720,
-        "emittedLines": 17390,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 800,
+        "emittedLines": 19270,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 20
       },
       "ownedMeshes": 3,
@@ -1540,63 +1540,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.1190999999998894,
-            "p95Ms": 1.1190999999998894,
+            "medianMs": 1.4854999999997744,
+            "p95Ms": 1.4854999999997744,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.3076000000000931,
-            "p95Ms": 1.3076000000000931,
+            "medianMs": 1.7690999999999804,
+            "p95Ms": 1.7690999999999804,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 0.8558427653715278
+          "speedup": 0.8396924990106783
         },
         "idle": {
           "before": {
-            "medianMs": 0.00009999999999763532,
-            "p95Ms": 0.00010500000000774889,
-            "samples": 21,
+            "medianMs": 0.0000750000000152795,
+            "p95Ms": 0.00014500000002044545,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00018499999999903592,
-            "p95Ms": 0.0002000000000066393,
-            "samples": 21,
+            "medianMs": 0.00018500000001040462,
+            "p95Ms": 0.00039500000000316506,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.5405405405305753
+          "speedup": 0.4054054054651968
         },
         "refresh": {
           "before": {
-            "medianMs": 0.5097000000000662,
-            "p95Ms": 0.7292999999999665,
-            "samples": 21,
+            "medianMs": 0.5421000000001186,
+            "p95Ms": 0.7615000000000691,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.44869999999991705,
-            "p95Ms": 0.6324999999999363,
-            "samples": 21,
+            "medianMs": 0.4986999999996442,
+            "p95Ms": 0.6675000000000182,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.1359482950750177
+          "speedup": 1.087026268298587
         },
         "active": {
           "before": {
-            "medianMs": 0.05319999999983338,
-            "p95Ms": 0.08449999999993452,
-            "samples": 21,
+            "medianMs": 0.07899999999972351,
+            "p95Ms": 0.18589999999994689,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.049999999999954525,
-            "p95Ms": 0.0704000000000633,
-            "samples": 21,
+            "medianMs": 0.08849999999983993,
+            "p95Ms": 0.16570000000001528,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.0639999999976353
+          "speedup": 0.8926553672301288
         }
       }
     },
@@ -1608,22 +1608,22 @@
         2872,
         null
       ],
-      "idleUploadVersionDelta": 864,
+      "idleUploadVersionDelta": 1030,
       "idleRebuiltRows": 0,
-      "idleProjectionPasses": 432,
+      "idleProjectionPasses": 515,
       "stats": {
-        "traversals": 506,
+        "traversals": 600,
         "rebuiltRows": 18,
-        "replayedRows": 9090,
-        "emittedLines": 364320,
-        "projectionPasses": 506,
+        "replayedRows": 10782,
+        "emittedLines": 432000,
+        "projectionPasses": 600,
         "skippedPasses": 0,
         "cachedRows": 18
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 864,
+      "beforeIdleUploadVersionDelta": 1030,
       "parity": {
         "initial": true,
         "idle": true,
@@ -1635,63 +1635,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.632799999999861,
-            "p95Ms": 1.632799999999861,
+            "medianMs": 1.6146000000003369,
+            "p95Ms": 1.6146000000003369,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.6241999999999734,
-            "p95Ms": 1.6241999999999734,
+            "medianMs": 2.2765999999996893,
+            "p95Ms": 2.2765999999996893,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.0052949144193373
+          "speedup": 0.7092154967937087
         },
         "idle": {
           "before": {
-            "medianMs": 0.8170899999999847,
-            "p95Ms": 0.9181949999999915,
-            "samples": 21,
+            "medianMs": 0.864955000000009,
+            "p95Ms": 1.0921649999999772,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.7146449999999959,
-            "p95Ms": 0.7469449999999938,
-            "samples": 21,
+            "medianMs": 0.7501450000000205,
+            "p95Ms": 0.8934449999999743,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 1.1433508945000517
+          "speedup": 1.153050410253998
         },
         "refresh": {
           "before": {
-            "medianMs": 0.8752999999996973,
-            "p95Ms": 1.1259000000000015,
-            "samples": 21,
+            "medianMs": 0.886000000000422,
+            "p95Ms": 1.264299999999821,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.677599999999984,
-            "p95Ms": 0.7039999999999509,
-            "samples": 21,
+            "medianMs": 0.672099999999773,
+            "p95Ms": 1.1204000000007,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.2917650531282734
+          "speedup": 1.3182562118743062
         },
         "active": {
           "before": {
-            "medianMs": 0.8980999999998858,
-            "p95Ms": 1.1619000000000597,
-            "samples": 21,
+            "medianMs": 0.6595000000006621,
+            "p95Ms": 0.9013999999997395,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.5975000000000819,
-            "p95Ms": 0.7104999999999109,
-            "samples": 21,
+            "medianMs": 0.5785999999998239,
+            "p95Ms": 0.9468999999999141,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.5030962343092262
+          "speedup": 1.1398202557913288
         }
       }
     },
@@ -1701,22 +1701,22 @@
       "initialCounts": [
         2279
       ],
-      "idleUploadVersionDelta": 864,
+      "idleUploadVersionDelta": 1030,
       "idleRebuiltRows": 0,
-      "idleProjectionPasses": 432,
+      "idleProjectionPasses": 515,
       "stats": {
-        "traversals": 506,
+        "traversals": 600,
         "rebuiltRows": 18,
-        "replayedRows": 9090,
-        "emittedLines": 582912,
-        "projectionPasses": 506,
+        "replayedRows": 10782,
+        "emittedLines": 691200,
+        "projectionPasses": 600,
         "skippedPasses": 0,
         "cachedRows": 18
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 864,
+      "beforeIdleUploadVersionDelta": 1030,
       "parity": {
         "initial": true,
         "idle": true,
@@ -1728,63 +1728,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 2.2532000000001062,
-            "p95Ms": 2.2532000000001062,
+            "medianMs": 3.624300000000403,
+            "p95Ms": 3.624300000000403,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 2.1387999999999465,
-            "p95Ms": 2.1387999999999465,
+            "medianMs": 2.550199999999677,
+            "p95Ms": 2.550199999999677,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.0534879371611008
+          "speedup": 1.421182652341331
         },
         "idle": {
           "before": {
-            "medianMs": 1.0012199999999893,
-            "p95Ms": 1.120004999999992,
-            "samples": 21,
+            "medianMs": 0.9243800000000192,
+            "p95Ms": 1.0977550000000065,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.6563400000000001,
-            "p95Ms": 0.7072300000000041,
-            "samples": 21,
+            "medianMs": 0.6771300000000338,
+            "p95Ms": 0.8870699999999943,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 1.525459365572705
+          "speedup": 1.3651440639167858
         },
         "refresh": {
           "before": {
-            "medianMs": 1.1975999999999658,
-            "p95Ms": 1.481499999999869,
-            "samples": 21,
+            "medianMs": 0.8942000000006374,
+            "p95Ms": 1.344199999999546,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.6177000000000135,
-            "p95Ms": 0.6548000000000229,
-            "samples": 21,
+            "medianMs": 0.6441999999997279,
+            "p95Ms": 1.0618999999996959,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.938805245264594
+          "speedup": 1.3880782365740687
         },
         "active": {
           "before": {
-            "medianMs": 0.935399999999845,
-            "p95Ms": 1.2489000000000487,
-            "samples": 21,
+            "medianMs": 0.8698999999996886,
+            "p95Ms": 1.3481000000001586,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.656400000000076,
-            "p95Ms": 0.7302999999999429,
-            "samples": 21,
+            "medianMs": 0.6810999999997875,
+            "p95Ms": 1.1257000000005064,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.4250457038387214
+          "speedup": 1.2771986492438114
         }
       }
     },
@@ -1827,7 +1827,7 @@
         "replayedRows": 0,
         "emittedLines": 0,
         "projectionPasses": 1,
-        "skippedPasses": 32,
+        "skippedPasses": 39,
         "cachedRows": 0
       },
       "ownedMeshes": 24,
@@ -1845,63 +1845,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.010300000000370346,
-            "p95Ms": 0.010300000000370346,
+            "medianMs": 0.023200000000542786,
+            "p95Ms": 0.023200000000542786,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.008700000000089858,
-            "p95Ms": 0.008700000000089858,
+            "medianMs": 0.001999999999497959,
+            "p95Ms": 0.001999999999497959,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.183908046007352
+          "speedup": 11.600000003183231
         },
         "idle": {
           "before": {
-            "medianMs": 0.00017000000000280124,
-            "p95Ms": 0.00029499999998279237,
-            "samples": 21,
+            "medianMs": 0.00023499999997511622,
+            "p95Ms": 0.0005100000000311411,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00018999999999778084,
-            "p95Ms": 0.00020499999999401552,
-            "samples": 21,
+            "medianMs": 0.00023500000002059097,
+            "p95Ms": 0.00028999999999541616,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.8947368421304569
+          "speedup": 0.9999999998064905
         },
         "refresh": {
           "before": {
-            "medianMs": 0.0003999999998995918,
-            "p95Ms": 0.0004999999996471161,
-            "samples": 21,
+            "medianMs": 0.0005000000001018634,
+            "p95Ms": 0.0007999999997991836,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.0003999999998995918,
-            "p95Ms": 0.00040000000012696546,
-            "samples": 21,
+            "medianMs": 0.0005999999993946403,
+            "p95Ms": 0.000699999999596912,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1
+          "speedup": 0.833333334343883
         },
         "active": {
           "before": {
-            "medianMs": 0.083299999999781,
-            "p95Ms": 0.12080000000014479,
-            "samples": 21,
+            "medianMs": 0.1265000000003056,
+            "p95Ms": 0.13500000000021828,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.0005999999998493877,
-            "p95Ms": 0.0010000000002037268,
-            "samples": 21,
+            "medianMs": 0.0010000000002037268,
+            "p95Ms": 0.0020000000004074536,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 138.83333336781834
+          "speedup": 126.49999997453415
         }
       }
     },
@@ -1918,12 +1918,12 @@
       "idleProjectionPasses": 0,
       "stats": {
         "traversals": 1,
-        "rebuiltRows": 52,
+        "rebuiltRows": 0,
         "replayedRows": 0,
         "emittedLines": 3536,
         "projectionPasses": 1,
-        "skippedPasses": 505,
-        "cachedRows": 52
+        "skippedPasses": 0,
+        "cachedRows": 0
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
@@ -1940,63 +1940,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 52.846700000000055,
-            "p95Ms": 52.846700000000055,
+            "medianMs": 78.79619999999977,
+            "p95Ms": 78.79619999999977,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 54.5951,
-            "p95Ms": 54.5951,
+            "medianMs": 59.98859999999968,
+            "p95Ms": 59.98859999999968,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 0.9679751479528392
+          "speedup": 1.3135195687180596
         },
         "idle": {
           "before": {
-            "medianMs": 0.00014499999999770808,
-            "p95Ms": 0.00028500000000803994,
-            "samples": 21,
+            "medianMs": 0.0003250000000207365,
+            "p95Ms": 0.0006100000000060391,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00018000000000029104,
-            "p95Ms": 0.0001900000000205182,
-            "samples": 21,
+            "medianMs": 0.00014500000002044545,
+            "p95Ms": 0.0006349999999656575,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.8055555555415201
+          "speedup": 2.2413793101717965
         },
         "refresh": {
           "before": {
-            "medianMs": 0.001799999999548163,
-            "p95Ms": 0.0027000000000043656,
-            "samples": 21,
+            "medianMs": 0.0011000000004059984,
+            "p95Ms": 0.002300000000104774,
+            "samples": 25,
             "batch": 1
           },
           "after": {
             "medianMs": 0.0010000000002037268,
-            "p95Ms": 0.001099999999951251,
-            "samples": 21,
+            "p95Ms": 0.002199999999902502,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.7999999991814548
+          "speedup": 1.100000000181899
         },
         "active": {
           "before": {
-            "medianMs": 2.020300000000134,
-            "p95Ms": 2.8921000000000276,
-            "samples": 21,
+            "medianMs": 1.4690999999993437,
+            "p95Ms": 2.226599999999962,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.8020999999998821,
-            "p95Ms": 2.695299999999861,
-            "samples": 21,
+            "medianMs": 1.6520999999993364,
+            "p95Ms": 2.3229999999994106,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.1210809611010855
+          "speedup": 0.8892318866896276
         }
       }
     },
@@ -2011,12 +2011,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 18,
-        "replayedRows": 648,
-        "emittedLines": 14652,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 720,
+        "emittedLines": 16236,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 18
       },
       "ownedMeshes": 2,
@@ -2034,63 +2034,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.631800000000112,
-            "p95Ms": 0.631800000000112,
+            "medianMs": 0.9429000000000087,
+            "p95Ms": 0.9429000000000087,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.5808999999999287,
-            "p95Ms": 0.5808999999999287,
+            "medianMs": 0.613100000000486,
+            "p95Ms": 0.613100000000486,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.0876226545019618
+          "speedup": 1.5379220355558005
         },
         "idle": {
           "before": {
-            "medianMs": 0.00008000000000265572,
-            "p95Ms": 0.00009000000000014552,
-            "samples": 21,
+            "medianMs": 0.00007000000000516593,
+            "p95Ms": 0.0000750000000152795,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00010499999998501153,
-            "p95Ms": 0.00011500000000523869,
-            "samples": 21,
+            "medianMs": 0.00008499999999003193,
+            "p95Ms": 0.00009000000000014552,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.7619047620388143
+          "speedup": 0.823529411922058
         },
         "refresh": {
           "before": {
-            "medianMs": 0.3431000000000495,
-            "p95Ms": 0.5183000000001812,
-            "samples": 21,
+            "medianMs": 0.40679999999974825,
+            "p95Ms": 0.6284999999998035,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.2790999999997439,
-            "p95Ms": 0.3321000000000822,
-            "samples": 21,
+            "medianMs": 0.30059999999957654,
+            "p95Ms": 0.5112999999992098,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.229308491581384
+          "speedup": 1.3532934131747216
         },
         "active": {
           "before": {
-            "medianMs": 0.00010000000020227162,
-            "p95Ms": 0.0001999999999497959,
-            "samples": 21,
+            "medianMs": 0.00029999999969732016,
+            "p95Ms": 0.00030000000060681487,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.0001999999999497959,
-            "p95Ms": 0.0001999999999497959,
-            "samples": 21,
+            "medianMs": 0.00030000000060681487,
+            "p95Ms": 0.0003999999998995918,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.5000000011368684
+          "speedup": 0.999999996968351
         }
       }
     },
@@ -2105,12 +2105,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 22,
-        "replayedRows": 792,
-        "emittedLines": 22792,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 880,
+        "emittedLines": 25256,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 22
       },
       "ownedMeshes": 2,
@@ -2128,63 +2128,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.636199999999917,
-            "p95Ms": 0.636199999999917,
+            "medianMs": 0.7273999999997613,
+            "p95Ms": 0.7273999999997613,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.5493999999998778,
-            "p95Ms": 0.5493999999998778,
+            "medianMs": 0.7890999999999622,
+            "p95Ms": 0.7890999999999622,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.1579905351293385
+          "speedup": 0.9218096565705186
         },
         "idle": {
           "before": {
-            "medianMs": 0.00009000000000014552,
-            "p95Ms": 0.0000950000000102591,
-            "samples": 21,
+            "medianMs": 0.00013500000000021828,
+            "p95Ms": 0.00014500000002044545,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00027000000000043656,
-            "p95Ms": 0.00028999999999541616,
-            "samples": 21,
+            "medianMs": 0.00025500000001557057,
+            "p95Ms": 0.001125000000001819,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.3333333333333333
+          "speedup": 0.5294117646744119
         },
         "refresh": {
           "before": {
-            "medianMs": 0.279700000000048,
-            "p95Ms": 0.44020000000000437,
-            "samples": 21,
+            "medianMs": 0.2871000000004642,
+            "p95Ms": 0.41449999999986176,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.23169999999981883,
-            "p95Ms": 0.3556000000003223,
-            "samples": 21,
+            "medianMs": 0.23660000000018044,
+            "p95Ms": 0.2867999999998574,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.2071644367728387
+          "speedup": 1.2134404057491346
         },
         "active": {
           "before": {
-            "medianMs": 0.014400000000023283,
-            "p95Ms": 0.016300000000228465,
-            "samples": 21,
+            "medianMs": 0.008799999999610009,
+            "p95Ms": 0.013799999999719148,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.009199999999964348,
-            "p95Ms": 0.014699999999720603,
-            "samples": 21,
+            "medianMs": 0.008800000000519503,
+            "p95Ms": 0.009500000000116415,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.5652173913129441
+          "speedup": 0.9999999998966483
         }
       }
     },
@@ -2200,12 +2200,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 20,
-        "replayedRows": 720,
-        "emittedLines": 17390,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 800,
+        "emittedLines": 19270,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 20
       },
       "ownedMeshes": 3,
@@ -2223,63 +2223,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.36850000000004,
-            "p95Ms": 0.36850000000004,
+            "medianMs": 0.5666000000001077,
+            "p95Ms": 0.5666000000001077,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.41859999999996944,
-            "p95Ms": 0.41859999999996944,
+            "medianMs": 0.7042000000001281,
+            "p95Ms": 0.7042000000001281,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 0.8803153368372358
+          "speedup": 0.8046009656347695
         },
         "idle": {
           "before": {
-            "medianMs": 0.00009000000000014552,
-            "p95Ms": 0.00009499999998752173,
-            "samples": 21,
+            "medianMs": 0.0001499999999850843,
+            "p95Ms": 0.0001649999999699503,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00016000000000531144,
-            "p95Ms": 0.00016500000001542502,
-            "samples": 21,
+            "medianMs": 0.00025000000000545696,
+            "p95Ms": 0.00027000000000043656,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.5624999999822364
+          "speedup": 0.5999999999272405
         },
         "refresh": {
           "before": {
-            "medianMs": 0.25880000000006476,
-            "p95Ms": 0.42410000000018044,
-            "samples": 21,
+            "medianMs": 0.37989999999990687,
+            "p95Ms": 0.4286000000001877,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.16589999999996508,
-            "p95Ms": 0.2284999999997126,
-            "samples": 21,
+            "medianMs": 0.27890000000024884,
+            "p95Ms": 0.3425999999999476,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.559975889090532
+          "speedup": 1.3621369666531657
         },
         "active": {
           "before": {
-            "medianMs": 0.008499999999912689,
-            "p95Ms": 0.01389999999992142,
-            "samples": 21,
+            "medianMs": 0.008799999999610009,
+            "p95Ms": 0.010199999999713327,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.005099999999856664,
-            "p95Ms": 0.008500000000367436,
-            "samples": 21,
+            "medianMs": 0.009100000000216824,
+            "p95Ms": 0.009600000000318687,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.6666666666963887
+          "speedup": 0.9670329669670695
         }
       }
     },
@@ -2293,18 +2293,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 70,
+        "traversals": 81,
         "rebuiltRows": 22,
-        "replayedRows": 1518,
-        "emittedLines": 46200,
-        "projectionPasses": 70,
-        "skippedPasses": 436,
+        "replayedRows": 1760,
+        "emittedLines": 53460,
+        "projectionPasses": 81,
+        "skippedPasses": 519,
         "cachedRows": 22
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 1296,
+      "beforeIdleUploadVersionDelta": 1545,
       "parity": {
         "initial": true,
         "idle": true,
@@ -2316,63 +2316,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.126800000000003,
-            "p95Ms": 1.126800000000003,
+            "medianMs": 1.1728999999995722,
+            "p95Ms": 1.1728999999995722,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.7089999999998327,
-            "p95Ms": 0.7089999999998327,
+            "medianMs": 1.2442000000000917,
+            "p95Ms": 1.2442000000000917,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.5892806770102523
+          "speedup": 0.9426941006264955
         },
         "idle": {
           "before": {
-            "medianMs": 0.3020099999999729,
-            "p95Ms": 0.36657999999997626,
-            "samples": 21,
+            "medianMs": 0.2832800000000134,
+            "p95Ms": 0.45799999999999275,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00025499999999283317,
-            "p95Ms": 0.0004200000000082582,
-            "samples": 21,
+            "medianMs": 0.0005099999999856663,
+            "p95Ms": 0.0008650000000216096,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 1184.352941209651
+          "speedup": 555.4509804077942
         },
         "refresh": {
           "before": {
-            "medianMs": 0.38429999999971187,
-            "p95Ms": 0.47559999999975844,
-            "samples": 21,
+            "medianMs": 0.35230000000046857,
+            "p95Ms": 0.4919999999992797,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.23430000000007567,
-            "p95Ms": 0.40639999999984866,
-            "samples": 21,
+            "medianMs": 0.21439999999984138,
+            "p95Ms": 0.44540000000051805,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.6402048655552188
+          "speedup": 1.6431902985108637
         },
         "active": {
           "before": {
-            "medianMs": 0.3860999999997148,
-            "p95Ms": 0.45380000000022847,
-            "samples": 21,
+            "medianMs": 0.2658000000001266,
+            "p95Ms": 0.3609999999998763,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.20520000000033178,
-            "p95Ms": 0.3506999999999607,
-            "samples": 21,
+            "medianMs": 0.1716999999998734,
+            "p95Ms": 0.19389999999930296,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.8815789473639888
+          "speedup": 1.5480489225411915
         }
       }
     },
@@ -2389,12 +2389,12 @@
       "idleProjectionPasses": 0,
       "stats": {
         "traversals": 1,
-        "rebuiltRows": 52,
+        "rebuiltRows": 0,
         "replayedRows": 0,
         "emittedLines": 3536,
         "projectionPasses": 1,
-        "skippedPasses": 505,
-        "cachedRows": 52
+        "skippedPasses": 0,
+        "cachedRows": 0
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
@@ -2411,63 +2411,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 63.25500000000011,
-            "p95Ms": 63.25500000000011,
+            "medianMs": 72.7489000000005,
+            "p95Ms": 72.7489000000005,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 50.78830000000016,
-            "p95Ms": 50.78830000000016,
+            "medianMs": 58.9340000000002,
+            "p95Ms": 58.9340000000002,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.2454640143497597
+          "speedup": 1.2344130722503184
         },
         "idle": {
           "before": {
-            "medianMs": 0.00007499999996980477,
-            "p95Ms": 0.0000750000000152795,
-            "samples": 21,
+            "medianMs": 0.00009000000000014552,
+            "p95Ms": 0.00010000000002037268,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0001099999999951251,
-            "p95Ms": 0.00011499999998250132,
-            "samples": 21,
+            "medianMs": 0.00009000000000014552,
+            "p95Ms": 0.00009999999997489795,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.6818181815738961
+          "speedup": 1
         },
         "refresh": {
           "before": {
-            "medianMs": 0.0007000000005064066,
-            "p95Ms": 0.0007999999997991836,
-            "samples": 21,
+            "medianMs": 0.0008000000007086783,
+            "p95Ms": 0.0010000000002037268,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.0008000000002539309,
+            "medianMs": 0.0009000000000014552,
             "p95Ms": 0.0009000000000014552,
-            "samples": 21,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.8750000003552714
+          "speedup": 0.888888889674872
         },
         "active": {
           "before": {
-            "medianMs": 2.18119999999999,
-            "p95Ms": 2.577400000000125,
-            "samples": 21,
+            "medianMs": 2.286699999999655,
+            "p95Ms": 2.733799999999974,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.4764000000000124,
-            "p95Ms": 1.803899999999885,
-            "samples": 21,
+            "medianMs": 2.1802999999999884,
+            "p95Ms": 2.7412999999996828,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.4773774044974068
+          "speedup": 1.048800623767219
         }
       }
     },
@@ -2482,12 +2482,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 18,
-        "replayedRows": 648,
-        "emittedLines": 14652,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 720,
+        "emittedLines": 16236,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 18
       },
       "ownedMeshes": 2,
@@ -2505,63 +2505,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.6387999999997191,
-            "p95Ms": 0.6387999999997191,
+            "medianMs": 1.1616000000003623,
+            "p95Ms": 1.1616000000003623,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.7485999999998967,
-            "p95Ms": 0.7485999999998967,
+            "medianMs": 1.2692999999999302,
+            "p95Ms": 1.2692999999999302,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 0.8533262089230661
+          "speedup": 0.9151500827230964
         },
         "idle": {
           "before": {
-            "medianMs": 0.00004500000000007276,
-            "p95Ms": 0.00005000000001018634,
-            "samples": 21,
+            "medianMs": 0.0001449999999749707,
+            "p95Ms": 0.00017499999999017745,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00009499999998752173,
-            "p95Ms": 0.0000950000000102591,
-            "samples": 21,
+            "medianMs": 0.00017499999999017745,
+            "p95Ms": 0.00018500000001040462,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.4736842105893002
+          "speedup": 0.8285714284749108
         },
         "refresh": {
           "before": {
-            "medianMs": 0.34400000000005093,
-            "p95Ms": 0.5421000000005733,
-            "samples": 21,
+            "medianMs": 0.41119999999955326,
+            "p95Ms": 0.6445000000003347,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.27870000000029904,
-            "p95Ms": 0.32860000000027867,
-            "samples": 21,
+            "medianMs": 0.3528999999998632,
+            "p95Ms": 0.4390000000003056,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.2343021169705124
+          "speedup": 1.165202606969999
         },
         "active": {
           "before": {
-            "medianMs": 0.00010000000020227162,
-            "p95Ms": 0.00010000000020227162,
-            "samples": 21,
+            "medianMs": 0.00019999999949504854,
+            "p95Ms": 0.00029999999969732016,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.0001999999999497959,
-            "p95Ms": 0.00020000000040454324,
-            "samples": 21,
+            "medianMs": 0.00029999999969732016,
+            "p95Ms": 0.0005000000001018634,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.5000000011368684
+          "speedup": 0.666666665656117
         }
       }
     },
@@ -2576,12 +2576,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 22,
-        "replayedRows": 792,
-        "emittedLines": 22792,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 880,
+        "emittedLines": 25256,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 22
       },
       "ownedMeshes": 2,
@@ -2599,63 +2599,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.5925000000006548,
-            "p95Ms": 0.5925000000006548,
+            "medianMs": 0.9621999999999389,
+            "p95Ms": 0.9621999999999389,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.5187000000000808,
-            "p95Ms": 0.5187000000000808,
+            "medianMs": 0.8321999999998297,
+            "p95Ms": 0.8321999999998297,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.1422787738588058
+          "speedup": 1.1562124489307086
         },
         "idle": {
           "before": {
-            "medianMs": 0.00006499999999505235,
-            "p95Ms": 0.00006500000004052708,
-            "samples": 21,
+            "medianMs": 0.00013500000000021828,
+            "p95Ms": 0.0001499999999850843,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00008000000000265572,
-            "p95Ms": 0.00008000000000265572,
-            "samples": 21,
+            "medianMs": 0.0002599999999802094,
+            "p95Ms": 0.0003200000000106229,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.8124999999111822
+          "speedup": 0.5192307692711314
         },
         "refresh": {
           "before": {
-            "medianMs": 0.33659999999963475,
-            "p95Ms": 0.5492999999996755,
-            "samples": 21,
+            "medianMs": 0.313600000000406,
+            "p95Ms": 0.4535999999998239,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.22879999999986467,
-            "p95Ms": 0.24130000000013752,
-            "samples": 21,
+            "medianMs": 0.2430000000003929,
+            "p95Ms": 0.4263999999993757,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.47115384615312
+          "speedup": 1.2905349794234524
         },
         "active": {
           "before": {
-            "medianMs": 0.030099999999947613,
-            "p95Ms": 0.0488999999997759,
-            "samples": 21,
+            "medianMs": 0.02580000000034488,
+            "p95Ms": 0.02790000000004511,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.019099999999980355,
-            "p95Ms": 0.03140000000030341,
-            "samples": 21,
+            "medianMs": 0.03570000000036089,
+            "p95Ms": 0.04839999999967404,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.5759162303653702
+          "speedup": 0.722689075632607
         }
       }
     },
@@ -2671,12 +2671,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 20,
-        "replayedRows": 720,
-        "emittedLines": 17390,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 800,
+        "emittedLines": 19270,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 20
       },
       "ownedMeshes": 3,
@@ -2694,63 +2694,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.41150000000016007,
-            "p95Ms": 0.41150000000016007,
+            "medianMs": 0.4147999999995591,
+            "p95Ms": 0.4147999999995591,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.41309999999975844,
-            "p95Ms": 0.41309999999975844,
+            "medianMs": 0.45280000000002474,
+            "p95Ms": 0.45280000000002474,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 0.9961268458010184
+          "speedup": 0.9160777385148773
         },
         "idle": {
           "before": {
-            "medianMs": 0.0000349999999798456,
-            "p95Ms": 0.00003500000002532033,
-            "samples": 21,
+            "medianMs": 0.00008000000002539309,
+            "p95Ms": 0.00016999999998006387,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00008000000000265572,
-            "p95Ms": 0.00009499999998752173,
-            "samples": 21,
+            "medianMs": 0.00014000000001033187,
+            "p95Ms": 0.00030999999999039576,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.43749999973354653
+          "speedup": 0.5714285715677798
         },
         "refresh": {
           "before": {
-            "medianMs": 0.3345999999992273,
-            "p95Ms": 0.4558999999999287,
-            "samples": 21,
+            "medianMs": 0.2669999999998254,
+            "p95Ms": 0.4301000000004933,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.24589999999989232,
-            "p95Ms": 0.3200000000001637,
-            "samples": 21,
+            "medianMs": 0.21309999999994034,
+            "p95Ms": 0.301499999999578,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.3607157381023742
+          "speedup": 1.252932895353825
         },
         "active": {
           "before": {
-            "medianMs": 0.02449999999953434,
-            "p95Ms": 0.046000000000276486,
-            "samples": 21,
+            "medianMs": 0.0136000000002241,
+            "p95Ms": 0.017600000000129512,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.017800000000079308,
-            "p95Ms": 0.04059999999981301,
-            "samples": 21,
+            "medianMs": 0.013700000000426371,
+            "p95Ms": 0.014600000000427826,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.3764044943497291
+          "speedup": 0.9927007299124702
         }
       }
     },
@@ -2764,18 +2764,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 70,
+        "traversals": 81,
         "rebuiltRows": 22,
-        "replayedRows": 1518,
-        "emittedLines": 46200,
-        "projectionPasses": 70,
-        "skippedPasses": 436,
+        "replayedRows": 1760,
+        "emittedLines": 53460,
+        "projectionPasses": 81,
+        "skippedPasses": 519,
         "cachedRows": 22
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 1296,
+      "beforeIdleUploadVersionDelta": 1545,
       "parity": {
         "initial": true,
         "idle": true,
@@ -2787,63 +2787,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.8105999999997948,
-            "p95Ms": 0.8105999999997948,
+            "medianMs": 0.753099999999904,
+            "p95Ms": 0.753099999999904,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.6033999999999651,
-            "p95Ms": 0.6033999999999651,
+            "medianMs": 0.6039000000000669,
+            "p95Ms": 0.6039000000000669,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.3433874709974176
+          "speedup": 1.2470607716506383
         },
         "idle": {
           "before": {
-            "medianMs": 0.3168899999999667,
-            "p95Ms": 0.3739950000000135,
-            "samples": 21,
+            "medianMs": 0.2654349999999795,
+            "p95Ms": 0.3829349999999977,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.000215000000002874,
-            "p95Ms": 0.00022999999998774,
-            "samples": 21,
+            "medianMs": 0.0005799999999908323,
+            "p95Ms": 0.002444999999988795,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 1473.9069767243288
+          "speedup": 457.6465517313363
         },
         "refresh": {
           "before": {
-            "medianMs": 0.3852999999999156,
-            "p95Ms": 0.41040000000066357,
-            "samples": 21,
+            "medianMs": 0.2986000000000786,
+            "p95Ms": 0.5597999999990861,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.15160000000014406,
-            "p95Ms": 0.1617999999998574,
-            "samples": 21,
+            "medianMs": 0.24530000000049768,
+            "p95Ms": 0.4954999999999927,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 2.541556728229218
+          "speedup": 1.2172849571931217
         },
         "active": {
           "before": {
-            "medianMs": 0.365099999999984,
-            "p95Ms": 0.45129999999971915,
-            "samples": 21,
+            "medianMs": 0.288300000000163,
+            "p95Ms": 0.5026999999990949,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.1898999999998523,
-            "p95Ms": 0.2559999999998581,
-            "samples": 21,
+            "medianMs": 0.23070000000006985,
+            "p95Ms": 0.3798000000006141,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.9225908372841916
+          "speedup": 1.2496749024710694
         }
       }
     },
@@ -2860,12 +2860,12 @@
       "idleProjectionPasses": 0,
       "stats": {
         "traversals": 1,
-        "rebuiltRows": 52,
+        "rebuiltRows": 0,
         "replayedRows": 0,
         "emittedLines": 3536,
         "projectionPasses": 1,
-        "skippedPasses": 505,
-        "cachedRows": 52
+        "skippedPasses": 0,
+        "cachedRows": 0
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
@@ -2882,63 +2882,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 51.38370000000032,
-            "p95Ms": 51.38370000000032,
+            "medianMs": 57.988499999999476,
+            "p95Ms": 57.988499999999476,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 29.99260000000004,
-            "p95Ms": 29.99260000000004,
+            "medianMs": 56.28470000000016,
+            "p95Ms": 56.28470000000016,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.7132125924394768
+          "speedup": 1.0302711038701338
         },
         "idle": {
           "before": {
-            "medianMs": 0.00008499999999003193,
-            "p95Ms": 0.00014000000001033187,
-            "samples": 21,
+            "medianMs": 0.000559999999950378,
+            "p95Ms": 0.0006349999999656575,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00008499999999003193,
-            "p95Ms": 0.0000950000000102591,
-            "samples": 21,
+            "medianMs": 0.0006449999999858846,
+            "p95Ms": 0.0007050000000162982,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 1
+          "speedup": 0.8682170542056329
         },
         "refresh": {
           "before": {
-            "medianMs": 0.0007999999997991836,
-            "p95Ms": 0.0008000000007086783,
-            "samples": 21,
+            "medianMs": 0.0020000000004074536,
+            "p95Ms": 0.002200000000811997,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.0007999999997991836,
-            "p95Ms": 0.0008000000002539309,
-            "samples": 21,
+            "medianMs": 0.0020999999997002305,
+            "p95Ms": 0.002300000000104774,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1
+          "speedup": 0.9523809527109278
         },
         "active": {
           "before": {
-            "medianMs": 0.8959999999997308,
-            "p95Ms": 1.3890000000001237,
-            "samples": 21,
+            "medianMs": 1.1105999999999767,
+            "p95Ms": 1.5456000000012864,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 1.033600000000206,
-            "p95Ms": 1.338799999999992,
-            "samples": 21,
+            "medianMs": 1.3389999999999418,
+            "p95Ms": 1.8322000000007392,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.8668730650150467
+          "speedup": 0.8294249439880694
         }
       }
     },
@@ -2953,12 +2953,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 18,
-        "replayedRows": 648,
-        "emittedLines": 14652,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 720,
+        "emittedLines": 16236,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 18
       },
       "ownedMeshes": 2,
@@ -2976,63 +2976,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.005099999999402,
-            "p95Ms": 1.005099999999402,
+            "medianMs": 0.6484000000000378,
+            "p95Ms": 0.6484000000000378,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.6601999999998043,
-            "p95Ms": 0.6601999999998043,
+            "medianMs": 0.6160999999992782,
+            "p95Ms": 0.6160999999992782,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.5224174492573461
+          "speedup": 1.0524265541321172
         },
         "idle": {
           "before": {
-            "medianMs": 0.0000750000000152795,
-            "p95Ms": 0.00008000000002539309,
-            "samples": 21,
+            "medianMs": 0.00004499999995459803,
+            "p95Ms": 0.00004500000004554749,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00009499999998752173,
-            "p95Ms": 0.00010500000000774889,
-            "samples": 21,
+            "medianMs": 0.00008500000003550668,
+            "p95Ms": 0.00009500000005573384,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.7894736844750607
+          "speedup": 0.5294117639505926
         },
         "refresh": {
           "before": {
-            "medianMs": 0.4508000000005268,
-            "p95Ms": 0.7502000000004045,
-            "samples": 21,
+            "medianMs": 0.33840000000054715,
+            "p95Ms": 0.5420000000012806,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.26929999999993015,
-            "p95Ms": 0.2826999999997497,
-            "samples": 21,
+            "medianMs": 0.28180000000065775,
+            "p95Ms": 0.433100000000195,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.6739695506893566
+          "speedup": 1.2008516678486774
         },
         "active": {
           "before": {
-            "medianMs": 0.00010000000020227162,
-            "p95Ms": 0.00019999999949504854,
-            "samples": 21,
+            "medianMs": 0.00010000000111176632,
+            "p95Ms": 0.00020000000040454324,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.0001999999999497959,
-            "p95Ms": 0.0001999999999497959,
-            "samples": 21,
+            "medianMs": 0.00019999999858555384,
+            "p95Ms": 0.00020000000040454324,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.5000000011368684
+          "speedup": 0.5000000090949471
         }
       }
     },
@@ -3047,12 +3047,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 22,
-        "replayedRows": 792,
-        "emittedLines": 22792,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 880,
+        "emittedLines": 25256,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 22
       },
       "ownedMeshes": 2,
@@ -3070,63 +3070,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.7186999999994441,
-            "p95Ms": 0.7186999999994441,
+            "medianMs": 0.5329000000001543,
+            "p95Ms": 0.5329000000001543,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.4758999999999105,
-            "p95Ms": 0.4758999999999105,
+            "medianMs": 0.5486000000000786,
+            "p95Ms": 0.5486000000000786,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.5101912166412677
+          "speedup": 0.9713816988699926
         },
         "idle": {
           "before": {
-            "medianMs": 0.00005000000001018634,
-            "p95Ms": 0.00005000000001018634,
-            "samples": 21,
+            "medianMs": 0.00003500000002532033,
+            "p95Ms": 0.00005500000006577466,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00008000000000265572,
-            "p95Ms": 0.00010499999998501153,
-            "samples": 21,
+            "medianMs": 0.00008500000003550668,
+            "p95Ms": 0.00018499999996492988,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.6250000001065814
+          "speedup": 0.41176470600823456
         },
         "refresh": {
           "before": {
-            "medianMs": 0.2899999999999636,
-            "p95Ms": 0.3236000000006243,
-            "samples": 21,
+            "medianMs": 0.28620000000046275,
+            "p95Ms": 0.5265999999992346,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.22060000000010405,
-            "p95Ms": 0.29619999999977153,
-            "samples": 21,
+            "medianMs": 0.22400000000016007,
+            "p95Ms": 0.4252999999989697,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.314596554849623
+          "speedup": 1.2776785714297243
         },
         "active": {
           "before": {
-            "medianMs": 0.009500000000116415,
-            "p95Ms": 0.009700000000520959,
-            "samples": 21,
+            "medianMs": 0.016499999999723514,
+            "p95Ms": 0.019800000000032014,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.010000000000218279,
-            "p95Ms": 0.010800000000017462,
-            "samples": 21,
+            "medianMs": 0.01749999999992724,
+            "p95Ms": 0.027399999999033753,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 0.949999999990905
+          "speedup": 0.9428571428452638
         }
       }
     },
@@ -3142,12 +3142,12 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 37,
+        "traversals": 41,
         "rebuiltRows": 20,
-        "replayedRows": 720,
-        "emittedLines": 17390,
-        "projectionPasses": 37,
-        "skippedPasses": 469,
+        "replayedRows": 800,
+        "emittedLines": 19270,
+        "projectionPasses": 41,
+        "skippedPasses": 559,
         "cachedRows": 20
       },
       "ownedMeshes": 3,
@@ -3165,63 +3165,63 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 0.410200000000259,
-            "p95Ms": 0.410200000000259,
+            "medianMs": 0.413300000000163,
+            "p95Ms": 0.413300000000163,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.4252999999998792,
-            "p95Ms": 0.4252999999998792,
+            "medianMs": 0.405800000000454,
+            "p95Ms": 0.405800000000454,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 0.9644956501302034
+          "speedup": 1.0184820108420418
         },
         "idle": {
           "before": {
             "medianMs": 0.00003500000002532033,
-            "p95Ms": 0.00003999999998995918,
-            "samples": 21,
+            "p95Ms": 0.00004500000004554749,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.00008499999999003193,
-            "p95Ms": 0.00009000000000014552,
-            "samples": 21,
+            "medianMs": 0.0000750000000152795,
+            "p95Ms": 0.00007999999997991836,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 0.4117647062285274
+          "speedup": 0.4666666669091986
         },
         "refresh": {
           "before": {
-            "medianMs": 0.33770000000004075,
-            "p95Ms": 0.44350000000031287,
-            "samples": 21,
+            "medianMs": 0.33469999999942956,
+            "p95Ms": 0.4555000000000291,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.1801999999997861,
-            "p95Ms": 0.18879999999990105,
-            "samples": 21,
+            "medianMs": 0.29279999999926076,
+            "p95Ms": 0.39249999999992724,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.8740288568282
+          "speedup": 1.1431010928971126
         },
         "active": {
           "before": {
-            "medianMs": 0.011099999999714782,
-            "p95Ms": 0.018199999999524152,
-            "samples": 21,
+            "medianMs": 0.01779999999962456,
+            "p95Ms": 0.03950000000077125,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.010499999999865395,
-            "p95Ms": 0.010900000000219734,
-            "samples": 21,
+            "medianMs": 0.018199999998614658,
+            "p95Ms": 0.0216999999993277,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.0571428571292456
+          "speedup": 0.9780219780757943
         }
       }
     },
@@ -3235,18 +3235,18 @@
       "idleRebuiltRows": 0,
       "idleProjectionPasses": 0,
       "stats": {
-        "traversals": 70,
+        "traversals": 81,
         "rebuiltRows": 22,
-        "replayedRows": 1518,
-        "emittedLines": 46200,
-        "projectionPasses": 70,
-        "skippedPasses": 436,
+        "replayedRows": 1760,
+        "emittedLines": 53460,
+        "projectionPasses": 81,
+        "skippedPasses": 519,
         "cachedRows": 22
       },
       "ownedMeshes": 1,
       "disposedMeshes": 1,
       "cachedRowsAfterDispose": 0,
-      "beforeIdleUploadVersionDelta": 1296,
+      "beforeIdleUploadVersionDelta": 1545,
       "parity": {
         "initial": true,
         "idle": true,
@@ -3258,70 +3258,70 @@
       "timings": {
         "cold": {
           "before": {
-            "medianMs": 1.0430000000005748,
-            "p95Ms": 1.0430000000005748,
+            "medianMs": 0.8859000000011292,
+            "p95Ms": 0.8859000000011292,
             "samples": 1,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.6170000000001892,
-            "p95Ms": 0.6170000000001892,
+            "medianMs": 0.8968999999997322,
+            "p95Ms": 0.8968999999997322,
             "samples": 1,
             "batch": 1
           },
-          "speedup": 1.6904376012970097
+          "speedup": 0.9877355335058464
         },
         "idle": {
           "before": {
-            "medianMs": 0.427034999999978,
-            "p95Ms": 0.5094650000000002,
-            "samples": 21,
+            "medianMs": 0.35529000000005906,
+            "p95Ms": 0.5337750000000596,
+            "samples": 25,
             "batch": 20
           },
           "after": {
-            "medianMs": 0.0001099999999951251,
-            "p95Ms": 0.00011500000000523869,
-            "samples": 21,
+            "medianMs": 0.0003899999999703141,
+            "p95Ms": 0.000559999999950378,
+            "samples": 25,
             "batch": 20
           },
-          "speedup": 3882.1363638082094
+          "speedup": 911.0000000694946
         },
         "refresh": {
           "before": {
-            "medianMs": 0.32659999999941647,
-            "p95Ms": 0.4558999999999287,
-            "samples": 21,
+            "medianMs": 0.5262000000002445,
+            "p95Ms": 0.6314000000002125,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.23030000000017026,
-            "p95Ms": 0.28549999999995634,
-            "samples": 21,
+            "medianMs": 0.3827999999994063,
+            "p95Ms": 0.4360000000015134,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.4181502388153495
+          "speedup": 1.3746081504729901
         },
         "active": {
           "before": {
-            "medianMs": 0.35010000000056607,
-            "p95Ms": 0.3877999999995154,
-            "samples": 21,
+            "medianMs": 0.3477999999995518,
+            "p95Ms": 0.35859999999956926,
+            "samples": 25,
             "batch": 1
           },
           "after": {
-            "medianMs": 0.2652000000002772,
-            "p95Ms": 0.379399999999805,
-            "samples": 21,
+            "medianMs": 0.2536000000000058,
+            "p95Ms": 0.27850000000034925,
+            "samples": 25,
             "batch": 1
           },
-          "speedup": 1.3201357466070893
+          "speedup": 1.3714511040991475
         }
       }
     }
   ],
   "gates": {
     "allFamiliesUseRuntime": true,
-    "sharedCacheReused": true,
+    "cachedExecutionReused": true,
     "outputParity": true,
     "staticIdleNoUploads": true,
     "warmIdleNoReflow": true,

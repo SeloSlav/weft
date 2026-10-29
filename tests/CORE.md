@@ -63,13 +63,13 @@ The committed Windows x64 / Node 24 sample reports these CPU medians:
 
 | Workload | Before | After |
 | --- | --- | --- |
-| Cold seeding, 256 rows, long source | 396.67 ms | 4.42 ms |
-| Warm 4,096-slot traversal | 10.96 ms | 1.95 ms |
-| 10,000 motion samples over 64 packets | 14.39 ms | 2.40 ms |
-| Uncached source preparation, shared font metrics | 6.94 ms | 6.95 ms |
-| 1,000 cached source lookups | 7.06 ms | 8.94 ms |
+| Cold seeding, 256 rows, long source | 225.61 ms | 2.48 ms |
+| Warm 4,096-slot traversal | 7.15 ms | 1.50 ms |
+| 10,000 motion samples over 64 packets | 10.52 ms | 1.42 ms |
+| Uncached source preparation, shared font metrics | 4.28 ms | 4.19 ms |
+| 1,000 cached source lookups | 4.36 ms | 6.60 ms |
 
-Input validation adds work to cached source lookup; keep prepared handles across
+Source lookup validates its inputs; keep prepared handles across
 frames. The source-retention case kept 128 of 2,048 requested sources after GC,
 compared with all 2,048 in the baseline. Idle shared-runtime updates performed
 zero projection/buffer writes. Editing one row projected 96 instances versus

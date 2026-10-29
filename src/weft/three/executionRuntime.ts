@@ -137,10 +137,13 @@ export class SurfaceExecutionRuntime<TokenId extends string = string, Meta = unk
    */
   dispose(group?: THREE.Object3D): void {
     if (this.disposed) return
+    this.disposed = true
     this.driver?.dispose()
     this.rows.length = 0
     this.passes.clear()
-    group?.traverse((object) => { if ((object as THREE.InstancedMesh).isInstancedMesh) (object as THREE.InstancedMesh).dispose() })
-    this.disposed = true
+    const meshes: THREE.InstancedMesh[] = []
+    group?.traverse((object) => { if ((object as THREE.InstancedMesh).isInstancedMesh) meshes.push(object as THREE.InstancedMesh) })
+    // Disposal listeners may reenter or detach meshes from the group.
+    for (const mesh of meshes) mesh.dispose()
   }
 }

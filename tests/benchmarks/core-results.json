@@ -1,6 +1,6 @@
 {
   "baselineRevision": "27dad3cc9cafbaecdff3f36140261e2e3a0ff562",
-  "generatedAt": "2026-10-29T19:43:56.131Z",
+  "generatedAt": "2026-10-29T19:57:56.158Z",
   "before": {
     "backend": "deterministic OffscreenCanvas stub (UTF-16/grapheme fixtures)",
     "node": "v24.22.1",
@@ -10,91 +10,91 @@
       {
         "fixture": "periodic-short",
         "rows": 64,
-        "medianMs": 17.442199999999957,
-        "p95Ms": 24.665199999999913,
+        "medianMs": 12.959299999999985,
+        "p95Ms": 18.20429999999999,
         "samples": 7,
         "layoutSteps": 26528
       },
       {
         "fixture": "periodic-short",
         "rows": 128,
-        "medianMs": 65.8972,
-        "p95Ms": 74.87450000000013,
+        "medianMs": 49.73129999999992,
+        "p95Ms": 50.49530000000004,
         "samples": 7,
         "layoutSteps": 106304
       },
       {
         "fixture": "periodic-short",
         "rows": 256,
-        "medianMs": 256.1412,
-        "p95Ms": 277.9999,
+        "medianMs": 216.50229999999988,
+        "p95Ms": 223.6908999999996,
         "samples": 7,
         "layoutSteps": 425600
       },
       {
         "fixture": "periodic-short",
         "rows": 512,
-        "medianMs": 1029.0888000000004,
-        "p95Ms": 1339.5244999999995,
+        "medianMs": 898.8469999999998,
+        "p95Ms": 1004.8560999999995,
         "samples": 7,
         "layoutSteps": 1703168
       },
       {
         "fixture": "long-stream",
         "rows": 64,
-        "medianMs": 22.188399999999092,
-        "p95Ms": 24.621000000001004,
+        "medianMs": 13.867700000000696,
+        "p95Ms": 14.444499999999607,
         "samples": 7,
         "layoutSteps": 26528
       },
       {
         "fixture": "long-stream",
         "rows": 128,
-        "medianMs": 85.57730000000083,
-        "p95Ms": 88.82970000000023,
+        "medianMs": 60.961199999999735,
+        "p95Ms": 70.65020000000004,
         "samples": 7,
         "layoutSteps": 106304
       },
       {
         "fixture": "long-stream",
         "rows": 256,
-        "medianMs": 363.9369999999999,
-        "p95Ms": 372.0532000000003,
+        "medianMs": 225.6144000000004,
+        "p95Ms": 234.65289999999914,
         "samples": 7,
         "layoutSteps": 425600
       },
       {
         "fixture": "long-stream",
         "rows": 512,
-        "medianMs": 1352.3745999999992,
-        "p95Ms": 1419.1581000000006,
+        "medianMs": 948.0583999999981,
+        "p95Ms": 1185.8676999999989,
         "samples": 7,
         "layoutSteps": 1703168
       }
     ],
     "preparation": {
       "uncachedSource": {
-        "medianMs": 7.017600000000016,
-        "p95Ms": 19.533199999999994,
+        "medianMs": 4.28279999999998,
+        "p95Ms": 10.512399999999985,
         "samples": 15
       },
       "cachedSourceLookups": {
-        "medianMs": 6.032500000000027,
-        "p95Ms": 9.230500000000006,
+        "medianMs": 4.357399999999984,
+        "p95Ms": 6.15349999999998,
         "samples": 15
       },
       "note": "Uncached handles with shared warm font metrics; hot lookup is a batch of 1000 calls. Current hot lookups validate inputs; the baseline only trusted the key."
     },
     "traversal": {
-      "medianMs": 7.171500000000378,
-      "p95Ms": 8.539400000001478,
+      "medianMs": 7.1512000000002445,
+      "p95Ms": 11.077799999999115,
       "samples": 15,
       "slots": 4096,
       "stats": null
     },
     "sampling": {
-      "medianMs": 11.51879999999801,
-      "p95Ms": 14.552100000000792,
+      "medianMs": 10.522099999998318,
+      "p95Ms": 13.219700000001467,
       "samples": 15,
       "samplesPerBatch": 10000,
       "packets": 64,
@@ -102,11 +102,11 @@
       "resultObjectsPerBatch": 10000
     },
     "cache": {
-      "medianMs": 95.05839999999807,
-      "p95Ms": 95.05839999999807,
+      "medianMs": 81.83499999999913,
+      "p95Ms": 81.83499999999913,
       "samples": 1,
       "requestedSources": 2048,
-      "retainedHeapDeltaBytes": 13164560,
+      "retainedHeapDeltaBytes": 13125080,
       "retainedRequestedSources": 2048,
       "stats": null,
       "note": "Heap delta includes dependency/runtime caches; deterministic entry/text caps are the memory regression gate."
@@ -125,84 +125,84 @@
       {
         "fixture": "periodic-short",
         "rows": 64,
-        "medianMs": 0.11050000000000182,
-        "p95Ms": 0.25869999999997617,
+        "medianMs": 0.09050000000002001,
+        "p95Ms": 0.2441000000000031,
         "samples": 7,
         "layoutSteps": 26
       },
       {
         "fixture": "periodic-short",
         "rows": 128,
-        "medianMs": 0.08670000000000755,
-        "p95Ms": 0.24359999999995807,
+        "medianMs": 0.06150000000002365,
+        "p95Ms": 0.11069999999995161,
         "samples": 7,
         "layoutSteps": 26
       },
       {
         "fixture": "periodic-short",
         "rows": 256,
-        "medianMs": 0.07260000000002265,
-        "p95Ms": 0.08519999999998618,
+        "medianMs": 0.088799999999992,
+        "p95Ms": 0.11509999999998399,
         "samples": 7,
         "layoutSteps": 26
       },
       {
         "fixture": "periodic-short",
         "rows": 512,
-        "medianMs": 0.07030000000003156,
-        "p95Ms": 0.09890000000001464,
+        "medianMs": 0.08780000000001564,
+        "p95Ms": 0.2014000000000351,
         "samples": 7,
         "layoutSteps": 26
       },
       {
         "fixture": "long-stream",
         "rows": 64,
-        "medianMs": 0.7180000000000177,
-        "p95Ms": 1.3296000000000276,
+        "medianMs": 0.7955000000000041,
+        "p95Ms": 1.037900000000036,
         "samples": 7,
         "layoutSteps": 824
       },
       {
         "fixture": "long-stream",
         "rows": 128,
-        "medianMs": 1.2538000000000125,
-        "p95Ms": 6.325199999999995,
+        "medianMs": 1.310200000000009,
+        "p95Ms": 1.6075999999999908,
         "samples": 7,
         "layoutSteps": 1656
       },
       {
         "fixture": "long-stream",
         "rows": 256,
-        "medianMs": 3.3611000000000217,
-        "p95Ms": 4.981300000000033,
+        "medianMs": 2.4758000000000493,
+        "p95Ms": 2.9676000000000045,
         "samples": 7,
         "layoutSteps": 3493
       },
       {
         "fixture": "long-stream",
         "rows": 512,
-        "medianMs": 4.587500000000034,
-        "p95Ms": 7.436199999999985,
+        "medianMs": 4.493700000000047,
+        "p95Ms": 4.908299999999997,
         "samples": 7,
         "layoutSteps": 7434
       }
     ],
     "preparation": {
       "uncachedSource": {
-        "medianMs": 5.978999999999985,
-        "p95Ms": 7.961699999999979,
+        "medianMs": 4.187299999999993,
+        "p95Ms": 8.250699999999995,
         "samples": 15
       },
       "cachedSourceLookups": {
-        "medianMs": 5.358200000000011,
-        "p95Ms": 7.070700000000045,
+        "medianMs": 6.5984000000000265,
+        "p95Ms": 9.537999999999954,
         "samples": 15
       },
       "note": "Uncached handles with shared warm font metrics; hot lookup is a batch of 1000 calls. Current hot lookups validate inputs; the baseline only trusted the key."
     },
     "traversal": {
-      "medianMs": 0.6149999999998954,
-      "p95Ms": 4.74210000000005,
+      "medianMs": 1.5004000000000133,
+      "p95Ms": 1.9801000000001068,
       "samples": 15,
       "slots": 4096,
       "stats": {
@@ -216,8 +216,8 @@
       }
     },
     "sampling": {
-      "medianMs": 1.6035000000000537,
-      "p95Ms": 2.22969999999998,
+      "medianMs": 1.4230000000000018,
+      "p95Ms": 1.908200000000079,
       "samples": 15,
       "samplesPerBatch": 10000,
       "packets": 64,
@@ -225,11 +225,11 @@
       "resultObjectsPerBatch": 0
     },
     "cache": {
-      "medianMs": 75.11500000000001,
-      "p95Ms": 75.11500000000001,
+      "medianMs": 85.17910000000006,
+      "p95Ms": 85.17910000000006,
       "samples": 1,
       "requestedSources": 2048,
-      "retainedHeapDeltaBytes": 1003864,
+      "retainedHeapDeltaBytes": 1004928,
       "retainedRequestedSources": 128,
       "stats": {
         "text": {
@@ -256,20 +256,20 @@
     "execution": {
       "idle": {
         "medianMs": 0.00020000000006348273,
-        "p95Ms": 0.0004000000000132786,
+        "p95Ms": 0.0003000000000383807,
         "samples": 50,
         "projectedInstances": 0,
         "bufferWrites": 0
       },
       "dirtyRow": {
-        "medianMs": 0.0847999999999729,
-        "p95Ms": 0.22309999999993124,
+        "medianMs": 0.056500000000028194,
+        "p95Ms": 0.2215999999999667,
         "samples": 30,
         "projectedInstancesPerUpdate": 96
       },
       "fullInvalidation": {
-        "medianMs": 1.2448000000000548,
-        "p95Ms": 1.6416999999999007,
+        "medianMs": 1.0143999999999096,
+        "p95Ms": 2.647799999999961,
         "samples": 15,
         "projectedInstancesPerUpdate": 6144
       },
@@ -289,63 +289,63 @@
   "comparisons": [
     {
       "case": "periodic-short seed 64 rows",
-      "beforeMs": 17.442199999999957,
-      "afterMs": 0.11050000000000182,
-      "speedup": 157.847963800902
+      "beforeMs": 12.959299999999985,
+      "afterMs": 0.09050000000002001,
+      "speedup": 143.1966850828411
     },
     {
       "case": "periodic-short seed 128 rows",
-      "beforeMs": 65.8972,
-      "afterMs": 0.08670000000000755,
-      "speedup": 760.059976931883
+      "beforeMs": 49.73129999999992,
+      "afterMs": 0.06150000000002365,
+      "speedup": 808.6390243899317
     },
     {
       "case": "periodic-short seed 256 rows",
-      "beforeMs": 256.1412,
-      "afterMs": 0.07260000000002265,
-      "speedup": 3528.1157024782387
+      "beforeMs": 216.50229999999988,
+      "afterMs": 0.088799999999992,
+      "speedup": 2438.0889639641823
     },
     {
       "case": "periodic-short seed 512 rows",
-      "beforeMs": 1029.0888000000004,
-      "afterMs": 0.07030000000003156,
-      "speedup": 14638.532005683335
+      "beforeMs": 898.8469999999998,
+      "afterMs": 0.08780000000001564,
+      "speedup": 10237.437357629153
     },
     {
       "case": "long-stream seed 64 rows",
-      "beforeMs": 22.188399999999092,
-      "afterMs": 0.7180000000000177,
-      "speedup": 30.90306406685034
+      "beforeMs": 13.867700000000696,
+      "afterMs": 0.7955000000000041,
+      "speedup": 17.43268384663812
     },
     {
       "case": "long-stream seed 128 rows",
-      "beforeMs": 85.57730000000083,
-      "afterMs": 1.2538000000000125,
-      "speedup": 68.25434678577125
+      "beforeMs": 60.961199999999735,
+      "afterMs": 1.310200000000009,
+      "speedup": 46.52816363913855
     },
     {
       "case": "long-stream seed 256 rows",
-      "beforeMs": 363.9369999999999,
-      "afterMs": 3.3611000000000217,
-      "speedup": 108.27913480705648
+      "beforeMs": 225.6144000000004,
+      "afterMs": 2.4758000000000493,
+      "speedup": 91.12787785766051
     },
     {
       "case": "long-stream seed 512 rows",
-      "beforeMs": 1352.3745999999992,
-      "afterMs": 4.587500000000034,
-      "speedup": 294.7955531335126
+      "beforeMs": 948.0583999999981,
+      "afterMs": 4.493700000000047,
+      "speedup": 210.97500945768257
     },
     {
       "case": "traversal",
-      "beforeMs": 7.171500000000378,
-      "afterMs": 0.6149999999998954,
-      "speedup": 11.660975609758696
+      "beforeMs": 7.1512000000002445,
+      "afterMs": 1.5004000000000133,
+      "speedup": 4.766195681151814
     },
     {
       "case": "sampling",
-      "beforeMs": 11.51879999999801,
-      "afterMs": 1.6035000000000537,
-      "speedup": 7.183536014965777
+      "beforeMs": 10.522099999998318,
+      "afterMs": 1.4230000000000018,
+      "speedup": 7.394307800420453
     }
   ],
   "gates": {

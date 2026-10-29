@@ -1100,7 +1100,10 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
   }
 
   private updateBlades(elapsedTime: number): void {
-    this.runtime.run('blades', [], () => this.rebuildBladeCache(), this.bladeCacheDirty)
+    // Preserve the existing hot path: the spatial cache already knows when it needs rebuilding.
+    if (this.bladeCacheDirty) {
+      this.runtime.run('blades', [], () => this.rebuildBladeCache(), true)
+    }
     if (this.bladeRestMatricesDirty) this.rebuildRestMatrices()
 
     const hasDisturbances = this.disturbances.length > 0
@@ -1423,6 +1426,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     const bladeBaseColor = this.tintColor(STATE_BLADE_BASE[stateIndex]!, SEASON_BLADE_TINT, 0.72, tmpSeasonColorA)
     const bladeTipColor = this.tintColor(STATE_BLADE_TIP[stateIndex]!, SEASON_BLADE_TINT, 0.88, tmpSeasonColorB)
 
+    // The spatial blade cache owns these placements; avoid retaining a second row copy.
     this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
@@ -1536,7 +1540,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
           }
         }
       },
-    }, [this.params.layoutDensity, this.stateIndex()])
+    }, undefined, 'stream')
 
     this.bladeCacheDirty = false
     this.baseBladeColorsDirty = true

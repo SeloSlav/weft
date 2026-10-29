@@ -396,8 +396,9 @@ For specialized custom projectors, `SurfaceExecutionRuntime.run(name, dependenci
 project, force?)` schedules named passes. Its `forEachLaidOutLine(options, widthKey?,
 mode?)` caches rows and returns borrowed lines; do not mutate or retain their arrays
 as writable storage. Omit `widthKey` for automatic exact effective-width checks,
-or supply every width dependency to avoid resampling unchanged widths. `mode:
-'stream'` avoids retaining continuously changing rows. `dispose(ownedGroup)`
+or supply every width dependency to avoid resampling unchanged widths. Pass
+`'stream'` as the third argument to avoid retaining continuously changing rows.
+`dispose(ownedGroup)`
 releases layout caches and all instance buffers in that group; geometry, materials
 and textures remain the projector's responsibility. See `tests/PRESETS.md` for
 the repeatable before/after benchmark and native rendering checks.
