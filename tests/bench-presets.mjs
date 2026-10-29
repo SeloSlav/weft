@@ -34,7 +34,9 @@ const cases=after.results.map((current,index)=>{
     speedup:baseline[phase].medianMs/Math.max(current[phase].medianMs,1e-9)}]))
   if(current.activation)timings.activation={before:baseline.activation,after:current.activation,
     speedup:baseline.activation.medianMs/Math.max(current.activation.medianMs,1e-9)}
-  const {states:_,cold:_cold,idle:_idle,refresh:_refresh,active:_active,activation:_activation,...metadata}=current
+  if(current.moving)timings.moving={before:baseline.moving,after:current.moving,
+    speedup:baseline.moving.medianMs/Math.max(current.moving.medianMs,1e-9)}
+  const {states:_,cold:_cold,idle:_idle,refresh:_refresh,active:_active,activation:_activation,moving:_moving,...metadata}=current
   return {...metadata,beforeIdleUploadVersionDelta:baseline.idleUploadVersionDelta,
     beforeActivationCandidates:baseline.activationCandidates,activationMatches:current.activated===baseline.activated,parity,timings}
 })
@@ -46,7 +48,9 @@ const gates={allFamiliesUseRuntime:cases.every(row=>row.stats!==undefined),
   activationParity:cases.every(row=>row.activationMatches),
   staticIdleNoUploads:cases.filter(row=>staticNames.includes(row.name)).every(row=>row.idleUploadVersionDelta===0),
   warmIdleNoReflow:cases.every(row=>row.idleRebuiltRows===0),
-  ownedBuffersDisposed:cases.every(row=>row.disposedMeshes===row.ownedMeshes && row.cachedRowsAfterDispose===0)}
+  ownedBuffersDisposed:cases.every(row=>row.disposedMeshes===row.ownedMeshes && row.cachedRowsAfterDispose===0),
+  outputCachesReleased:cases.every(row=>!row.outputCacheAfterDispose ||
+    (row.outputCacheAfterDispose.cachedLines ?? row.outputCacheAfterDispose.cachedGlyphs)===0)}
 console.table(cases.map(row=>({preset:row.name,instances:row.initialCounts.reduce((sum,n)=>sum+(n??0),0),
   'idle ms':row.timings.idle.after.medianMs.toFixed(4),'idle speedup':row.timings.idle.speedup.toFixed(2)+'x',
   'refresh speedup':row.timings.refresh.speedup.toFixed(2)+'x','active speedup':row.hasReaction?row.timings.active.speedup.toFixed(2)+'x':'—',
@@ -60,5 +64,8 @@ console.log('Regression gates:',gates)
 console.table(cases.filter(row=>row.timings.activation).map(row=>({preset:row.name,
   beforeMs:row.timings.activation.before.medianMs.toFixed(4),afterMs:row.timings.activation.after.medianMs.toFixed(4),
   speedup:row.timings.activation.speedup.toFixed(2)+'x',candidates:`${row.beforeActivationCandidates} → ${row.activationCandidates}`})))
+console.table(cases.filter(row=>row.timings.moving).map(row=>({preset:row.name,
+  beforeMs:row.timings.moving.before.medianMs.toFixed(4),afterMs:row.timings.moving.after.medianMs.toFixed(4),
+  speedup:row.timings.moving.speedup.toFixed(2)+'x'})))
 console.log('Report:',output)
 if(Object.values(gates).some(value=>!value))process.exitCode=1

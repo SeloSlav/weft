@@ -20,7 +20,7 @@ export class SpatialCandidateSet {
 }
 
 /** Immutable-between-rebuilds point grid. Results are borrowed until the next query or rebuild
- * and retain original placement order. Rebuild after changing point positions.
+ * and retain original placement order by default. Rebuild after changing point positions.
  */
 export class SpatialPointIndex {
   private readonly cells = new Map<string, number[]>()
@@ -41,7 +41,7 @@ export class SpatialPointIndex {
     }
   }
   private key(x: number, z: number): string { return `${x}:${z}` }
-  query(discs: readonly {x: number; z: number; radius: number}[]): readonly number[] {
+  query(discs: readonly {x: number; z: number; radius: number}[], ordered = true): readonly number[] {
     const candidates = this.candidates
     candidates.reset()
     for (const disc of discs) {
@@ -63,7 +63,7 @@ export class SpatialPointIndex {
         if (cell) for (const index of cell) candidates.add(index)
       }
     }
-    candidates.values.sort((a, b) => a - b)
+    if (ordered) candidates.values.sort((a, b) => a - b)
     return candidates.values
   }
   clear(): void { this.cells.clear(); this.points = []; this.candidates = new SpatialCandidateSet(0) }

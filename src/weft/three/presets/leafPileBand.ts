@@ -1,5 +1,6 @@
+import { LineOutputCache } from '../helpers/lineOutputCache'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
-import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
+import { updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -265,6 +266,7 @@ function leafColor(
 
 export class LeafPileBandEffect {
   readonly group = new THREE.Group()
+  private readonly outputCache = new LineOutputCache()
 
   private readonly leafGeometry = makeLeafPileLeafGeometry()
   private readonly leafMaterial = new THREE.MeshStandardMaterial({
@@ -334,6 +336,7 @@ export class LeafPileBandEffect {
   }
 
   setSurface(surface: PreparedSurfaceSource<LeafPileTokenId, LeafPileTokenMeta>): void {
+    this.outputCache.clear()
     this.usesCustomSurface = true
     const next = this.createRuntime(surface)
     this.runtime.dispose()
@@ -341,6 +344,7 @@ export class LeafPileBandEffect {
   }
 
   clearDisturbances(): void {
+    this.outputCache.clear()
     this.runtime.invalidate()
     this.disturbances.length = 0
     this.leafStates.clear()
@@ -448,6 +452,7 @@ export class LeafPileBandEffect {
       this.params.sizeScale <= 0 ||
       this.params.bandWidth <= 0
     ) {
+      this.outputCache.clear()
       this.leafMesh.count = 0
       updateInstanceMatrices(this.leafMesh)
       return
@@ -458,13 +463,18 @@ export class LeafPileBandEffect {
     let instanceIndex = 0
     const generation = ++this.updateGeneration
 
+    this.outputCache.begin(this.leafMesh, this.leafBurnRimAttr, [...Object.values(this.params), getGroundHeight],
+      [...this.burns.map(burn => ({ x: burn.x, z: burn.z, radius: Math.max(0.001, burn.radius) + 0.85 })),
+      ...this.disturbances.map(hit => ({ x: hit.x, z: hit.z, radius: Math.abs(hit.radius) }))])
+    const activeSlots = new Set<number>()
+    for (const key of this.leafStates.keys()) activeSlots.add(Math.floor(key / (LEAF_STATE_KEY_GLYPH_CAP * 16)))
     this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
       getMaxWidth: (slot) => this.getSlotMaxWidth(slot),
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
-        instanceIndex = this.projectLine(
+        instanceIndex = this.outputCache.visit(slot.row * SECTORS + slot.sector, instanceIndex, () => this.projectLine(
           slot,
           resolvedGlyphs,
           tokenLineKey,
@@ -473,7 +483,7 @@ export class LeafPileBandEffect {
           instanceIndex,
           delta,
           generation,
-        )
+        ), activeSlots.has(slot.row * SECTORS + slot.sector))
       },
     }, [this.params.layoutDensity, this.params.season])
 
@@ -484,20 +494,18 @@ export class LeafPileBandEffect {
     }
     this.disturbances.length = 0
 
-    this.leafMesh.count = instanceIndex
-    updateInstanceMatrices(this.leafMesh)
-    this.leafBurnRimAttr.needsUpdate = true
-    if (this.leafMesh.instanceColor) {
-      updateActiveAttribute(this.leafMesh.instanceColor, this.leafMesh.count)
-    }
+    this.outputCache.finish(instanceIndex)
   }
 
   /** Refresh after mutating terrain or placement callbacks in place. */
-  invalidate(): void { this.runtime.invalidate() }
+  invalidate(): void { this.outputCache.clear(); this.runtime.invalidate() }
+
+  getOutputCacheStats() { return this.outputCache.getStats() }
 
   getRuntimeStats() { return this.runtime.getStats() }
 
   dispose(): void {
+    this.outputCache.clear()
     this.runtime.dispose(this.group)
     this.leafGeometry.dispose()
     this.leafMaterial.dispose()
@@ -726,6 +734,7 @@ export class LeafPileBandEffect {
         slot.lineCoord +
         (hashDep - 0.5) * rowStep * 0.72 +
         lineDepthShift
+      this.outputCache.note(clumpX, clumpZ)
       if (!this.placementMask.includeAtXZ(clumpX, clumpZ)) continue
 
       const signedDistance = this.placementMask.distanceToBandAtXZ(clumpX, clumpZ)
@@ -772,6 +781,7 @@ export class LeafPileBandEffect {
         const angle = leafHashA * Math.PI * 2
         const baseLeafX = clumpX + Math.cos(angle) * radius
         const baseLeafZ = clumpZ + Math.sin(angle) * radius
+        this.outputCache.note(baseLeafX, baseLeafZ)
         let state: LeafState | undefined
         const leafKey = this.makeLeafStateKey(slot.row, slot.sector, k, leafIndex)
         state = this.leafStates.get(leafKey)

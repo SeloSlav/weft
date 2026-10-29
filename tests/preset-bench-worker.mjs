@@ -42,7 +42,20 @@ for(let caseIndex=0;caseIndex<fixtures[0].length;caseIndex++) {
   const versionDelta=benches.map((bench,index)=>uploadVersions(bench.effect).reduce((sum,value,attribute)=>sum+value-versions[index][attribute],0))
   const refresh=measure(benches.map((bench,index)=>()=>{bench.params();updates[index]()}))
   for(const bench of benches)bench.damage?.()
+  const beforeActiveCache=benches.map(bench=>bench.effect.getOutputCacheStats?.())
   const active=measure(updates)
+  const afterActiveCache=benches.map(bench=>bench.effect.getOutputCacheStats?.())
+  let moving
+  if (benches[0].name === 'book') {
+    const points=benches.map(()=>new THREE.Vector3())
+    const steps=[0,0]
+    moving=measure(benches.map((bench,index)=>()=>{
+      const step=steps[index]++
+      points[index].set(Math.sin(step*.08)*3,4+Math.cos(step*.07),.2)
+      bench.effect.setPlayerWorldPoint(points[index]);updates[index]()
+    }),{warmup:15,samples:25})
+  }
+  const afterMovingCache=benches.map(bench=>bench.effect.getOutputCacheStats?.())
   // Isolate impulse candidate discovery from the much larger, ongoing physics work.
   // Private fields are used only by this diagnostic fixture, not by SDK consumers.
   let activation
@@ -70,10 +83,13 @@ for(let caseIndex=0;caseIndex<fixtures[0].length;caseIndex++) {
     bench.effect.dispose()
     results[index].push({name:bench.name,hasReaction:Boolean(bench.damage),states:states[index],initialCounts:states[index].initial.map(mesh=>mesh.count),
       cold:cold[index],idle:idle[index],refresh:refresh[index],active:active[index],
-      activation:activation?.[index],activationCandidates,activationTotal,activated,
+      activation:activation?.[index],activationCandidates,activationTotal,activated,moving:moving?.[index],
+      cacheWork:afterActiveCache[index] ? { before:beforeActiveCache[index], afterActive:afterActiveCache[index],
+        afterMoving:afterMovingCache[index] } : undefined,
       idleUploadVersionDelta:versionDelta[index],idleRebuiltRows:afterIdle[index] ? afterIdle[index].rebuiltRows-initialStats[index].rebuiltRows : null,
       idleProjectionPasses:afterIdle[index] ? afterIdle[index].projectionPasses-initialStats[index].projectionPasses : null,
-      stats,ownedMeshes:meshes.length,disposedMeshes,cachedRowsAfterDispose:bench.effect.getRuntimeStats?.().cachedRows})
+      stats,ownedMeshes:meshes.length,disposedMeshes,cachedRowsAfterDispose:bench.effect.getRuntimeStats?.().cachedRows,
+      outputCacheAfterDispose:bench.effect.getOutputCacheStats?.()})
   }
 }
 console.log(JSON.stringify({node:process.version,platform:process.platform,arch:process.arch,

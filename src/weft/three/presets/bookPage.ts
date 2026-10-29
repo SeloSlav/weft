@@ -1,5 +1,6 @@
 import { SurfaceExecutionRuntime } from '../executionRuntime'
-import { updateInstanceMatrices } from '../helpers/bufferUpdates'
+import { updateInstanceMatrices, updateAttributeSpan } from '../helpers/bufferUpdates'
+import { SpatialCandidateSet, SpatialPointIndex } from '../../runtime'
 import { layoutNextLine, type LayoutCursor } from '@chenglou/pretext'
 import * as THREE from 'three'
 import type { PreparedSurfaceSource, SeedCursorFactory } from '../../core'
@@ -100,6 +101,7 @@ type GlyphPlacement = {
   sx: number
   sy: number
 }
+type CachedGlyph = { placement: GlyphPlacement; matrix: Float32Array; visible: boolean; outputIndex: number; ordinal: number }
 
 export class BookPageEffect {
   readonly group = new THREE.Group()
@@ -112,6 +114,12 @@ export class BookPageEffect {
   private readonly buckets = new Map<string, THREE.InstancedMesh>()
   private readonly bucketCounts = new Map<string, number>()
   private readonly placements: GlyphPlacement[] = []
+  private readonly spatial = new SpatialPointIndex(2)
+  private readonly cachedGlyphs: CachedGlyph[] = []
+  private readonly glyphBuckets = new Map<string, number[]>()
+  private candidates = new SpatialCandidateSet(0)
+  private previousCandidates: number[] = []
+  private projectedGlyphs = 0
   private params: BookPageParams = { ...DEFAULT_BOOK_PAGE_PARAMS }
   /** Large enough to read nearby, but not so large that adjacent text rows overlap. */
   private readonly baseGlyphHeight = 0.22
@@ -155,6 +163,7 @@ export class BookPageEffect {
 
     this.buildPlacements()
     this.renderPlacements(false)
+    this.buildOutputCache()
   }
 
   setParams(params: Partial<BookPageParams>): void {
@@ -167,9 +176,12 @@ export class BookPageEffect {
   }
 
   getRuntimeStats() { return this.runtime.getStats() }
+  getOutputCacheStats() { return { cachedGlyphs: this.cachedGlyphs.length, projectedGlyphs: this.projectedGlyphs } }
 
   dispose(): void {
     this.runtime.dispose(this.group)
+    this.spatial.clear(); this.candidates = new SpatialCandidateSet(0)
+    this.cachedGlyphs.length = 0; this.glyphBuckets.clear(); this.previousCandidates.length = 0
     for (const mesh of this.buckets.values()) {
       const mat = mesh.material as THREE.MeshBasicMaterial
       mat.dispose()
@@ -192,7 +204,7 @@ export class BookPageEffect {
 
     this.runtime.run('glyphs', [this.params, canAffectGlyphs,
       canAffectGlyphs ? tmpLocalPlayer.x : 0, canAffectGlyphs ? tmpLocalPlayer.y : 0,
-      canAffectGlyphs ? tmpLocalPlayer.z : 0], () => this.renderPlacements(canAffectGlyphs))
+      canAffectGlyphs ? tmpLocalPlayer.z : 0], () => this.updateCachedPlacements(canAffectGlyphs))
     this.wasActiveLastFrame = canAffectGlyphs
   }
 
@@ -329,6 +341,93 @@ export class BookPageEffect {
     for (const [glyph, mesh] of this.buckets) {
       mesh.count = this.bucketCounts.get(glyph) ?? 0
       updateInstanceMatrices(mesh)
+    }
+  }
+
+  private buildOutputCache(): void {
+    const counts = new Map<string, number>()
+    const points: { x: number; z: number }[] = []
+    for (const placement of this.placements) {
+      dummy.position.set(placement.x, placement.y, 0)
+      dummy.scale.set(placement.sx, placement.sy, 1)
+      dummy.rotation.set(0, 0, 0); dummy.updateMatrix()
+      const ordinal = counts.get(placement.glyph) ?? 0
+      counts.set(placement.glyph, ordinal + 1)
+      const index = this.cachedGlyphs.length
+      this.cachedGlyphs.push({ placement, matrix: Float32Array.from(dummy.matrix.elements), visible: true,
+        outputIndex: ordinal < MAX_PER_BUCKET ? ordinal : -1, ordinal })
+      let bucket = this.glyphBuckets.get(placement.glyph)
+      if (!bucket) { bucket = []; this.glyphBuckets.set(placement.glyph, bucket) }
+      bucket.push(index); points.push({ x: placement.x, z: placement.y })
+    }
+    this.spatial.rebuild(points)
+    this.candidates = new SpatialCandidateSet(points.length)
+  }
+
+  private updateCachedPlacements(isActive: boolean): void {
+    const radius = Math.max(0, Number.isNaN(this.params.influenceRadius) ? 0 : this.params.influenceRadius,
+      Number.isNaN(this.params.coreClearRadius) ? 0 : this.params.coreClearRadius)
+    const current: number[] = []
+    if (isActive) for (const index of this.spatial.query([{ x: tmpLocalPlayer.x, z: tmpLocalPlayer.y, radius }], false)) {
+      const p = this.cachedGlyphs[index]!.placement
+      const dx = p.x - tmpLocalPlayer.x, dy = p.y - tmpLocalPlayer.y
+      if (dx * dx + dy * dy + tmpLocalPlayer.z * tmpLocalPlayer.z < radius * radius) current.push(index)
+    }
+    const candidates = this.candidates
+    candidates.reset()
+    for (const index of this.previousCandidates) candidates.add(index)
+    for (const index of current) candidates.add(index)
+    this.previousCandidates = current
+    const changedBuckets = new Map<string, { repack: boolean; first: number; indices: number[] }>()
+    for (const index of candidates.values) {
+      const cached = this.cachedGlyphs[index]!, p = cached.placement
+      let visible = true, ox = 0, oy = 0, oz = 0
+      if (isActive) {
+        const ux = p.x - tmpLocalPlayer.x, uy = p.y - tmpLocalPlayer.y, uz = -tmpLocalPlayer.z
+        const dist = Math.sqrt(ux * ux + uy * uy + uz * uz)
+        if (dist < this.params.coreClearRadius) visible = false
+        else if (dist < this.params.influenceRadius && dist > 1e-5) {
+          const t = 1 - dist / this.params.influenceRadius
+          const push = t * t * (3 - 2 * t) * this.params.pushStrength
+          const inv = 1 / dist
+          ox = ux * inv * push; oy = uy * inv * push; oz = uz * inv * push
+        }
+      }
+      const px = Math.fround(p.x + ox), py = Math.fround(p.y + oy), pz = Math.fround(oz)
+      const changed = visible !== cached.visible || cached.matrix[12] !== px || cached.matrix[13] !== py || cached.matrix[14] !== pz
+      cached.matrix[12] = px; cached.matrix[13] = py; cached.matrix[14] = pz
+      this.projectedGlyphs++
+      if (!changed) continue
+      let bucket = changedBuckets.get(p.glyph)
+      if (!bucket) { bucket = { repack: false, first: cached.ordinal, indices: [] }; changedBuckets.set(p.glyph, bucket) }
+      bucket.first = Math.min(bucket.first, cached.ordinal)
+      if (visible !== cached.visible) bucket.repack = true
+      cached.visible = visible; bucket.indices.push(index)
+    }
+    for (const [glyph, change] of changedBuckets) {
+      const mesh = this.buckets.get(glyph)!, array = mesh.instanceMatrix.array as Float32Array
+      let first = Infinity, last = -1
+      if (change.repack) {
+        const indices = this.glyphBuckets.get(glyph)!
+        let count = 0
+        for (let i = change.first - 1; i >= 0; i--) {
+          const prior = this.cachedGlyphs[indices[i]!]!.outputIndex
+          if (prior >= 0) { count = prior + 1; break }
+        }
+        first = count
+        for (let i = change.first; i < indices.length; i++) {
+          const index = indices[i]!
+          const glyphState = this.cachedGlyphs[index]!
+          glyphState.outputIndex = glyphState.visible && count < MAX_PER_BUCKET ? count++ : -1
+          if (glyphState.outputIndex >= 0) array.set(glyphState.matrix, glyphState.outputIndex * 16)
+        }
+        mesh.count = count; last = count
+      } else for (const index of change.indices) {
+        const glyphState = this.cachedGlyphs[index]!, output = glyphState.outputIndex
+        if (output < 0) continue
+        array.set(glyphState.matrix, output * 16); first = Math.min(first, output); last = Math.max(last, output + 1)
+      }
+      if (last > first) updateAttributeSpan(mesh.instanceMatrix, first, last - first)
     }
   }
 }

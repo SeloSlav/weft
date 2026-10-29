@@ -26,6 +26,9 @@ export function presetCases(sdk) {
   cases.push(()=>field('fungus-seam',sdk.createFungusSeamEffect,sdk.DEFAULT_FUNGUS_SEAM_PARAMS))
   cases.push(()=>field('needle-litter',sdk.createNeedleLitterFieldEffect,sdk.DEFAULT_NEEDLE_LITTER_FIELD_PARAMS))
   cases.push(()=>field('leaf-pile',sdk.createLeafPileBandEffect,sdk.DEFAULT_LEAF_PILE_BAND_PARAMS))
+  cases.push(()=>field('fungus-dense',sdk.createFungusSeamEffect,{...sdk.DEFAULT_FUNGUS_SEAM_PARAMS,layoutDensity:5,bandWidth:14}))
+  cases.push(()=>field('needle-dense',sdk.createNeedleLitterFieldEffect,{...sdk.DEFAULT_NEEDLE_LITTER_FIELD_PARAMS,layoutDensity:5}))
+  cases.push(()=>field('leaf-dense',sdk.createLeafPileBandEffect,{...sdk.DEFAULT_LEAF_PILE_BAND_PARAMS,layoutDensity:5,bandWidth:14}))
   cases.push(()=>{
     const effect=sdk.createGrassEffect(options)
     return {name:'grass',effect,update:t=>effect.update(t),params:()=>effect.setParams({...sdk.DEFAULT_GRASS_FIELD_PARAMS}),
@@ -144,6 +147,40 @@ export function inspectFixture(fixture) {
   fixture.damage?.();update(1.15);states.damage=snapshot(effect)
   update(1.2);states.reaction=snapshot(effect)
   fixture.clear?.();update(1.25);states.clear=snapshot(effect)
+  if(['fungus-seam','needle-litter','leaf-pile','fungus-dense','needle-dense','leaf-dense',
+    'meadow/leafPile','woodland/leafPile','autumn/leafPile'].includes(fixture.name)) {
+    effect.addBurnFromWorldPoint(new THREE.Vector3(-1,0,0),{radiusScale:1.4,strength:1})
+    effect.addBurnFromWorldPoint(new THREE.Vector3(2,0,1),{radiusScale:1.2,strength:.8})
+    effect.addDisturbanceFromWorldPoint?.(new THREE.Vector3(1,0,0),{strength:1})
+    let frame=0
+    for(let t=1.3;t<1.8;t+=.05) {
+      update(t)
+      if (++frame % 3===0)states[`reaction-${frame}`]=snapshot(effect)
+    }
+    states.overlappingReactions=snapshot(effect)
+    fixture.clear?.();effect.clearDisturbances?.();update(1.9);states.restoredReactions=snapshot(effect)
+    if(fixture.name.startsWith('needle')) {
+      const cull={cameraWorld:new THREE.Vector3(-10,2,0),radius:8}
+      const ground=()=>0
+      effect.update(2,ground,cull);cull.cameraWorld.x=10;effect.update(2.05,ground,cull)
+      effect.update(2.1,ground,null);states.visibilityRestored=snapshot(effect)
+    }
+    if(fixture.name==='leaf-pile' || fixture.name==='leaf-dense') {
+      effect.setParams({season:'winter'});update(2.15);states.changedSeason=snapshot(effect)
+      fixture.params();update(2.2);states.restoredSeason=snapshot(effect)
+    }
+  }
+  if(fixture.name==='book') {
+    for(const p of [[-3,4,.1],[2,3,.2],[3,4,.4],[0,0,1e6]]) {
+      effect.setPlayerWorldPoint(new THREE.Vector3(...p));update(2);states[`player-${p.join(',')}`]=snapshot(effect)
+    }
+    effect.setParams({coreClearRadius:3.2,influenceRadius:1.5})
+    for(let i=0;i<12;i++) {
+      effect.setPlayerWorldPoint(new THREE.Vector3(Math.sin(i*.63)*4,4+Math.cos(i*.43),.1))
+      update(2.1+i*.05);states[`moving-${i}`]=snapshot(effect)
+    }
+    effect.setPlayerWorldPoint(new THREE.Vector3(0,0,1e6));update(3);states.playerExit=snapshot(effect)
+  }
   if(fixture.name==='grass' || fixture.name.endsWith('/grass')) {
     effect.addDisturbanceFromWorldPoint(new THREE.Vector3(1,0,0),{strength:.9,recoveryRate:2})
     effect.addDisturbanceFromWorldPoint(new THREE.Vector3(-1,0,.5),{strength:.7,recoveryRate:1})

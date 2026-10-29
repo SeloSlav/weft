@@ -1,5 +1,6 @@
+import { LineOutputCache } from '../helpers/lineOutputCache'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
-import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
+import { updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -144,6 +145,7 @@ function needleColor(
 
 export class NeedleLitterFieldEffect {
   readonly group = new THREE.Group()
+  private readonly outputCache = new LineOutputCache()
 
   private readonly needleGeometry = makeNeedleGeometry()
   private readonly needleMaterial = new THREE.MeshLambertMaterial()
@@ -261,11 +263,14 @@ export class NeedleLitterFieldEffect {
   }
 
   /** Refresh after mutating terrain or placement callbacks in place. */
-  invalidate(): void { this.runtime.invalidate() }
+  invalidate(): void { this.outputCache.clear(); this.runtime.invalidate() }
+
+  getOutputCacheStats() { return this.outputCache.getStats() }
 
   getRuntimeStats() { return this.runtime.getStats() }
 
   dispose(): void {
+    this.outputCache.clear()
     this.runtime.dispose(this.group)
     this.needleGeometry.dispose()
     this.needleMaterial.dispose()
@@ -309,6 +314,7 @@ export class NeedleLitterFieldEffect {
     viewCull?: PresetLayoutViewCull | null,
   ): void {
     if (this.params.layoutDensity <= 0 || this.params.sizeScale <= 0) {
+      this.outputCache.clear()
       this.needleMesh.count = 0
       updateInstanceMatrices(this.needleMesh)
       return
@@ -326,6 +332,8 @@ export class NeedleLitterFieldEffect {
       this.group.updateMatrixWorld(true)
     }
 
+    this.outputCache.begin(this.needleMesh, undefined, [...Object.values(this.params), getGroundHeight, Boolean(viewCull)],
+      this.burns.map(burn => ({ x: burn.x, z: burn.z, radius: Math.max(0.001, burn.radius) + 0.7 })), Boolean(viewCull))
     this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
@@ -335,15 +343,12 @@ export class NeedleLitterFieldEffect {
         ? (slot) => shouldVisitSlotForViewCull(slot, this.fieldCenterX, this.fieldCenterZ, viewCull, frustumCtx)
         : undefined,
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
-        instanceIndex = this.projectLine(slot, resolvedGlyphs, tokenLineKey, rowStep, getGroundHeight, instanceIndex)
+        instanceIndex = this.outputCache.visit(slot.row * SECTORS + slot.sector, instanceIndex,
+          () => this.projectLine(slot, resolvedGlyphs, tokenLineKey, rowStep, getGroundHeight, instanceIndex))
       },
     }, [this.params.layoutDensity])
 
-    this.needleMesh.count = instanceIndex
-    updateInstanceMatrices(this.needleMesh)
-    if (this.needleMesh.instanceColor) {
-      updateActiveAttribute(this.needleMesh.instanceColor, this.needleMesh.count)
-    }
+    this.outputCache.finish(instanceIndex)
   }
 
   private projectLine(
@@ -383,6 +388,7 @@ export class NeedleLitterFieldEffect {
         slot.lineCoord +
         (hashDep - 0.5) * rowStep * 0.66 +
         lineDepthShift
+      this.outputCache.note(centerX, centerZ)
       if (!this.placementMask.includeAtXZ(centerX, centerZ)) continue
 
       const noise = needleOrganicWorldField(centerX + hashOrg * 0.3, centerZ + hashOrg * 0.22)

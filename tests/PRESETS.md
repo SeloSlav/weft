@@ -13,9 +13,9 @@ CPU benchmark. It uses the build tool already declared by `tsup`.
 
 ## Coverage and method
 
-There are 37 configurations: all 14 executable preset classes, the three band
+There are 40 configurations: all 14 executable preset classes, the three band
 appearances, five shell appearances, and all five constituent families of each
-meadow/woodland/autumn look, plus dense log and stick workloads. Standard fixtures use their authored SDK densities, seed 17,
+meadow/woodland/autumn look, plus dense log, stick, fungus, needle and leaf workloads. Standard fixtures use their authored SDK densities, seed 17,
 the same terrain and matched elapsed times. No instance reductions are introduced
 to obtain a speedup.
 
@@ -46,6 +46,8 @@ Timing phases are reported separately:
 - Activation isolates adding an impulse and finding affected log/stick placements;
   it deliberately excludes subsequent physics. It uses internal diagnostic access
   to reset the pending impulse and state between samples.
+- Moving varies the player's position each update for the book, including glyph
+  visibility changes and bucket compaction.
 
 Reports contain median and p95 timings, work counts and upload-version changes.
 Timings are observations; the deterministic gates are what fail the command:
@@ -69,10 +71,38 @@ The point index is rebuilt with placements and returns candidates in authored
 order; precise distance tests and existing physics remain unchanged.
 
 Tree and shrub burns target instance IDs rather than spatial impulses. Leaf piles,
-fungus and needle litter currently reproject visible content during reactions;
-local updates there would first need persistent placement and output-index caches.
-Book glyphs are bucketed and compacted when hidden, so applying a spatial index
-there also requires preserving bucket order and shifted output indices.
+fungus and needle litter now cache output per authored line, reproject affected
+lines and repack shifted output when reactions change counts. The book stores
+glyph poses and visibility and repacks affected bucket suffixes in authored order.
+
+## Persistent output cache sample
+
+The [output-cache report](./benchmarks/output-cache-results.json) compares against
+`e68a57b1227f0ab32cd4649c9a4b591009a3af15`, immediately before this change:
+
+```bash
+npm run bench:presets -- --baseline e68a57b1227f0ab32cd4649c9a4b591009a3af15 --output tests/benchmarks/output-cache-results.json
+```
+
+| Workload | Before (ms) | After (ms) |
+| --- | ---: | ---: |
+| Fungus, default / active | 0.0812 | 0.0436 |
+| Fungus, dense / active | 0.1992 | 0.0812 |
+| Needle litter / active | 0.2842 | 0.0397 |
+| Needle litter, dense / active | 1.3782 | 0.1297 |
+| Leaf pile / active | 0.4092 | 0.1225 |
+| Leaf pile, dense / active | 2.5077 | 0.5194 |
+| Book / moving player | 0.0780 | 0.0615 |
+
+These are paired CPU medians for the described fixtures, not GPU or frame timings.
+The small default fungus case varied between runs, including a slower sample;
+cache overhead and timing noise matter at this scale. The three line caches retain
+matrix/color copies (and burn-rim values where applicable), about 76–80 bytes per cached instance plus
+line metadata. Book glyphs retain a matrix and spatial/bucket metadata per glyph.
+They release these caches on disposal. Camera-culling changes force a complete
+needle projection to preserve visibility and ordering.
+The four effects expose `getOutputCacheStats()` for cached and projected work;
+the paired report records these counters during the measured reaction phases.
 
 The committed sample is [preset-results.json](./benchmarks/preset-results.json).
 Sub-microsecond idle ratios are dominated by call overhead and timer precision.
@@ -129,17 +159,17 @@ borrowed assets.
 ## Native fonts and WebGPU
 
 ```bash
-npm run validate:baseline -- 035a56bb4a8f7cb7bcf8ecdc2baf269e7e359d6e
+npm run validate:baseline -- e68a57b1227f0ab32cd4649c9a4b591009a3af15
 npm run dev -- --host 127.0.0.1
 ```
 
-Open `/tests/presets-browser.html` and run all checks. This repeats all 37 output
+Open `/tests/presets-browser.html` and run all checks. This repeats all 40 output
 comparisons using native browser metrics, draws every migrated preset through
 WebGPU, and verifies consumed instance upload ranges. Seven further checks cover
 terrain invalidation, needle visibility movement/restoration, and repeated source
 replacement in all five mutable-source families. Its preview selects each preset
 and its reaction at fixed seed, camera, 960 × 540 resolution and DPR 1.
 
-`/tests/core-browser.html` also runs 24 core checks plus a native partial-upload
+`/tests/core-browser.html` also runs 25 core checks plus a native partial-upload
 check. `/tests/browser.html` retains the 11 existing grass/camera/burn/foliage and
 WebGL/WebGPU regressions.

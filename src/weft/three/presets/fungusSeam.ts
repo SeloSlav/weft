@@ -1,5 +1,6 @@
+import { LineOutputCache } from '../helpers/lineOutputCache'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
-import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
+import { updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -154,6 +155,7 @@ function fungusColor(
 
 export class FungusSeamEffect {
   readonly group = new THREE.Group()
+  private readonly outputCache = new LineOutputCache()
 
   private readonly fungusGeometry = makeFungusGeometry()
   private readonly fungusMaterial = new THREE.MeshStandardMaterial({
@@ -273,11 +275,14 @@ export class FungusSeamEffect {
   }
 
   /** Refresh after mutating terrain or placement callbacks in place. */
-  invalidate(): void { this.runtime.invalidate() }
+  invalidate(): void { this.outputCache.clear(); this.runtime.invalidate() }
+
+  getOutputCacheStats() { return this.outputCache.getStats() }
 
   getRuntimeStats() { return this.runtime.getStats() }
 
   dispose(): void {
+    this.outputCache.clear()
     this.runtime.dispose(this.group)
     this.fungusGeometry.dispose()
     this.fungusMaterial.dispose()
@@ -330,6 +335,7 @@ export class FungusSeamEffect {
       this.params.sizeScale <= 0 ||
       this.params.bandWidth <= 0
     ) {
+      this.outputCache.clear()
       this.fungusMesh.count = 0
       updateInstanceMatrices(this.fungusMesh)
       return
@@ -339,29 +345,26 @@ export class FungusSeamEffect {
     const backZ = this.fieldDepth * 0.48
     let instanceIndex = 0
 
+    this.outputCache.begin(this.fungusMesh, this.fungusBurnRimAttr, [...Object.values(this.params), getGroundHeight],
+      this.burns.map(burn => ({ x: burn.x, z: burn.z, radius: Math.max(0.001, burn.radius) + 0.8 })))
     this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
       getMaxWidth: (slot) => this.getSlotMaxWidth(slot),
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
-        instanceIndex = this.projectLine(
+        instanceIndex = this.outputCache.visit(slot.row * SECTORS + slot.sector, instanceIndex, () => this.projectLine(
           slot,
           resolvedGlyphs,
           tokenLineKey,
           rowStep,
           getGroundHeight,
           instanceIndex,
-        )
+        ))
       },
     }, [this.params.layoutDensity])
 
-    this.fungusMesh.count = instanceIndex
-    updateInstanceMatrices(this.fungusMesh)
-    this.fungusBurnRimAttr.needsUpdate = true
-    if (this.fungusMesh.instanceColor) {
-      updateActiveAttribute(this.fungusMesh.instanceColor, this.fungusMesh.count)
-    }
+    this.outputCache.finish(instanceIndex)
   }
 
   private projectLine(
@@ -402,6 +405,7 @@ export class FungusSeamEffect {
         slot.lineCoord +
         (hashDep - 0.5) * rowStep * 0.62 +
         lineDepthShift
+      this.outputCache.note(x, z)
       if (!this.placementMask.includeAtXZ(x, z)) continue
 
       const signedDistance = this.placementMask.distanceToBandAtXZ(x, z)

@@ -4,6 +4,7 @@ import * as core from '../src/weft/core'
 import {createSurfaceMotionField, decayRecoveringStrength, updateRecoveringImpacts, SpatialCandidateSet, SpatialPointIndex} from '../src/weft/runtime'
 import {createSurfaceEffect, createSurfaceSource, fieldLayout, recoverableDamage, threeInstancedMeshRenderer} from '../src/weft/three/api'
 import {SurfaceExecutionRuntime} from '../src/weft/three/executionRuntime'
+import {LineOutputCache} from '../src/weft/three/helpers/lineOutputCache'
 
 type Check = {name:string; passed:boolean; error?:string}
 function assert(value:unknown, message = 'assertion failed'): asserts value { if (!value) throw new Error(message) }
@@ -25,6 +26,40 @@ export function runCoreChecks(): Check[] {
       ...options,onLine:line=>lines.push(line)})
     return lines
   }
+
+  test('persistent line outputs preserve compacted order and restore shifted cached lines',()=>{
+    const geometry=new THREE.BoxGeometry(),material=new THREE.MeshBasicMaterial()
+    const mesh=new THREE.InstancedMesh(geometry,material,12),cache=new LineOutputCache()
+    const extra=new THREE.InstancedBufferAttribute(new Float32Array(12),1)
+    const counts=[2,2,2],colors=new THREE.Color(),matrix=new THREE.Matrix4()
+    const render=(regions:{x:number;z:number;radius:number}[])=>{
+      cache.begin(mesh,extra,['same'],regions)
+      let cursor=0
+      for(let line=0;line<3;line++)cursor=cache.visit(line,cursor,()=>{
+        cache.note(line*10,0)
+        for(let j=0;j<counts[line]!;j++) {
+          matrix.makeTranslation(line*10+j,0,0);mesh.setMatrixAt(cursor,matrix)
+          mesh.setColorAt(cursor,colors.setRGB(line/3,j/3,0));extra.setX(cursor,line+j/10);cursor++
+        }
+        return cursor
+      })
+      cache.finish(cursor)
+    }
+    render([]);assert(mesh.count===6)
+    counts[0]=1;render([{x:0,z:0,radius:1}])
+    equal(Array.from(mesh.instanceMatrix.array).filter((_,i)=>i%16===12).slice(0,mesh.count),[0,10,11,20,21])
+    assert(cache.getStats().replayedLines===2,'unaffected lines were reprojected')
+    assert(extra.getX(1)===1 && extra.getX(3)===2,'extra attribute did not follow compaction')
+    counts[0]=2;render([{x:0,z:0,radius:1}])
+    equal(Array.from(mesh.instanceMatrix.array).filter((_,i)=>i%16===12).slice(0,mesh.count),[0,1,10,11,20,21])
+    assert(mesh.instanceMatrix.updateRanges.length>0,'updated spans were not uploaded')
+    cache.clear();assert(cache.getStats().cachedLines===0)
+    counts.splice(0,3,4,4,4);render([]);assert(mesh.count===12)
+    counts[0]=3;render([{x:0,z:0,radius:1}])
+    equal(Array.from(mesh.instanceMatrix.array).filter((_,i)=>i%16===12).slice(0,mesh.count),[0,1,2,10,11,12,13,20,21,22,23],
+      'capacity overflow hid instances after a later removal')
+    mesh.dispose();geometry.dispose();material.dispose()
+  })
 
   test('shared spatial candidates preserve order and include exact hits across overlap and rebuilds',()=>{
     const points=Array.from({length:1600},(_,i)=>({x:(i%40)-20,z:Math.floor(i/40)-20}))
