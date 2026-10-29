@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -304,7 +305,7 @@ export class StickFieldEffect {
       this.placementByKey.clear()
       this.twigStates.clear()
       this.stickMesh.count = 0
-      this.stickMesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(this.stickMesh)
       return
     }
 
@@ -334,9 +335,9 @@ export class StickFieldEffect {
     })
 
     this.stickMesh.count = instanceIndex
-    this.stickMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.stickMesh)
     if (this.stickMesh.instanceColor) {
-      this.stickMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.stickMesh.instanceColor, this.stickMesh.count)
     }
   }
 
@@ -645,7 +646,7 @@ export class StickFieldEffect {
       this.stickMesh.setMatrixAt(placement.instanceIndex, dummy.matrix)
     }
     if (touchedMatrix) {
-      this.stickMesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(this.stickMesh)
     }
   }
 

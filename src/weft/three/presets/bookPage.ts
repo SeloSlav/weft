@@ -1,3 +1,4 @@
+import { updateInstanceMatrices } from '../helpers/bufferUpdates'
 import { layoutNextLine, type LayoutCursor } from '@chenglou/pretext'
 import * as THREE from 'three'
 import type { PreparedSurfaceSource, SeedCursorFactory } from '../../core'
@@ -321,7 +322,7 @@ export class BookPageEffect {
 
     for (const [glyph, mesh] of this.buckets) {
       mesh.count = this.bucketCounts.get(glyph) ?? 0
-      mesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(mesh)
     }
   }
 }

@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { makeLeafPileLeafGeometry } from './leafPileLeafGeometry'
 
-const LEAF_TEMPLATE = makeLeafPileLeafGeometry()
+const LEAF_TEMPLATE = makeLeafPileLeafGeometry(2)
 
 const _bA = new THREE.Vector3()
 const _bB = new THREE.Vector3()
@@ -57,7 +57,7 @@ function pushLeafCluster(
   else n.normalize()
 
   const base = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), n)
-  const scale = 0.152 * spread
+  const scale = 0.19 * spread
 
   _leafTanU.crossVectors(n, _bUp)
   if (_leafTanU.lengthSq() < 1e-5) _leafTanU.set(1, 0, 0)
@@ -66,7 +66,7 @@ function pushLeafCluster(
   if (_leafTanV.lengthSq() < 1e-5) _leafTanV.set(0, 0, 1)
   else _leafTanV.normalize()
 
-  const rings = 6
+  const rings = 3
   const jitter = [
     [0, 0],
     [0.08, -0.06],
@@ -85,8 +85,15 @@ function pushLeafCluster(
     for (let i = 0; i < 2; i++) {
       const g = LEAF_TEMPLATE.clone()
       const q = base.clone().multiply(
-        new THREE.Quaternion().setFromAxisAngle(n, ringYaw + i * Math.PI * 0.5 + 0.15),
+        new THREE.Quaternion().setFromEuler(new THREE.Euler(0.45 + r * 0.27, i * 1.15 - 0.5, ringYaw)),
       )
+      const colors = new Float32Array(g.attributes.position.count * 3)
+      const tint = 0.8 + (r * 0.13 + i * 0.11) % 0.24
+      for (let v = 0; v < g.attributes.position.count; v++) {
+        const light = tint * (0.76 + (g.attributes.position.getY(v) + 0.58) * 0.21)
+        colors.set([light, light, light * 0.9], v * 3)
+      }
+      g.setAttribute('color', new THREE.BufferAttribute(colors, 3))
       const m = new THREE.Matrix4().compose(new THREE.Vector3(px, py, pz), q, new THREE.Vector3(s, s, s))
       g.applyMatrix4(m)
       out.push(g)
@@ -198,8 +205,8 @@ export function makeBranchedFoliageGeometries(profile: BranchedFoliageProfile): 
   const primaryTips: THREE.Vector3[] = []
 
   for (let i = 0; i < primaryN; i++) {
-    const theta = (i / primaryN) * Math.PI * 2 + 0.41
-    const elev = 0.38 + Math.sin(i * 1.7 + 0.3) * 0.08
+    const theta = i * 2.399963229728653 + 0.41
+    const elev = 0.32 + (i % 3) * 0.23 + Math.sin(i * 1.7 + 0.3) * 0.09
     const horiz = Math.cos(elev)
     _bDir.set(Math.cos(theta) * horiz, Math.sin(elev), Math.sin(theta) * horiz).normalize()
 
@@ -207,25 +214,26 @@ export function makeBranchedFoliageGeometries(profile: BranchedFoliageProfile): 
     const rootY = trunkTop + branchRootRise + rootLayerT * primaryLen * (profile.includeTrunk ? 0.12 : 0.2)
     const sx = 0
     const sz = 0
-    const bx = _bDir.x * primaryLen
-    const by = rootY + _bDir.y * primaryLen
-    const bz = _bDir.z * primaryLen
+    const branchLen = primaryLen * (0.86 + (i % 3) * 0.13)
+    const bx = _bDir.x * branchLen
+    const by = rootY + _bDir.y * branchLen
+    const bz = _bDir.z * branchLen
     pushCylinderBetween(wood, sx, rootY, sz, bx, by, bz, profile.primaryR0, profile.primaryR1)
     primaryTips.push(new THREE.Vector3(bx, by, bz))
 
     for (const frac of [0.26, 0.42, 0.58, 0.74]) {
-      const px = _bDir.x * primaryLen * frac
-      const py = rootY + _bDir.y * primaryLen * frac
-      const pz = _bDir.z * primaryLen * frac
+      const px = _bDir.x * branchLen * frac
+      const py = rootY + _bDir.y * branchLen * frac
+      const pz = _bDir.z * branchLen * frac
       const out = new THREE.Vector3(px, py, pz).normalize()
       pushLeafCluster(leaves, px, py, pz, out, (0.82 + frac * 0.12) * m)
     }
 
     // Dense leaf clusters along the primary branch — no sub-branch cylinders that can appear detached
     for (const frac of [0.72, 0.88]) {
-      const px = _bDir.x * primaryLen * frac
-      const py = rootY + _bDir.y * primaryLen * frac
-      const pz = _bDir.z * primaryLen * frac
+      const px = _bDir.x * branchLen * frac
+      const py = rootY + _bDir.y * branchLen * frac
+      const pz = _bDir.z * branchLen * frac
       const out = new THREE.Vector3(px, py, pz).normalize()
       pushLeafCluster(leaves, px, py, pz, out, (0.94 + frac * 0.08) * m)
     }
@@ -253,6 +261,18 @@ export function makeBranchedFoliageGeometries(profile: BranchedFoliageProfile): 
 
   mergedWood.computeVertexNormals()
   mergedLeaves.computeVertexNormals()
+  // Blend card normals toward the crown volume, so the canopy reads as one soft mass.
+  const lp = mergedLeaves.attributes.position
+  const ln = mergedLeaves.attributes.normal
+  const round = new THREE.Vector3()
+  const card = new THREE.Vector3()
+  for (let i = 0; i < lp.count; i++) {
+    round.set(lp.getX(i), (lp.getY(i) - trunkTop) * 0.7 + 0.12, lp.getZ(i)).normalize()
+    card.fromBufferAttribute(ln, i)
+    if (card.dot(round) < 0) card.negate()
+    card.lerp(round, 0.58).normalize()
+    ln.setXYZ(i, card.x, card.y, card.z)
+  }
   return { wood: mergedWood, leaves: mergedLeaves }
 }
 

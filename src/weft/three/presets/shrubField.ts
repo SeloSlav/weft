@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -183,14 +184,17 @@ function shrubFoliageBurnColor(
   return tmpColor
 }
 
-const SHRUB_BRANCH_GEOMS = makeShrubBranchedGeometries()
+let shrubTemplate: ReturnType<typeof makeShrubBranchedGeometries> | undefined
+function getShrubTemplate() {
+  return shrubTemplate ??= makeShrubBranchedGeometries()
+}
 
 export class ShrubFieldEffect {
   readonly group = new THREE.Group()
   readonly foliageInteractionMesh: THREE.InstancedMesh
 
-  private readonly woodGeometry = SHRUB_BRANCH_GEOMS.wood
-  private readonly leafGeometry = SHRUB_BRANCH_GEOMS.leaves
+  private readonly woodGeometry = getShrubTemplate().wood.clone()
+  private readonly leafGeometry = getShrubTemplate().leaves.clone()
   /** Same procedural grain as `treeField` trunks and `logField` logs (`createBarkGrainTexture`). */
   private readonly woodBarkTexture = createBarkGrainTexture()
   private readonly woodMaterial = new THREE.MeshLambertMaterial({
@@ -200,6 +204,7 @@ export class ShrubFieldEffect {
   })
   /** Same shading model as `leafPileBand` ground leaves. */
   private readonly leafMaterial = new THREE.MeshStandardMaterial({
+    vertexColors: true,
     roughness: 0.96,
     metalness: 0.02,
     side: THREE.DoubleSide,
@@ -324,6 +329,10 @@ export class ShrubFieldEffect {
   }
 
   dispose(): void {
+    this.woodMesh.dispose()
+    this.leafMesh.dispose()
+    this.woodGeometry.dispose()
+    this.leafGeometry.dispose()
     this.woodBarkTexture.dispose()
     this.woodMaterial.dispose()
     this.leafMaterial.dispose()
@@ -382,8 +391,8 @@ export class ShrubFieldEffect {
     if (this.params.layoutDensity <= 0 || this.params.sizeScale <= 0 || this.params.heightScale <= 0) {
       this.woodMesh.count = 0
       this.leafMesh.count = 0
-      this.woodMesh.instanceMatrix.needsUpdate = true
-      this.leafMesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(this.woodMesh)
+      updateInstanceMatrices(this.leafMesh)
       this.placements.length = 0
       return
     }
@@ -405,14 +414,14 @@ export class ShrubFieldEffect {
 
     this.woodMesh.count = instanceIndex
     this.leafMesh.count = instanceIndex
-    this.woodMesh.instanceMatrix.needsUpdate = true
-    this.leafMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.woodMesh)
+    updateInstanceMatrices(this.leafMesh)
     this.leafBurnRimAttr.needsUpdate = true
     if (this.woodMesh.instanceColor) {
-      this.woodMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.woodMesh.instanceColor, this.woodMesh.count)
     }
     if (this.leafMesh.instanceColor) {
-      this.leafMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.leafMesh.instanceColor, this.leafMesh.count)
     }
   }
 
@@ -451,10 +460,10 @@ export class ShrubFieldEffect {
         THREE.MathUtils.clamp((leafVisible ? burnField.burn * 0.9 : 0) + burnField.front * 0.45, 0, 1),
       )
     }
-    this.leafMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.leafMesh)
     this.leafBurnRimAttr.needsUpdate = true
     if (this.leafMesh.instanceColor) {
-      this.leafMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.leafMesh.instanceColor, this.leafMesh.count)
     }
   }
 
@@ -498,7 +507,8 @@ export class ShrubFieldEffect {
       if (!this.placementMask.includeAtXZ(x, z)) continue
 
       const noise = shrubOrganicWorldField(x + hashOrg * 0.34, z + hashOrg * 0.28)
-      const keepChance = THREE.MathUtils.clamp(0.46 + noise * 0.42 + meta.spreadBias * 0.18, 0.28, 0.98)
+      const keepChance = THREE.MathUtils.clamp(0.46 + noise * 0.42 + meta.spreadBias * 0.18, 0.28, 0.98) *
+        Math.min(1, this.params.layoutDensity)
       if (hashKeep > keepChance) continue
 
       const groundY = getGroundHeight(x, z)

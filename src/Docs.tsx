@@ -6,6 +6,11 @@ import weftGuideUrl from '../weft.md?url'
 
 const API_GROUPS = [
   {
+    title: 'Landscape looks',
+    description: 'Coordinated grass, stone, shrub, tree, and litter params in SDK units. Pair tree and shrub sources with the preset leafPile.season.',
+    items: ['LANDSCAPE_PRESETS.meadow', 'LANDSCAPE_PRESETS.woodland', 'LANDSCAPE_PRESETS.autumn'],
+  },
+  {
     title: 'Core helpers',
     description: 'Create measured sources and low-level surface configs.',
     items: [

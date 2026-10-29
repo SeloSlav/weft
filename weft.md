@@ -305,6 +305,26 @@ Useful exported types:
 
 ## Preset Selection Guidance
 
+For a coordinated environment, start with `LANDSCAPE_PRESETS` from
+`weft-sdk/three`. Its `meadow`, `woodland`, and `autumn` entries provide full
+`grass`, `rocks`, `shrubs`, `trees`, and `leafPile` params. Spread the desired
+object into the matching factory's `initialParams`. These use SDK densities;
+the demo's quality multipliers are not part of the presets. Use the matching
+`leafPile.season` with `buildTreeSeasonSurface()` and `buildShrubSeasonSurface()`
+when creating seasonal tree and shrub sources.
+
+`DEFAULT_GRASS_FIELD_PARAMS.layoutDensity` is `8`. Wind is GPU-driven under
+WebGPU and has a WebGL shader path. `grass.update(elapsedSeconds, viewCull)` skips
+unchanged visible sets and updates local reactions using stable authored instance
+indices. Hidden blades retain collapsed instance slots until recovery, so the
+mesh instance count includes hidden blades. `grass.updateWind(elapsedSeconds)`
+can advance only wind uniforms when an application schedules reactions less often.
+Keep `update()` running during damage/recovery or camera movement. The authored
+cache spans the whole field; camera visibility is queried separately.
+
+Layout line caches use exact widths and cursors with bounded capacity. They do
+not quantize gameplay widths. Returned arrays and cursors are isolated from the cache.
+
 - Use `createBandFieldEffect()` for terrain-projected strips such as roadsides, root bands, shoreline foam, and narrow clutter corridors.
 - Use `createLeafPileBandEffect()` for verge drifts, gutter accumulations, or other leaf-heavy corridor surfaces with season-aware appearance.
 - Use `createFungusSeamEffect()` for glowing cracks, fungal seams, and other narrow recoverable growth bands.

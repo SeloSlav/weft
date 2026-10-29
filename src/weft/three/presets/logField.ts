@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -294,7 +295,7 @@ export class LogFieldEffect {
       this.placementByKey.clear()
       this.motionStates.clear()
       this.logMesh.count = 0
-      this.logMesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(this.logMesh)
       return
     }
     const rowStep = this.fieldDepth / (ROWS + 1)
@@ -323,9 +324,9 @@ export class LogFieldEffect {
     })
 
     this.logMesh.count = instanceIndex
-    this.logMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.logMesh)
     if (this.logMesh.instanceColor) {
-      this.logMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.logMesh.instanceColor, this.logMesh.count)
     }
   }
 
@@ -644,7 +645,7 @@ export class LogFieldEffect {
       this.logMesh.setMatrixAt(placement.instanceIndex, dummy.matrix)
     }
     if (touchedMatrix) {
-      this.logMesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(this.logMesh)
     }
   }
 

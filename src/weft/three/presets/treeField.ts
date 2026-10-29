@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -138,7 +139,7 @@ const treeOrganicWorldField = createWorldField(1427, {
 })
 
 function makeTrunkGeometry(): THREE.BufferGeometry {
-  return new THREE.CylinderGeometry(0.5, 0.5, 1, 14, 1, false)
+  return new THREE.CylinderGeometry(0.32, 0.5, 1, 9, 1, false)
 }
 
 // warmth encodes season: spring ~ -0.18, summer ~ -0.06, autumn ~ +0.55, winter ~ -0.72
@@ -196,7 +197,10 @@ function treeCrownBurnColor(
   return tmpColor
 }
 
-const TREE_CROWN_GEOMS = makeTreeCrownBranchedGeometries()
+let treeCrownTemplate: ReturnType<typeof makeTreeCrownBranchedGeometries> | undefined
+function getTreeCrownTemplate() {
+  return treeCrownTemplate ??= makeTreeCrownBranchedGeometries()
+}
 
 export class TreeFieldEffect {
   readonly group = new THREE.Group()
@@ -210,8 +214,8 @@ export class TreeFieldEffect {
     emissiveIntensity: 0.28,
   })
   private readonly trunkMesh: THREE.InstancedMesh
-  private readonly crownWoodGeometry = TREE_CROWN_GEOMS.wood
-  private readonly crownLeafGeometry = TREE_CROWN_GEOMS.leaves
+  private readonly crownWoodGeometry = getTreeCrownTemplate().wood.clone()
+  private readonly crownLeafGeometry = getTreeCrownTemplate().leaves.clone()
   /** Same bark tile as trunk; small branch cylinders in the crown read as continuous wood. */
   private readonly crownWoodMaterial = new THREE.MeshLambertMaterial({
     map: this.trunkBarkTexture,
@@ -220,6 +224,7 @@ export class TreeFieldEffect {
   })
   /** Same leaf silhouette + shading model as `shrubField` / `leafPileBand`. */
   private readonly crownLeafMaterial = new THREE.MeshStandardMaterial({
+    vertexColors: true,
     roughness: 0.96,
     metalness: 0.02,
     side: THREE.DoubleSide,
@@ -356,6 +361,9 @@ export class TreeFieldEffect {
   }
 
   dispose(): void {
+    this.trunkMesh.dispose()
+    this.crownWoodMesh.dispose()
+    this.crownLeafMesh.dispose()
     this.trunkBarkTexture.dispose()
     this.trunkGeometry.dispose()
     this.trunkMaterial.dispose()
@@ -422,11 +430,11 @@ export class TreeFieldEffect {
       this.params.crownScale <= 0
     ) {
       this.trunkMesh.count = 0
-      this.trunkMesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(this.trunkMesh)
       this.crownWoodMesh.count = 0
       this.crownLeafMesh.count = 0
-      this.crownWoodMesh.instanceMatrix.needsUpdate = true
-      this.crownLeafMesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(this.crownWoodMesh)
+      updateInstanceMatrices(this.crownLeafMesh)
       this.treePlacements.length = 0
       return
     }
@@ -454,20 +462,20 @@ export class TreeFieldEffect {
     })
 
     this.trunkMesh.count = instanceIndex
-    this.trunkMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.trunkMesh)
     if (this.trunkMesh.instanceColor) {
-      this.trunkMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.trunkMesh.instanceColor, this.trunkMesh.count)
     }
     this.crownWoodMesh.count = instanceIndex
     this.crownLeafMesh.count = instanceIndex
-    this.crownWoodMesh.instanceMatrix.needsUpdate = true
-    this.crownLeafMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.crownWoodMesh)
+    updateInstanceMatrices(this.crownLeafMesh)
     this.crownLeafBurnRimAttr.needsUpdate = true
     if (this.crownWoodMesh.instanceColor) {
-      this.crownWoodMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.crownWoodMesh.instanceColor, this.crownWoodMesh.count)
     }
     if (this.crownLeafMesh.instanceColor) {
-      this.crownLeafMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.crownLeafMesh.instanceColor, this.crownLeafMesh.count)
     }
   }
 
@@ -506,10 +514,10 @@ export class TreeFieldEffect {
         THREE.MathUtils.clamp((crownLeafVisible ? burnField.burn * 0.9 : 0) + burnField.front * 0.45, 0, 1),
       )
     }
-    this.crownLeafMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.crownLeafMesh)
     this.crownLeafBurnRimAttr.needsUpdate = true
     if (this.crownLeafMesh.instanceColor) {
-      this.crownLeafMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.crownLeafMesh.instanceColor, this.crownLeafMesh.count)
     }
   }
 
@@ -552,7 +560,9 @@ export class TreeFieldEffect {
       if (!this.placementMask.includeAtXZ(x, z)) continue
 
       const noise = treeOrganicWorldField(x + hashOrg * 0.24, z + hashOrg * 0.18)
-      const keepChance = THREE.MathUtils.clamp(0.34 + noise * 0.42 + meta.crownBias * 0.14, 0.16, 0.86)
+      // Below one glyph per slot, width alone cannot represent a fractional population.
+      const keepChance = THREE.MathUtils.clamp(0.34 + noise * 0.42 + meta.crownBias * 0.14, 0.16, 0.86) *
+        Math.min(1, this.params.layoutDensity / DEFAULT_TREE_FIELD_PARAMS.layoutDensity)
       if (hashKeep > keepChance) continue
 
       const groundY = getGroundHeight(x, z)

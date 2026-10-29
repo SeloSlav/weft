@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -321,7 +322,7 @@ export class FungusSeamEffect {
       this.params.bandWidth <= 0
     ) {
       this.fungusMesh.count = 0
-      this.fungusMesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(this.fungusMesh)
       return
     }
 
@@ -347,10 +348,10 @@ export class FungusSeamEffect {
     })
 
     this.fungusMesh.count = instanceIndex
-    this.fungusMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.fungusMesh)
     this.fungusBurnRimAttr.needsUpdate = true
     if (this.fungusMesh.instanceColor) {
-      this.fungusMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.fungusMesh.instanceColor, this.fungusMesh.count)
     }
   }
 

@@ -1,3 +1,6 @@
+export { LANDSCAPE_PRESETS } from './presets/landscapePresets.ts'
+export type { LandscapePreset, LandscapePresetId } from './presets/landscapePresets.ts'
+
 export type {
   PresetLayoutViewCull,
   PresetLayoutViewCullFrustumContext,

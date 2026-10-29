@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import { Demo } from './Demo'
-import { Docs } from './Docs'
-import { Editor } from './Editor'
+import { lazy, Suspense, useState } from 'react'
 import { Landing } from './Landing'
-import { SceneryDemo } from './SceneryDemo'
+
+const Demo = lazy(() => import('./Demo').then((module) => ({ default: module.Demo })))
+const Docs = lazy(() => import('./Docs').then((module) => ({ default: module.Docs })))
+const Editor = lazy(() => import('./Editor').then((module) => ({ default: module.Editor })))
+const SceneryDemo = lazy(() => import('./SceneryDemo').then((module) => ({ default: module.SceneryDemo })))
 
 type SitePage = 'home' | 'docs' | 'editor' | 'demo' | 'scenery'
 
@@ -69,17 +70,19 @@ export default function App() {
       </header>
 
       <main className="site-main">
-        {page === 'home' ? (
-          <Landing onEnterEditor={() => setPage('editor')} onEnterScenery={() => setPage('scenery')} />
-        ) : page === 'docs' ? (
-          <Docs onEnterEditor={() => setPage('editor')} />
-        ) : page === 'demo' ? (
-          <Demo />
-        ) : page === 'scenery' ? (
-          <SceneryDemo />
-        ) : (
-          <Editor />
-        )}
+        <Suspense fallback={<p className="hint" role="status">Loading…</p>}>
+          {page === 'home' ? (
+            <Landing onEnterEditor={() => setPage('editor')} onEnterScenery={() => setPage('scenery')} />
+          ) : page === 'docs' ? (
+            <Docs onEnterEditor={() => setPage('editor')} />
+          ) : page === 'demo' ? (
+            <Demo />
+          ) : page === 'scenery' ? (
+            <SceneryDemo />
+          ) : (
+            <Editor />
+          )}
+        </Suspense>
       </main>
     </div>
   )

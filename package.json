@@ -58,6 +58,8 @@
     "build:sdk": "tsup",
     "build:demo": "tsc && vite build",
     "preview": "vite preview",
+    "validate:baseline": "node tests/prepare-baseline.mjs",
+    "validate:types": "tsc -p tests/tsconfig.json",
     "pack:check": "npm pack --dry-run",
     "prepack": "npm run build:sdk"
   },

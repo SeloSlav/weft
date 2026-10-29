@@ -135,7 +135,7 @@ export class ToonShadingPipeline {
         float(1.0),
       )
 
-      const finalColor = posterized.mul(edgeFactor)
+      const finalColor = posterized.rgb.mul(edgeFactor)
 
       return vec4(finalColor, float(1.0))
     })

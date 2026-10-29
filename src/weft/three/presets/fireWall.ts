@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -359,9 +360,9 @@ export class FireWallEffect {
     })
 
     this.particleMesh.count = instanceIndex
-    this.particleMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.particleMesh)
     if (this.particleMesh.instanceColor) {
-      this.particleMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.particleMesh.instanceColor, this.particleMesh.count)
     }
   }
 }

@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -985,9 +986,9 @@ export class ShellSurfaceEffect {
     })
 
     this.scaleMesh.count = instanceIndex
-    this.scaleMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.scaleMesh)
     if (this.scaleMesh.instanceColor) {
-      this.scaleMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.scaleMesh.instanceColor, this.scaleMesh.count)
     }
   }
 

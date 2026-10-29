@@ -10,6 +10,8 @@ import {
   DEFAULT_STAR_SKY_PARAMS,
   DEFAULT_STICK_FIELD_PARAMS,
   LEAF_PILE_SEASONS,
+  LANDSCAPE_PRESETS,
+  type LandscapePresetId,
 } from "./weft/three";
 import {
   DEFAULT_SCENERY_TERRAIN_RELIEF_PARAMS,
@@ -20,6 +22,8 @@ import {
   DEMO_GRASS_DISTURBANCE_RADIUS_DEFAULT,
   DEMO_GRASS_DISTURBANCE_RADIUS_MAX,
   DEMO_GRASS_LAYOUT_DENSITY_MAX,
+  PLAYGROUND_GRASS_LAYOUT_SCALE,
+  PLAYGROUND_ROCK_LAYOUT_SCALE,
 } from "./playground/playgroundQuality";
 import {
   formatPlaygroundPerfClipboardText,
@@ -42,22 +46,22 @@ const LEAF_PILE_SEASON_LABELS = {
 const FOLIAGE_SEASON_CYCLE = ["auto", ...LEAF_PILE_SEASONS] as const;
 
 const SCENERY_DEMO_GRASS_LAYOUT_DENSITY_DEFAULT = 14;
-const SCENERY_DEMO_GRASS_BLADE_WIDTH_SCALE_DEFAULT = 1.2;
-const SCENERY_DEMO_GRASS_BLADE_HEIGHT_SCALE_DEFAULT = 1.0;
+const SCENERY_DEMO_GRASS_BLADE_WIDTH_SCALE_DEFAULT = LANDSCAPE_PRESETS.woodland.grass.bladeWidthScale;
+const SCENERY_DEMO_GRASS_BLADE_HEIGHT_SCALE_DEFAULT = LANDSCAPE_PRESETS.woodland.grass.bladeHeightScale;
 const SCENERY_DEMO_BAND_LAYOUT_DENSITY_DEFAULT = 0.58;
 const SCENERY_DEMO_UNDERSTORY_WIDTH_DEFAULT = 2.2;
 const SCENERY_DEMO_UNDERSTORY_SIZE_SCALE_DEFAULT = 0.95;
 const SCENERY_DEMO_LEAF_PILE_WIDTH_DEFAULT = 2.1;
-const SCENERY_DEMO_LEAF_PILE_SIZE_SCALE_DEFAULT = 1.2;
-const SCENERY_DEMO_ROCK_LAYOUT_DENSITY_DEFAULT = 1.2;
-const SCENERY_DEMO_ROCK_SIZE_SCALE_DEFAULT = 2.3;
-const SCENERY_DEMO_SHRUB_LAYOUT_DENSITY_DEFAULT = 0.78;
-const SCENERY_DEMO_SHRUB_SIZE_SCALE_DEFAULT = 1.95;
-const SCENERY_DEMO_SHRUB_HEIGHT_SCALE_DEFAULT = 2.55;
-const SCENERY_DEMO_TREE_LAYOUT_DENSITY_DEFAULT = 0.48;
+const SCENERY_DEMO_LEAF_PILE_SIZE_SCALE_DEFAULT = LANDSCAPE_PRESETS.woodland.leafPile.sizeScale;
+const SCENERY_DEMO_ROCK_LAYOUT_DENSITY_DEFAULT = LANDSCAPE_PRESETS.woodland.rocks.layoutDensity / PLAYGROUND_ROCK_LAYOUT_SCALE;
+const SCENERY_DEMO_ROCK_SIZE_SCALE_DEFAULT = LANDSCAPE_PRESETS.woodland.rocks.sizeScale;
+const SCENERY_DEMO_SHRUB_LAYOUT_DENSITY_DEFAULT = LANDSCAPE_PRESETS.woodland.shrubs.layoutDensity / PLAYGROUND_ROCK_LAYOUT_SCALE;
+const SCENERY_DEMO_SHRUB_SIZE_SCALE_DEFAULT = LANDSCAPE_PRESETS.woodland.shrubs.sizeScale;
+const SCENERY_DEMO_SHRUB_HEIGHT_SCALE_DEFAULT = LANDSCAPE_PRESETS.woodland.shrubs.heightScale;
+const SCENERY_DEMO_TREE_LAYOUT_DENSITY_DEFAULT = LANDSCAPE_PRESETS.woodland.trees.layoutDensity / PLAYGROUND_ROCK_LAYOUT_SCALE;
 const SCENERY_DEMO_TREE_SIZE_SCALE_DEFAULT = 1.6;
-const SCENERY_DEMO_TREE_HEIGHT_SCALE_DEFAULT = 1.75;
-const SCENERY_DEMO_TREE_CROWN_SCALE_DEFAULT = 0.6;
+const SCENERY_DEMO_TREE_HEIGHT_SCALE_DEFAULT = LANDSCAPE_PRESETS.woodland.trees.heightScale;
+const SCENERY_DEMO_TREE_CROWN_SCALE_DEFAULT = LANDSCAPE_PRESETS.woodland.trees.crownScale;
 const SCENERY_DEMO_STICK_LAYOUT_DENSITY_DEFAULT = 0.36;
 const SCENERY_DEMO_STICK_SIZE_SCALE_DEFAULT = 1.75;
 const SCENERY_DEMO_STICK_LENGTH_SCALE_DEFAULT = 1.8;
@@ -91,6 +95,7 @@ function ControlSection({ title, summary, children }: ControlSectionProps) {
 
 /** Large grass field using the same Playground runtime and controls; town content omitted. */
 export function SceneryDemo() {
+  const [landscapePreset, setLandscapePreset] = useState<LandscapePresetId>('woodland');
   const hostRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef<PlaygroundRuntime | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -108,7 +113,7 @@ export function SceneryDemo() {
   const [trampleDepth, setTrampleDepth] = useState(
     DEFAULT_GRASS_FIELD_PARAMS.trampleDepth,
   );
-  const [wind, setWind] = useState(DEFAULT_GRASS_FIELD_PARAMS.wind);
+  const [wind, setWind] = useState(LANDSCAPE_PRESETS.woodland.grass.wind);
   const [recoveryRate, setRecoveryRate] = useState(
     DEFAULT_GRASS_FIELD_PARAMS.recoveryRate,
   );
@@ -267,7 +272,7 @@ export function SceneryDemo() {
     DEFAULT_STAR_SKY_PARAMS.recoveryRate,
   );
   const [skyMode, setSkyMode] = useState<"night" | "day">("day");
-  const [toonEnabled, setToonEnabled] = useState(true);
+  const [toonEnabled, setToonEnabled] = useState(false);
   const [toonBands, setToonBands] = useState(8);
   const [toonEdgeStrength, setToonEdgeStrength] = useState(0.6);
   const [toonEdgeThreshold, setToonEdgeThreshold] = useState(0.15);
@@ -605,6 +610,36 @@ export function SceneryDemo() {
     });
   }, [toonEnabled, toonBands, toonEdgeStrength, toonEdgeThreshold]);
 
+  function applyLandscapePreset(id: LandscapePresetId) {
+    const preset = LANDSCAPE_PRESETS[id];
+    setLandscapePreset(id);
+    setGrassLayoutDensity(preset.grass.layoutDensity / PLAYGROUND_GRASS_LAYOUT_SCALE);
+    setGrassBladeWidthScale(preset.grass.bladeWidthScale);
+    setGrassBladeHeightScale(preset.grass.bladeHeightScale);
+    setWind(preset.grass.wind);
+    setFoliageSeasonOverride(preset.leafPile.season);
+    setRockLayoutDensity(preset.rocks.layoutDensity / PLAYGROUND_ROCK_LAYOUT_SCALE);
+    setRockSizeScale(preset.rocks.sizeScale);
+    setShrubLayoutDensity(preset.shrubs.layoutDensity / PLAYGROUND_ROCK_LAYOUT_SCALE);
+    setShrubSizeScale(preset.shrubs.sizeScale);
+    setShrubHeightScale(preset.shrubs.heightScale);
+    setTreeLayoutDensity(preset.trees.layoutDensity / PLAYGROUND_ROCK_LAYOUT_SCALE);
+    setTreeSizeScale(preset.trees.sizeScale);
+    setTreeHeightScale(preset.trees.heightScale);
+    setTreeCrownScale(preset.trees.crownScale);
+    setBandLayoutDensity(preset.leafPile.layoutDensity / PLAYGROUND_GRASS_LAYOUT_SCALE);
+    setLeafPileSizeScale(preset.leafPile.sizeScale);
+    setLeafPileWidth(preset.leafPile.bandWidth);
+    setShowLogs(id !== 'meadow');
+    setShowSticks(id !== 'meadow');
+    setShowTrees(true);
+    setShowShrubs(true);
+    setShowRocks(true);
+    setShowLeafPiles(true);
+    setSkyMode('day');
+    runtimeRef.current?.clearAllEffects();
+  }
+
   return (
     <div className="app-shell">
       <aside
@@ -645,6 +680,17 @@ export function SceneryDemo() {
 
             <section className="sample-detail">
               <div className="sample-controls">
+
+                <ControlSection title="Landscape" summary="Curated surface presets">
+                  <label className="control">
+                    <span>Landscape preset</span>
+                    <select value={landscapePreset} onChange={(event) => applyLandscapePreset(event.target.value as LandscapePresetId)}>
+                      {Object.entries(LANDSCAPE_PRESETS).map(([id, preset]) => <option key={id} value={id}>{preset.name}</option>)}
+                    </select>
+                  </label>
+                  <p className="hint">{LANDSCAPE_PRESETS[landscapePreset].description}</p>
+                  <button type="button" className="btn" onClick={() => applyLandscapePreset(landscapePreset)}>Reset preset</button>
+                </ControlSection>
 
                 <ControlSection title="Sky" summary="Atmosphere">
                   <label className="control">

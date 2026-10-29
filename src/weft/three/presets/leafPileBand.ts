@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -435,7 +436,7 @@ export class LeafPileBandEffect {
       this.params.bandWidth <= 0
     ) {
       this.leafMesh.count = 0
-      this.leafMesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(this.leafMesh)
       return
     }
 
@@ -471,10 +472,10 @@ export class LeafPileBandEffect {
     this.disturbances.length = 0
 
     this.leafMesh.count = instanceIndex
-    this.leafMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.leafMesh)
     this.leafBurnRimAttr.needsUpdate = true
     if (this.leafMesh.instanceColor) {
-      this.leafMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.leafMesh.instanceColor, this.leafMesh.count)
     }
   }
 

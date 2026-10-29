@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -299,7 +300,7 @@ export class NeedleLitterFieldEffect {
   ): void {
     if (this.params.layoutDensity <= 0 || this.params.sizeScale <= 0) {
       this.needleMesh.count = 0
-      this.needleMesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(this.needleMesh)
       return
     }
 
@@ -329,9 +330,9 @@ export class NeedleLitterFieldEffect {
     })
 
     this.needleMesh.count = instanceIndex
-    this.needleMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.needleMesh)
     if (this.needleMesh.instanceColor) {
-      this.needleMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.needleMesh.instanceColor, this.needleMesh.count)
     }
   }
 

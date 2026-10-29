@@ -49,6 +49,24 @@ It is not trying to replace every biome or world-simulation system. It works bes
 
 ## Shipped presets
 
+`LANDSCAPE_PRESETS` provides three coordinated looks: `meadow` (Open meadow),
+`woodland` (Fern glade), and `autumn` (Amber woodland). Each contains complete
+`grass`, `rocks`, `shrubs`, `trees`, and `leafPile` parameter objects in SDK units.
+The first-person demo includes a landscape selector and a reset button.
+
+```ts
+import { createGrassEffect, LANDSCAPE_PRESETS } from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
+
+const grass = createGrassEffect({
+  seedCursor,
+  initialParams: { ...LANDSCAPE_PRESETS.meadow.grass },
+})
+scene.add(grass.group)
+// Supply scene lighting, then update before rendering each frame.
+grass.update(elapsedSeconds)
+```
+
 Current public presets include:
 
 - `createBandFieldEffect()`
@@ -151,6 +169,20 @@ npm run dev
 ```
 
 The local site is WebGPU-only.
+
+Grass wind runs on the GPU. Unchanged visible cells skip CPU matrix and color
+updates, while disturbances update affected cells and restore them after recovery.
+Camera culling uses the full authored placement cache, so newly visited areas keep
+their grass. Presets upload live buffer ranges rather than their entire capacities.
+
+The default grass density is now `8` (previously `200`); explicit overrides still
+work. Grass blades have grounded roots and fewer triangles. Tree and shrub foliage
+uses folded leaves, varied branch elevations, crown normals, and independent burn
+attributes. Low tree/shrub densities also thin the population below one glyph per slot.
+
+For reproducible browser checks, open `/tests/browser.html` with the dev server
+running. See [performance validation](./tests/PERFORMANCE.md) for measured CPU
+costs, comparison setup, and limitations.
 
 ## Credits
 

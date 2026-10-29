@@ -56,6 +56,8 @@ type LayoutTraversalOptions<TokenId extends string = string, Meta = unknown> = {
 }
 
 const ROOT_CURSOR: LayoutCursor = { segmentIndex: 0, graphemeIndex: 0 }
+const MAX_LINE_CACHE = 2048
+const MAX_GLYPH_CACHE = 512
 
 function cloneCursor(cursor: LayoutCursor): LayoutCursor {
   return { segmentIndex: cursor.segmentIndex, graphemeIndex: cursor.graphemeIndex }
@@ -98,6 +100,13 @@ export class SurfaceLayoutDriver<TokenId extends string = string, Meta = unknown
   private readonly minSpanFactor: number
   private readonly minLayoutWidth: number
   private readonly bandSeeds: LayoutCursor[]
+  // Exact widths and cursors only: damage must never be quantized to a cached width.
+  private readonly lineCache = new Map<string, ReturnType<typeof layoutNextLineOrRewind>>()
+  private readonly glyphCache = new Map<string, {
+    glyphs: string[]
+    resolvedGlyphs: ResolvedSurfaceGlyph<TokenId, Meta>[]
+    tokenLineKey: string
+  }>()
 
   constructor({
     surface,
@@ -163,23 +172,36 @@ export class SurfaceLayoutDriver<TokenId extends string = string, Meta = unknown
         if (requestedWidth <= 0) continue
         const maxWidth = Math.max(this.minLayoutWidth, requestedWidth)
         const cursorStart = cloneCursor(cursor)
-        const laidOut = layoutNextLineOrRewind(this.prepared, cursorStart, maxWidth)
+        const cacheKey = `${cursorStart.segmentIndex}:${cursorStart.graphemeIndex}:${maxWidth}`
+        let laidOut = this.lineCache.get(cacheKey)
+        if (laidOut === undefined) {
+          laidOut = layoutNextLineOrRewind(this.prepared, cursorStart, maxWidth)
+          if (this.lineCache.size >= MAX_LINE_CACHE) this.lineCache.delete(this.lineCache.keys().next().value!)
+          this.lineCache.set(cacheKey, laidOut)
+        }
         if (laidOut === null) continue
 
-        cursor = laidOut.cursorEnd
-        const glyphs = graphemesOf(laidOut.line.text).filter((glyph) => !/^\s+$/.test(glyph))
-        if (glyphs.length === 0) continue
-        const resolvedGlyphs = glyphs
-          .map((glyph) => this.surface.glyphLookup.get(glyph))
-          .filter((glyph): glyph is ResolvedSurfaceGlyph<TokenId, Meta> => glyph !== undefined)
-        if (resolvedGlyphs.length !== glyphs.length) continue
+        cursor = cloneCursor(laidOut.cursorEnd)
+        let decoded = this.glyphCache.get(laidOut.line.text)
+        if (!decoded) {
+          const glyphs = graphemesOf(laidOut.line.text).filter((glyph) => !/^\s+$/.test(glyph))
+          if (glyphs.length === 0) continue
+          const resolvedGlyphs = glyphs
+            .map((glyph) => this.surface.glyphLookup.get(glyph))
+            .filter((glyph): glyph is ResolvedSurfaceGlyph<TokenId, Meta> => glyph !== undefined)
+          if (resolvedGlyphs.length !== glyphs.length) continue
+          decoded = { glyphs, resolvedGlyphs, tokenLineKey: resolvedGlyphs.map((glyph) => glyph.id).join('|') }
+          if (this.glyphCache.size >= MAX_GLYPH_CACHE) this.glyphCache.delete(this.glyphCache.keys().next().value!)
+          this.glyphCache.set(laidOut.line.text, decoded)
+        }
 
         onLine({
           slot,
           lineText: laidOut.line.text,
-          glyphs,
-          resolvedGlyphs,
-          tokenLineKey: resolvedGlyphs.map((glyph) => glyph.id).join('|'),
+          // Callbacks may retain or mutate their arrays/cursors; never expose the cache entries.
+          glyphs: decoded.glyphs.slice(),
+          resolvedGlyphs: decoded.resolvedGlyphs.slice(),
+          tokenLineKey: decoded.tokenLineKey,
           maxWidth,
           cursorStart,
           cursorEnd: cloneCursor(laidOut.cursorEnd),

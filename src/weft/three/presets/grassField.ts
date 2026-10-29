@@ -1,4 +1,6 @@
 import * as THREE from 'three'
+import { attribute, uniform, positionLocal, uv, vec2, vec3, float, sin, smoothstep, mix, materialColor } from 'three/tsl'
+import { updateActiveAttribute, updateAttributeSpan, trackInstanceUploads } from '../helpers/bufferUpdates'
 import type {
   PreparedSurfaceSource,
   SeedCursorFactory,
@@ -18,11 +20,7 @@ import {
   type GrassTokenId,
   type GrassTokenMeta,
 } from './grassFieldSource'
-import {
-  shouldVisitSlotForViewCull,
-  type PresetLayoutViewCull,
-  type PresetLayoutViewCullFrustumContext,
-} from './presetLayoutCull'
+import type { PresetLayoutViewCull } from './presetLayoutCull'
 import { BURN_NEON_RIM_COLOR_FRAGMENT, createBurnRimInstancedAttribute } from './burnNeonRim'
 
 export type GrassFieldParams = {
@@ -56,12 +54,9 @@ export const DEFAULT_GRASS_FIELD_PARAMS: GrassFieldParams = {
   burnRecoveryRate: 0.0042,
   state: 0,
   colorSeason: null,
-  /** High default; playground quality still scales density. Editor slider max allows pushing further. */
-  layoutDensity: 200,
-  /** Wider billboards so clumps read as small leaf rosettes, not hair-thin blades. */
-  bladeWidthScale: 1.42,
-  /** ~⅓ of the previous default visual height (taller mesh was 1.08×2.9; shorter leaf mesh uses this scale). */
-  bladeHeightScale: 1.12,
+  layoutDensity: 8,
+  bladeWidthScale: 1.65,
+  bladeHeightScale: 1.05,
 }
 
 export type GrassFieldBounds = {
@@ -111,13 +106,13 @@ const ZERO_GRASS_BURN_FIELD = { burn: 0, front: 0, cull: 0 }
 const dummy = new THREE.Object3D()
 
 const STATE_BLADE_BASE = [
-  new THREE.Color('#3a7a20'),
+  new THREE.Color('#355b32'),
   new THREE.Color('#a07a18'),
   new THREE.Color('#3d1660'),
   new THREE.Color('#4e4840'),
 ] as const
 const STATE_BLADE_TIP = [
-  new THREE.Color('#b8e870'),
+  new THREE.Color('#a5be73'),
   new THREE.Color('#ffe080'),
   new THREE.Color('#d080ff'),
   new THREE.Color('#ccc5b8'),
@@ -236,8 +231,9 @@ function makeBladeGeometry(): THREE.BufferGeometry {
   const bladeHeight = 0.92
   const bladeWidth = 0.44
   const baseY = -0.048
-  const geometry = new THREE.PlaneGeometry(bladeWidth, bladeHeight, 1, 6)
+  const geometry = new THREE.PlaneGeometry(bladeWidth, bladeHeight, 1, 4)
   const position = geometry.attributes.position
+  const colors = new Float32Array(position.count * 3)
   const halfH = bladeHeight * 0.5
 
   for (let i = 0; i < position.count; i++) {
@@ -252,13 +248,16 @@ function makeBladeGeometry(): THREE.BufferGeometry {
     position.setXYZ(
       i,
       x * taper + ribbon,
-      y + baseY,
+      y01 * bladeHeight + baseY,
       curl + edge * edge * lean,
     )
+    const shade = THREE.MathUtils.lerp(0.38, 1, Math.pow(y01, 0.65))
+    colors.set([shade, shade, shade * THREE.MathUtils.lerp(0.9, 1, y01)], i * 3)
   }
 
   position.needsUpdate = true
   geometry.computeVertexNormals()
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
   return geometry
 }
 
@@ -302,25 +301,6 @@ function addGrassCellKeysInDisc(
         tmpBox.applyMatrix4(grassGroup.matrixWorld)
         if (!frustum.intersectsBox(tmpBox)) continue
       }
-      out.add(ix * 100_042_069 + iz)
-    }
-  }
-}
-
-function addGrassCellKeysInAabb(
-  minX: number,
-  maxX: number,
-  minZ: number,
-  maxZ: number,
-  pad: number,
-  out: Set<number>,
-): void {
-  const minIx = Math.floor((minX - pad) / BLADE_CELL_SIZE)
-  const maxIx = Math.floor((maxX + pad) / BLADE_CELL_SIZE)
-  const minIz = Math.floor((minZ - pad) / BLADE_CELL_SIZE)
-  const maxIz = Math.floor((maxZ + pad) / BLADE_CELL_SIZE)
-  for (let ix = minIx; ix <= maxIx; ix++) {
-    for (let iz = minIz; iz <= maxIz; iz++) {
       out.add(ix * 100_042_069 + iz)
     }
   }
@@ -530,9 +510,10 @@ export class GrassFieldEffect {
 
   private readonly bladeGeometry = makeBladeGeometry()
   private readonly bladeMaterial = new THREE.MeshStandardMaterial({
-    color: '#d3f48d',
-    emissive: '#35580f',
-    emissiveIntensity: 0.22,
+    color: '#ffffff',
+    vertexColors: true,
+    emissive: '#21351b',
+    emissiveIntensity: 0.08,
     side: THREE.DoubleSide,
     /** Fully diffuse: avoids view-dependent IBL/specular shimmer on the sun-facing side. */
     roughness: 1,
@@ -570,6 +551,16 @@ export class GrassFieldEffect {
   /** Blade indices per spatial cell (`bladeCellKey`); rebuilt with the blade cache. */
   private readonly bladeCellBuckets = new Map<number, number[]>()
   private readonly activeCellKeysScratch = new Set<number>()
+  private readonly previousActiveCellKeys = new Set<number>()
+  private previousUsedCull = false
+  private readonly renderedBladeIndices = new Int32Array(MAX_INSTANCES).fill(-1)
+  private readonly reactionBlades = new Set<number>()
+  private readonly reactionCandidates = new Set<number>()
+  private readonly reactionCellKeys = new Set<number>()
+  private bladeRestMatrices = new Float32Array(0)
+  private bladeRestMatricesDirty = true
+  private readonly gpuWindTime = uniform(0)
+  private readonly gpuWindStrength = uniform(0)
   private bladeWindPhaseAttr!: THREE.InstancedBufferAttribute
   private readonly bladeBurnRimAttr: THREE.InstancedBufferAttribute
   private readonly bladeShaderUniforms: Record<string, THREE.IUniform<number>> = {
@@ -582,7 +573,6 @@ export class GrassFieldEffect {
   private bladeCacheDirty = true
   private baseBladeColorsDirty = true
   private frameLayoutViewCull: PresetLayoutViewCull | null = null
-  private prevHadLayoutViewCull: boolean | null = null
   private readonly tmpViewCullBox = new THREE.Box3()
   private params: GrassFieldParams
 
@@ -611,6 +601,7 @@ export class GrassFieldEffect {
 
     this.bladeMesh.frustumCulled = false
     this.bladeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
+    trackInstanceUploads(this.bladeMesh)
     this.interactionMesh = new THREE.Mesh(this.groundGeometry, this.interactionMaterial)
     this.interactionMesh.rotation.x = -Math.PI / 2
     this.groundSurfaceMesh.rotation.x = -Math.PI / 2
@@ -633,12 +624,29 @@ export class GrassFieldEffect {
   }
 
   private patchGrassBladeMaterial(): void {
+    // WebGPU converts standard materials to node materials and copies these nodes.
+    // Retain onBeforeCompile below for WebGLRenderer integrations.
+    const phase = vec2(attribute('windPhase', 'vec2'))
+    const height = uv().y
+    const rooted = smoothstep(0, 1, height).pow(2)
+    const gust = sin(this.gpuWindTime.mul(1.55).add(phase.x))
+      .add(sin(this.gpuWindTime.mul(2.8).add(phase.y)).mul(0.55))
+    const sway = gust.mul(this.gpuWindStrength).mul(rooted)
+    const rim = float(attribute('burnRim', 'float'))
+    Object.assign(this.bladeMaterial, {
+      positionNode: positionLocal.add(vec3(sway.mul(0.12), rooted.mul(gust.abs()).mul(this.gpuWindStrength).mul(-0.025), sway.mul(0.07))),
+      colorNode: vec3(materialColor).mul(mix(vec3(1), vec3(1.12, 0.92, 0.72), smoothstep(0.6, 1, height).mul(0.22))),
+      emissiveNode: vec3(1, 0.18, 0.008).mul(rim.pow(2).mul(1.8)),
+    })
     this.bladeMaterial.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, this.bladeShaderUniforms)
 
       shader.vertexShader = shader.vertexShader.replace(
         '#include <common>',
         `#include <common>
+uniform float uGrassWindTime;
+uniform float uGrassWindStrength;
+uniform float uGrassGpuWind;
 attribute vec2 windPhase;
 attribute float burnRim;
 varying float vGrassHeight;
@@ -659,7 +667,7 @@ vGrassEdge = abs( uv.x - 0.5 ) * 2.0;
   float gust = sin( uGrassWindTime * 1.55 + wp.x ) + 0.55 * sin( uGrassWindTime * 2.8 + wp.y );
   float tip = smoothstep( 0.14, 1.0, uv.y );
   float edgeSigned = uv.x - 0.5;
-  float windMask = pow( smoothstep( 0.0, 0.38, uv.y ), 2.85 );
+  float windMask = pow( smoothstep( 0.0, 1.0, uv.y ), 2.0 );
   float sway = gust * uGrassWindStrength * 0.15 * windMask * gGpu;
   float bendAmt = ( 0.26 + abs( gust ) * 0.2 ) * uGrassWindStrength * windMask * gGpu;
   transformed.x += edgeSigned * tip * 0.035;
@@ -683,7 +691,7 @@ varying float vBurnRim;
         '#include <color_fragment>',
         `#include <color_fragment>
 {
-  float bladeAo = mix( 0.4, 1.0, smoothstep( 0.0, 0.52, vGrassHeight ) );
+  float bladeAo = mix( 0.85, 1.0, smoothstep( 0.0, 0.52, vGrassHeight ) );
   float edgeShade = mix( 0.9, 1.0, 1.0 - smoothstep( 0.3, 1.0, vGrassEdge ) );
   float tipLift = mix( 0.94, 1.06, smoothstep( 0.42, 1.0, vGrassHeight ) );
   diffuseColor.rgb *= bladeAo * edgeShade * tipLift;
@@ -698,7 +706,7 @@ totalEmissiveRadiance *= mix( 0.34, 1.0, smoothstep( 0.0, 0.48, vGrassHeight ) )
 ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
       )
     }
-    this.bladeMaterial.customProgramCacheKey = () => 'grass-blade-wind-ao-v8-burn-neon-no-env'
+    this.bladeMaterial.customProgramCacheKey = () => 'grass-blade-wind-ao-v9-rooted-burn-no-env'
     this.bladeMaterial.needsUpdate = true
   }
 
@@ -706,6 +714,8 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     const prevStateIndex = this.stateIndex()
     const prevLayoutDensity = this.params.layoutDensity
     const prevColorSeason = this.params.colorSeason ?? null
+    const prevWidth = this.params.bladeWidthScale
+    const prevHeight = this.params.bladeHeightScale
     this.params = { ...this.params, ...params }
     if (
       this.stateIndex() !== prevStateIndex ||
@@ -713,6 +723,10 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
       (this.params.colorSeason ?? null) !== prevColorSeason
     ) {
       this.bladeCacheDirty = true
+    }
+    if (prevWidth !== this.params.bladeWidthScale || prevHeight !== this.params.bladeHeightScale) {
+      this.baseBladeColorsDirty = true
+      this.bladeRestMatricesDirty = true
     }
     this.groundMaterial.color.copy(this.groundTintColor())
     for (const disturbance of this.disturbances) {
@@ -858,11 +872,6 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
   }
 
   update(elapsedTime: number, layoutViewCull?: PresetLayoutViewCull | null): void {
-    const hasCull = layoutViewCull != null
-    if (this.prevHadLayoutViewCull !== hasCull) {
-      this.bladeCacheDirty = true
-      this.prevHadLayoutViewCull = hasCull
-    }
     this.frameLayoutViewCull = layoutViewCull ?? null
     const delta = this.lastElapsedTime === 0 ? 0 : Math.max(0, elapsedTime - this.lastElapsedTime)
     this.lastElapsedTime = elapsedTime
@@ -871,7 +880,16 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     this.updateBlades(elapsedTime)
   }
 
+  /** Keep wind smooth when an application runs reactions on a slower cadence. */
+  updateWind(elapsedTime: number): void {
+    this.bladeShaderUniforms.uGrassWindTime.value = elapsedTime
+    this.bladeShaderUniforms.uGrassWindStrength.value = this.params.wind
+    this.gpuWindTime.value = elapsedTime
+    this.gpuWindStrength.value = this.params.wind
+  }
+
   dispose(): void {
+    this.bladeMesh.dispose()
     this.bladeGeometry.dispose()
     this.bladeMaterial.dispose()
     this.groundTexture.dispose()
@@ -1078,12 +1096,12 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     if (this.bladeCacheDirty) {
       this.rebuildBladeCache()
     }
+    if (this.bladeRestMatricesDirty) this.rebuildRestMatrices()
 
     const hasDisturbances = this.disturbances.length > 0
     const hasBurns = this.burns.length > 0
     const needsDynamicBladeColor = hasDisturbances || hasBurns
-    this.bladeShaderUniforms.uGrassWindTime.value = elapsedTime
-    this.bladeShaderUniforms.uGrassWindStrength.value = this.params.wind
+    this.updateWind(elapsedTime)
     /** Wind sway is vertex-only (anchored base); CPU no longer rotates the whole blade for wind. */
     this.bladeShaderUniforms.uGrassGpuWind.value = 1
 
@@ -1131,22 +1149,54 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
         this.group,
         this.tmpViewCullBox,
       )
-      if (effectBounds) {
-        addGrassCellKeysInAabb(
-          effectBounds.minX,
-          effectBounds.maxX,
-          effectBounds.minZ,
-          effectBounds.maxZ,
-          2.5,
-          activeCellKeys,
-        )
-      }
     }
+
+    // Wind is entirely on the GPU. An unchanged visible set needs no matrix/color work.
+    const sameCells = this.previousUsedCull === Boolean(cull) && (activeCellKeys
+      ? activeCellKeys.size === this.previousActiveCellKeys.size &&
+        [...activeCellKeys].every((key) => this.previousActiveCellKeys.has(key))
+      : this.previousActiveCellKeys.size === 0)
+    if (!needsDynamicBladeColor && this.reactionBlades.size === 0 && !this.baseBladeColorsDirty && sameCells) return
+    const incremental = sameCells && !this.baseBladeColorsDirty
+    this.previousActiveCellKeys.clear()
+    this.previousUsedCull = Boolean(cull)
+    if (activeCellKeys) for (const key of activeCellKeys) this.previousActiveCellKeys.add(key)
+
+    this.reactionCandidates.clear()
+    if (incremental) {
+      for (const i of this.reactionBlades) this.reactionCandidates.add(i)
+      this.reactionCellKeys.clear()
+      const impacts = [...this.disturbances, ...this.burns]
+      for (const impact of impacts) {
+        addGrassCellKeysInDisc(impact.x, impact.z, impact.radius + 0.6, 0,
+          this.reactionCellKeys, null, this.group, this.tmpViewCullBox)
+      }
+      for (const key of this.reactionCellKeys) {
+        const bucket = this.bladeCellBuckets.get(key)
+        if (bucket) for (const i of bucket) {
+          if (this.renderedBladeIndices[i] < 0) continue
+          const blade = this.cachedBlades[i]!
+          for (const impact of impacts) {
+            const dx = blade.x - impact.x
+            const dz = blade.z - impact.z
+            if (dx * dx + dz * dz <= (impact.radius + 0.6) ** 2) {
+              this.reactionCandidates.add(i)
+              break
+            }
+          }
+        }
+      }
+    } else {
+      this.renderedBladeIndices.fill(-1)
+    }
+    this.reactionBlades.clear()
 
     const windArr = this.bladeWindPhaseAttr.array as Float32Array
     let instanceIndex = 0
+    let firstChanged = Infinity
+    let lastChanged = -1
 
-    const processBlade = (i: number): void => {
+    const processBlade = (i: number, targetIndex?: number): void => {
       const blade = this.cachedBlades[i]!
       if (cull && !activeCellKeys) {
         const dx = blade.x - camLX
@@ -1164,6 +1214,11 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
           }
         }
       }
+      const outputIndex = targetIndex ?? instanceIndex++
+      this.renderedBladeIndices[i] = outputIndex
+      firstChanged = Math.min(firstChanged, outputIndex)
+      lastChanged = Math.max(lastChanged, outputIndex)
+      let hidden = false
       let localDisturbance = 0
       let awayX = 0
       let awayZ = 1
@@ -1179,7 +1234,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
         awayX = disturbance.awayX
         awayZ = disturbance.awayZ
         const localCoverage = THREE.MathUtils.lerp(statePresence, disturbedPresence, localDisturbance) * blade.coverageMultiplier
-        if (blade.hashPresence > localCoverage) return
+        hidden = blade.hashPresence > localCoverage
       }
 
       const burnField = hasBurns ? this.burnFieldAt(blade.x, blade.z, tmpGrassBurnField) : ZERO_GRASS_BURN_FIELD
@@ -1187,13 +1242,14 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
       /** Presence gate (stronger than visual burn): bare patch matches shot footprint, then regrows as strength fades. */
       if (hasBurns) {
         /** Game shots cap strength below 1; boost so the bare patch still clears almost all blades. */
-        const burnCullStrength = THREE.MathUtils.clamp(0.05 + burnField.cull * 1.06, 0, 1)
+        const burnCullStrength = THREE.MathUtils.clamp(burnField.cull * 1.11, 0, 1)
         if (burnCullStrength > 0.004) {
           const burnPresenceLimit =
             THREE.MathUtils.lerp(statePresence, 0, burnCullStrength) * blade.coverageMultiplier
-          if (blade.hashPresence > burnPresenceLimit) return
+          hidden ||= blade.hashPresence > burnPresenceLimit
         }
       }
+      if (localDisturbance > 0 || burnField.burn > 0 || burnField.front > 0 || hidden) this.reactionBlades.add(i)
 
       /** Charred blades keep most of their height: laser trample + burn shrink stacked invisibly. */
       const burnTrampleShield = THREE.MathUtils.clamp(
@@ -1210,31 +1266,36 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
       /** Strong burn can nearly flatten blades; floor keeps a stub so instances stay valid. */
       const burnHeightMul = Math.max(0.06, 1 - burnField.burn * 0.62 + burnField.front * 0.34)
 
-      tmpPos.set(
-        blade.x + awayX * visDisturbance * 0.22,
-        blade.baseY + 0.16 + visDisturbance * 0.05,
-        blade.z + awayZ * visDisturbance * 0.22,
-      )
-      dummy.position.copy(tmpPos)
-      dummy.rotation.set(0, Math.atan2(awayX, awayZ) + blade.baseBendDirection, 0)
-      dummy.rotateX(blade.baseRotateX)
-      dummy.rotateZ((trampleBend * Math.sign(awayX || 1) + stateLean) * stateBend)
-      dummy.scale.set(
-        blade.baseWidth * bladeWidthScale * (1 - visDisturbance * 0.42) * burnWidthMul,
-        Math.max(blade.baseHeight * bladeHeightScale * (1 - visDisturbance * 0.88), 0.18 * bladeHeightScale) *
-          burnHeightMul,
-        1,
-      )
-      dummy.updateMatrix()
-      this.bladeMesh.setMatrixAt(instanceIndex, dummy.matrix)
+      if (localDisturbance === 0 && burnField.burn === 0 && burnField.front === 0 && !hidden) {
+        this.bladeMesh.instanceMatrix.array.set(this.bladeRestMatrices.subarray(i * 16, i * 16 + 16), outputIndex * 16)
+      } else {
+        tmpPos.set(
+          blade.x + awayX * visDisturbance * 0.22,
+          blade.baseY + 0.048 + visDisturbance * 0.05,
+          blade.z + awayZ * visDisturbance * 0.22,
+        )
+        dummy.position.copy(tmpPos)
+        dummy.rotation.set(blade.baseRotateX, Math.atan2(awayX, awayZ) + blade.baseBendDirection,
+          (trampleBend * Math.sign(awayX || 1) + stateLean) * stateBend, 'YXZ')
+        dummy.scale.set(
+          blade.baseWidth * bladeWidthScale * (1 - visDisturbance * 0.42) * burnWidthMul,
+          Math.max(blade.baseHeight * bladeHeightScale * (1 - visDisturbance * 0.88), 0.18 * bladeHeightScale) *
+            burnHeightMul,
+          1,
+        )
+        // Keep authored instance indices stable: only touched cells need rewriting on the next frame.
+        if (hidden) dummy.scale.setScalar(0.000001)
+        dummy.updateMatrix()
+        this.bladeMesh.setMatrixAt(outputIndex, dummy.matrix)
+      }
 
-      windArr[instanceIndex * 2] = blade.windPhaseA
-      windArr[instanceIndex * 2 + 1] = blade.windPhaseB
+      windArr[outputIndex * 2] = blade.windPhaseA
+      windArr[outputIndex * 2 + 1] = blade.windPhaseB
 
       const burnRim01 = hasBurns
         ? THREE.MathUtils.clamp(burnField.burn * 0.92 + burnField.front * 0.42, 0, 1)
         : 0
-      this.bladeBurnRimAttr.setX(instanceIndex, burnRim01)
+      this.bladeBurnRimAttr.setX(outputIndex, burnRim01)
 
       if (needsDynamicBladeColor) {
         tmpColor.setRGB(blade.baseColorR, blade.baseColorG, blade.baseColorB)
@@ -1245,17 +1306,16 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
         if (burnField.burn > 0.002 || burnField.front > 0.002) {
           this.applyGrassBurnToBladeColor(tmpColor, burnField.burn, burnField.front)
         }
-        this.bladeMesh.setColorAt(instanceIndex, tmpColor)
-      } else if (this.baseBladeColorsDirty || cull) {
-        /** `cull` remaps instance indices every frame; refresh static colors whenever the visible set is camera-relative. */
+        this.bladeMesh.setColorAt(outputIndex, tmpColor)
+      } else {
         tmpColor.setRGB(blade.baseColorR, blade.baseColorG, blade.baseColorB)
-        this.bladeMesh.setColorAt(instanceIndex, tmpColor)
+        this.bladeMesh.setColorAt(outputIndex, tmpColor)
       }
-
-      instanceIndex++
     }
 
-    if (activeCellKeys) {
+    if (incremental) {
+      for (const i of this.reactionCandidates) processBlade(i, this.renderedBladeIndices[i])
+    } else if (activeCellKeys) {
       for (const key of activeCellKeys) {
         const bucket = this.bladeCellBuckets.get(key)
         if (!bucket) continue
@@ -1269,18 +1329,17 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
       }
     }
 
-    this.bladeMesh.count = instanceIndex
-    this.bladeMesh.instanceMatrix.needsUpdate = true
-    this.bladeWindPhaseAttr.needsUpdate = true
-    this.bladeBurnRimAttr.needsUpdate = true
-    if (needsDynamicBladeColor && this.bladeMesh.instanceColor) {
-      this.bladeMesh.instanceColor.needsUpdate = true
-      this.baseBladeColorsDirty = true
+    if (!incremental) {
+      this.bladeMesh.count = instanceIndex
+      updateActiveAttribute(this.bladeWindPhaseAttr, instanceIndex)
     }
-    if (!needsDynamicBladeColor && this.bladeMesh.instanceColor && (this.baseBladeColorsDirty || cull)) {
-      this.bladeMesh.instanceColor.needsUpdate = true
-      if (!cull) this.baseBladeColorsDirty = false
+    if (lastChanged >= firstChanged) {
+      const count = lastChanged - firstChanged + 1
+      updateAttributeSpan(this.bladeMesh.instanceMatrix, firstChanged, count)
+      updateAttributeSpan(this.bladeBurnRimAttr, firstChanged, count)
+      if (this.bladeMesh.instanceColor) updateAttributeSpan(this.bladeMesh.instanceColor, firstChanged, count)
     }
+    this.baseBladeColorsDirty = false
   }
 
   private static mergeXZBounds(
@@ -1359,30 +1418,25 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     const bladeBaseColor = this.tintColor(STATE_BLADE_BASE[stateIndex]!, SEASON_BLADE_TINT, 0.72, tmpSeasonColorA)
     const bladeTipColor = this.tintColor(STATE_BLADE_TIP[stateIndex]!, SEASON_BLADE_TINT, 0.88, tmpSeasonColorB)
 
-    const frustumCtx: PresetLayoutViewCullFrustumContext | undefined = this.frameLayoutViewCull
-      ? { group: this.group, tmpBox: this.tmpViewCullBox, rowThickness: rowStep * 0.55 }
-      : undefined
-
-    if (this.frameLayoutViewCull?.frustum) {
-      this.group.updateMatrixWorld(true)
-    }
-
     this.layoutDriver.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
       getMaxWidth: (slot) => this.getSlotMaxWidth(slot),
-      shouldVisitSlot: this.frameLayoutViewCull
-        ? (slot) => shouldVisitSlotForViewCull(slot, 0, 0, this.frameLayoutViewCull!, frustumCtx)
-        : undefined,
+      // Cache authored placement for the whole field. Visibility is a separate bucket query;
+      // building only the initial view loses grass when the camera moves.
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
         const n = resolvedGlyphs.length
         const lineSeed = lineSignature(tokenLineKey)
         const lineLateralShift = (lineSeed - 0.5) * slot.sectorStep * 0.28
         const lineDepthShift = (lineSeed - 0.5) * rowStep * 0.18
         const lineClusterStrength = 0.014 + lineSeed * 0.022
+        // Share the capacity across every slot, so high densities cannot exhaust it
+        // on the first rows and leave the far end of a large field empty.
+        const glyphBudget = Math.min(n, Math.floor(MAX_INSTANCES / (ROWS * SECTORS * BLADES_PER_SLOT)))
 
-        for (let k = 0; k < n; k++) {
+        for (let j = 0; j < glyphBudget; j++) {
+          const k = Math.floor(j * n / glyphBudget)
           if (this.cachedBlades.length >= MAX_INSTANCES) break
           const token = resolvedGlyphs[k]!
           const identity = token.ordinal + 1
@@ -1457,8 +1511,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
                 0.58 *
                 stateHeight,
               baseRotateX: (organicNoise - 0.5) * 0.14 * stateBend + (blade - BLADES_PER_SLOT * 0.5) * 0.018,
-              baseBendDirection:
-                (organicNoise - 0.5) * 0.38 + angle * 0.12 + (hashLat - 0.5) * 0.45,
+              baseBendDirection: angle + (hashLat - 0.5) * 0.45,
               windPhaseA: x * 0.52 + localZ * 0.34,
               windPhaseB: x * 1.1 - localZ * 0.62,
               coverageMultiplier: coverageMul,
@@ -1482,6 +1535,24 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
 
     this.bladeCacheDirty = false
     this.baseBladeColorsDirty = true
+    this.bladeRestMatricesDirty = true
+  }
+
+  private rebuildRestMatrices(): void {
+    const required = this.cachedBlades.length * 16
+    if (this.bladeRestMatrices.length !== required) this.bladeRestMatrices = new Float32Array(required)
+    const state = this.stateIndex()
+    const width = Math.max(0.01, this.params.bladeWidthScale)
+    const height = Math.max(0.01, this.params.bladeHeightScale)
+    for (let i = 0; i < this.cachedBlades.length; i++) {
+      const blade = this.cachedBlades[i]!
+      dummy.position.set(blade.x, blade.baseY + 0.048, blade.z)
+      dummy.rotation.set(blade.baseRotateX, blade.baseBendDirection, STATE_LEAN[state]! * STATE_BEND[state]!, 'YXZ')
+      dummy.scale.set(blade.baseWidth * width, Math.max(blade.baseHeight * height, 0.18 * height), 1)
+      dummy.updateMatrix()
+      dummy.matrix.toArray(this.bladeRestMatrices, i * 16)
+    }
+    this.bladeRestMatricesDirty = false
   }
 
   private getSlotMaxWidth(slot: SurfaceLayoutSlot): number {

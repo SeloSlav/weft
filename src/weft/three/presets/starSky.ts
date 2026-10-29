@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type { PreparedSurfaceSource, SeedCursorFactory } from '../../core'
 import { SurfaceLayoutDriver } from '../../core'
@@ -243,9 +244,9 @@ export class StarSkyEffect {
     })
 
     this.starMesh.count = instanceIndex
-    this.starMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.starMesh)
     if (this.starMesh.instanceColor) {
-      this.starMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.starMesh.instanceColor, this.starMesh.count)
     }
   }
 }

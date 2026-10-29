@@ -3345,6 +3345,7 @@ export class PlaygroundRuntime {
     // Burns are slow-moving and don't need the faster active cadence — only disturbances do.
     let grassCpuMs = 0
     let ranGrass = false
+    this.grassEffect.updateWind(elapsed)
     const grassCadence = this.grassEffect.hasDisturbances()
       ? this.cadenceFor('grass')
       : this.idleCadenceFor('grass')

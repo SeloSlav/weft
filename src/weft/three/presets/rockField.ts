@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -157,7 +158,21 @@ function rockStoneColor(identity: number, noise: number, meta: RockTokenMeta): T
 }
 
 function makeRockGeometry(): THREE.BufferGeometry {
-  return new THREE.DodecahedronGeometry(0.5, 0)
+  const geometry = new THREE.DodecahedronGeometry(0.5, 0)
+  const positions = geometry.attributes.position
+  const colors = new Float32Array(positions.count * 3)
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i)
+    const y = positions.getY(i)
+    const z = positions.getZ(i)
+    const strata = Math.sin(y * 12 + x * 3) * 0.035
+    positions.setXYZ(i, x * (1 + z * 0.22) + strata, y * 0.8 + x * 0.12, z * (1 - x * 0.18))
+    const shade = 0.72 + (y + 0.5) * 0.25
+    colors.set([shade, shade * 0.98, shade * 0.92], i * 3)
+  }
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+  geometry.computeVertexNormals()
+  return geometry
 }
 
 function makeShardGeometry(): THREE.BufferGeometry {
@@ -173,6 +188,7 @@ export class RockFieldEffect {
   private readonly rockGeometry = makeRockGeometry()
   private readonly shardGeometry = makeShardGeometry()
   private readonly rockMaterial = new THREE.MeshStandardMaterial({
+    vertexColors: true,
     roughness: 0.95,
     metalness: 0.05,
   })
@@ -306,6 +322,8 @@ export class RockFieldEffect {
   }
 
   dispose(): void {
+    this.rockMesh.dispose()
+    this.shardMesh.dispose()
     this.rockGeometry.dispose()
     this.shardGeometry.dispose()
     this.rockMaterial.dispose()
@@ -331,9 +349,9 @@ export class RockFieldEffect {
     })
 
     this.rockMesh.count = instanceIndex
-    this.rockMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.rockMesh)
     if (this.rockMesh.instanceColor) {
-      this.rockMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.rockMesh.instanceColor, this.rockMesh.count)
     }
   }
 
@@ -511,9 +529,9 @@ export class RockFieldEffect {
       this.shardMesh.setMatrixAt(i, dummy.matrix)
       this.shardMesh.setColorAt(i, s.color)
     }
-    this.shardMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.shardMesh)
     if (this.shardMesh.instanceColor) {
-      this.shardMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.shardMesh.instanceColor, this.shardMesh.count)
     }
   }
 

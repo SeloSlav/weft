@@ -1,3 +1,4 @@
+import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
@@ -232,7 +233,7 @@ export class BandFieldEffect {
       this.params.bandWidth <= 0
     ) {
       this.bandMesh.count = 0
-      this.bandMesh.instanceMatrix.needsUpdate = true
+      updateInstanceMatrices(this.bandMesh)
       return
     }
 
@@ -251,9 +252,9 @@ export class BandFieldEffect {
     })
 
     this.bandMesh.count = instanceIndex
-    this.bandMesh.instanceMatrix.needsUpdate = true
+    updateInstanceMatrices(this.bandMesh)
     if (this.bandMesh.instanceColor) {
-      this.bandMesh.instanceColor.needsUpdate = true
+      updateActiveAttribute(this.bandMesh.instanceColor, this.bandMesh.count)
     }
   }
 
