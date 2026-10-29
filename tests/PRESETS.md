@@ -13,9 +13,9 @@ CPU benchmark. It uses the build tool already declared by `tsup`.
 
 ## Coverage and method
 
-There are 35 configurations: all 14 executable preset classes, the three band
+There are 37 configurations: all 14 executable preset classes, the three band
 appearances, five shell appearances, and all five constituent families of each
-meadow/woodland/autumn look. Fixtures use their authored SDK densities, seed 17,
+meadow/woodland/autumn look, plus dense log and stick workloads. Standard fixtures use their authored SDK densities, seed 17,
 the same terrain and matched elapsed times. No instance reductions are introduced
 to obtain a speedup.
 
@@ -43,12 +43,36 @@ Timing phases are reported separately:
   already avoids rebuilding for identical parameters.
 - Active adds a reaction where supported and measures 25 following updates after
   warm-up. Ongoing deformation, physics and recovery keep their original cadence.
+- Activation isolates adding an impulse and finding affected log/stick placements;
+  it deliberately excludes subsequent physics. It uses internal diagnostic access
+  to reset the pending impulse and state between samples.
 
 Reports contain median and p95 timings, work counts and upload-version changes.
-Timings are observations; the six deterministic gates are what fail the command:
+Timings are observations; the deterministic gates are what fail the command:
 every family uses the shared kernel, its cache/pass scheduler is reused, output
 hashes match, static idle uploads are zero, stable idle rows do not reflow, and
-every owned instance buffer is disposed with cached rows released.
+every owned instance buffer is disposed with cached rows released, and the same
+number of placements activate in the impulse fixture.
+
+For the spatial tracker comparison against the pre-change revision:
+
+```bash
+npm run bench:presets -- --baseline 6db124574458488456b1e2f532168d28d19c365a --output tests/benchmarks/spatial-results.json
+```
+
+The [sample report](./benchmarks/spatial-results.json) records both elapsed time
+and the number of placement candidates. Dense sticks examined 454 of 5,600
+placements, with a 0.0502 → 0.0242 ms median for impulse activation. Dense logs
+examined 5 of 280, with a 0.0016 → 0.0013 ms median. These CPU samples are short;
+they are not frame-time or GPU benchmarks. Small log fields use a direct scan.
+The point index is rebuilt with placements and returns candidates in authored
+order; precise distance tests and existing physics remain unchanged.
+
+Tree and shrub burns target instance IDs rather than spatial impulses. Leaf piles,
+fungus and needle litter currently reproject visible content during reactions;
+local updates there would first need persistent placement and output-index caches.
+Book glyphs are bucketed and compacted when hidden, so applying a spatial index
+there also requires preserving bucket order and shifted output indices.
 
 The committed sample is [preset-results.json](./benchmarks/preset-results.json).
 Sub-microsecond idle ratios are dominated by call overhead and timer precision.
@@ -109,13 +133,13 @@ npm run validate:baseline -- 035a56bb4a8f7cb7bcf8ecdc2baf269e7e359d6e
 npm run dev -- --host 127.0.0.1
 ```
 
-Open `/tests/presets-browser.html` and run all checks. This repeats all 35 output
+Open `/tests/presets-browser.html` and run all checks. This repeats all 37 output
 comparisons using native browser metrics, draws every migrated preset through
 WebGPU, and verifies consumed instance upload ranges. Seven further checks cover
 terrain invalidation, needle visibility movement/restoration, and repeated source
 replacement in all five mutable-source families. Its preview selects each preset
 and its reaction at fixed seed, camera, 960 × 540 resolution and DPR 1.
 
-`/tests/core-browser.html` also runs 23 core checks plus a native partial-upload
+`/tests/core-browser.html` also runs 24 core checks plus a native partial-upload
 check. `/tests/browser.html` retains the 11 existing grass/camera/burn/foliage and
-WebGL/WebGPU regressions. All 77 native checks passed during migration validation.
+WebGL/WebGPU regressions.

@@ -1,3 +1,4 @@
+import { SpatialPointIndex } from '../../runtime'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
@@ -193,6 +194,7 @@ export class LogFieldEffect {
   private runtime: SurfaceExecutionRuntime<LogTokenId, LogTokenMeta>
   private placementsDirty = true
   private readonly placements: LogPlacement[] = []
+  private readonly spatialIndex = new SpatialPointIndex(6)
   private readonly placementByKey = new Map<string, LogPlacement>()
   private readonly motionStates = new Map<string, LogMotionState>()
   private readonly pendingImpulses: PendingLogImpulse[] = []
@@ -296,6 +298,7 @@ export class LogFieldEffect {
     if (this.params.layoutDensity <= 0 || this.params.sizeScale <= 0 || this.params.lengthScale <= 0) {
       this.placements.length = 0
       this.placementByKey.clear()
+      this.spatialIndex.clear()
       this.motionStates.clear()
       this.logMesh.count = 0
       updateInstanceMatrices(this.logMesh)
@@ -326,6 +329,7 @@ export class LogFieldEffect {
       },
     }, [this.params.layoutDensity])
 
+    this.spatialIndex.rebuild(this.placements)
     this.logMesh.count = instanceIndex
     updateInstanceMatrices(this.logMesh)
     if (this.logMesh.instanceColor) {
@@ -338,6 +342,7 @@ export class LogFieldEffect {
   getRuntimeStats() { return this.runtime.getStats() }
 
   dispose(): void {
+    this.spatialIndex.clear()
     this.runtime.dispose(this.group)
     this.logBarkTexture.dispose()
     this.logGeometry.dispose()
@@ -580,7 +585,14 @@ export class LogFieldEffect {
 
   private activateMotionNearPendingImpulses(): void {
     if (this.pendingImpulses.length === 0) return
-    for (const placement of this.placements) {
+    if (this.placements.length < 256) {
+      for (const placement of this.placements) {
+        if (this.shouldActivateMotionAt(placement.x, placement.z)) this.getMotionState(placement.key)
+      }
+      return
+    }
+    for (const index of this.spatialIndex.query(this.pendingImpulses)) {
+      const placement = this.placements[index]!
       if (this.shouldActivateMotionAt(placement.x, placement.z)) {
         this.getMotionState(placement.key)
       }

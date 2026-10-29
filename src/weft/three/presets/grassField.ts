@@ -1,3 +1,4 @@
+import { SpatialCandidateSet } from '../../runtime'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import * as THREE from 'three'
 import { attribute, uniform, positionLocal, uv, vec2, vec3, float, sin, smoothstep, mix, materialColor } from 'three/tsl'
@@ -556,9 +557,7 @@ export class GrassFieldEffect {
   private previousUsedCull = false
   private readonly renderedBladeIndices = new Int32Array(MAX_INSTANCES).fill(-1)
   private readonly reactionBlades = new Set<number>()
-  private readonly reactionCandidates: number[] = []
-  private readonly reactionCandidateMarks = new Uint32Array(MAX_INSTANCES)
-  private reactionCandidateGeneration = 0
+  private readonly reactionCandidates = new SpatialCandidateSet(MAX_INSTANCES)
   private readonly reactionCellKeys = new Set<number>()
   private bladeRestMatrices = new Float32Array(0)
   private bladeRestMatricesDirty = true
@@ -1179,17 +1178,10 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     this.previousUsedCull = Boolean(cull)
     if (activeCellKeys) for (const key of activeCellKeys) this.previousActiveCellKeys.add(key)
 
-    this.reactionCandidates.length = 0
+    this.reactionCandidates.reset()
     if (incremental) {
-      this.reactionCandidateGeneration = (this.reactionCandidateGeneration + 1) >>> 0
-      if (this.reactionCandidateGeneration === 0) {
-        this.reactionCandidateMarks.fill(0)
-        this.reactionCandidateGeneration = 1
-      }
-      const generation = this.reactionCandidateGeneration
-      const marks = this.reactionCandidateMarks
       const candidates = this.reactionCandidates
-      for (const i of this.reactionBlades) { marks[i] = generation; candidates.push(i) }
+      for (const i of this.reactionBlades) candidates.add(i)
       this.reactionCellKeys.clear()
       // Only blades inside the actual influence can change. Previously reacted
       // blades are retained above so shrinking/cleared effects still restore them.
@@ -1210,14 +1202,13 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
       for (const key of this.reactionCellKeys) {
         const bucket = this.bladeCellBuckets.get(key)
         if (bucket) for (const i of bucket) {
-          if (marks[i] === generation || this.renderedBladeIndices[i] < 0) continue
+          if (candidates.has(i) || this.renderedBladeIndices[i] < 0) continue
           const blade = this.cachedBlades[i]!
           for (const impact of impacts) {
             const dx = blade.x - impact.x
             const dz = blade.z - impact.z
             if (dx * dx + dz * dz <= impact.radius * impact.radius) {
-              marks[i] = generation
-              candidates.push(i)
+              candidates.add(i)
               break
             }
           }
@@ -1351,7 +1342,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     }
 
     if (incremental) {
-      for (const i of this.reactionCandidates) processBlade(i, this.renderedBladeIndices[i])
+      for (const i of this.reactionCandidates.values) processBlade(i, this.renderedBladeIndices[i])
     } else if (activeCellKeys) {
       for (const key of activeCellKeys) {
         const bucket = this.bladeCellBuckets.get(key)

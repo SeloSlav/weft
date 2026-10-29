@@ -1,6 +1,7 @@
 import './headless-preset-canvas.mjs'
 import {pathToFileURL} from 'node:url'
 import {performance} from 'node:perf_hooks'
+import * as THREE from 'three'
 import {presetCases,seeded,inspectFixture,meshesOf,uploadVersions} from './preset-fixtures.mjs'
 
 const libraries=await Promise.all(process.argv.slice(2,4).map(file=>import(pathToFileURL(file).href)))
@@ -42,14 +43,34 @@ for(let caseIndex=0;caseIndex<fixtures[0].length;caseIndex++) {
   const refresh=measure(benches.map((bench,index)=>()=>{bench.params();updates[index]()}))
   for(const bench of benches)bench.damage?.()
   const active=measure(updates)
+  // Isolate impulse candidate discovery from the much larger, ongoing physics work.
+  // Private fields are used only by this diagnostic fixture, not by SDK consumers.
+  let activation
+  if (['logs','sticks','logs-dense','sticks-dense'].includes(benches[0].name)) {
+    const nearest=benches[0].effect.placements.reduce((best,p)=>
+      p.x*p.x+p.z*p.z < best.x*best.x+best.z*best.z ? p : best)
+    const point=new THREE.Vector3(nearest.x,0,nearest.z)
+    activation=measure(benches.map(bench=>()=>{
+      const effect=bench.effect
+      effect.pendingImpulses.length=0
+      ;(effect.motionStates ?? effect.twigStates).clear()
+      effect.addMotionFromWorldPoint(point,{radiusScale:1})
+      effect.activateMotionNearPendingImpulses()
+    }),{warmup:30,samples:40,batch:20})
+  }
   for(let index=0;index<benches.length;index++) {
     const bench=benches[index],meshes=meshesOf(bench.effect)
+    const activationCandidates=activation ? (bench.effect.placements.length < 256 ? bench.effect.placements.length :
+      (bench.effect.spatialIndex?.query(bench.effect.pendingImpulses).length ?? bench.effect.placements.length)) : undefined
+    const activationTotal=activation ? bench.effect.placements.length : undefined
+    const activated=activation ? (bench.effect.motionStates ?? bench.effect.twigStates).size : undefined
     let disposedMeshes=0
     for(const mesh of meshes)mesh.addEventListener('dispose',()=>disposedMeshes++)
     const stats=bench.effect.getRuntimeStats?.()
     bench.effect.dispose()
     results[index].push({name:bench.name,hasReaction:Boolean(bench.damage),states:states[index],initialCounts:states[index].initial.map(mesh=>mesh.count),
       cold:cold[index],idle:idle[index],refresh:refresh[index],active:active[index],
+      activation:activation?.[index],activationCandidates,activationTotal,activated,
       idleUploadVersionDelta:versionDelta[index],idleRebuiltRows:afterIdle[index] ? afterIdle[index].rebuiltRows-initialStats[index].rebuiltRows : null,
       idleProjectionPasses:afterIdle[index] ? afterIdle[index].projectionPasses-initialStats[index].projectionPasses : null,
       stats,ownedMeshes:meshes.length,disposedMeshes,cachedRowsAfterDispose:bench.effect.getRuntimeStats?.().cachedRows})

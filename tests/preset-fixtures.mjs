@@ -36,6 +36,8 @@ export function presetCases(sdk) {
     ['rocks',sdk.createRockFieldEffect,sdk.DEFAULT_ROCK_FIELD_PARAMS],
     ['logs',sdk.createLogFieldEffect,sdk.DEFAULT_LOG_FIELD_PARAMS],
     ['sticks',sdk.createStickFieldEffect,sdk.DEFAULT_STICK_FIELD_PARAMS],
+    ['logs-dense',sdk.createLogFieldEffect,{...sdk.DEFAULT_LOG_FIELD_PARAMS,layoutDensity:8}],
+    ['sticks-dense',sdk.createStickFieldEffect,{...sdk.DEFAULT_STICK_FIELD_PARAMS,layoutDensity:8}],
     ['shrubs',sdk.createShrubFieldEffect,sdk.DEFAULT_SHRUB_FIELD_PARAMS],
     ['trees',sdk.createTreeFieldEffect,sdk.DEFAULT_TREE_FIELD_PARAMS],
   ]) cases.push(()=>{
@@ -153,6 +155,17 @@ export function inspectFixture(fixture) {
     cull.cameraWorld.set(8,2,3);effect.update(1.9,cull);states.movedCull=snapshot(effect)
     effect.clearBurns();effect.clearDisturbances();effect.update(2)
     states.restored=snapshot(effect)
+  }
+  if(['logs','sticks','logs-dense','sticks-dense'].includes(fixture.name)) {
+    effect.addMotionFromWorldPoint(new THREE.Vector3(-4,0,2),{radiusScale:2,strength:1})
+    effect.addMotionFromWorldPoint(new THREE.Vector3(3,0,1),{radiusScale:3,strength:.8})
+    update(2.05);states.overlappingImpulses=snapshot(effect)
+    for(let t=2.1;t<2.5;t+=.05)update(t)
+    states.motion=snapshot(effect)
+    effect.clearMotion();update(2.6);states.motionCleared=snapshot(effect)
+    effect.setParams({layoutDensity:0});update(2.65);states.empty=snapshot(effect)
+    fixture.params();update(2.7);effect.addMotionFromWorldPoint(new THREE.Vector3(2,0,-1));update(2.75)
+    states.rebuilt=snapshot(effect)
   }
   return states
 }

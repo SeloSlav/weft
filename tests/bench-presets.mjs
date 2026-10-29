@@ -32,14 +32,18 @@ const cases=after.results.map((current,index)=>{
   const parity=Object.fromEntries(Object.entries(current.states).map(([stage,state])=>[stage,JSON.stringify(state)===JSON.stringify(baseline.states[stage])]))
   const timings=Object.fromEntries(['cold','idle','refresh','active'].map(phase=>[phase,{before:baseline[phase],after:current[phase],
     speedup:baseline[phase].medianMs/Math.max(current[phase].medianMs,1e-9)}]))
-  const {states:_,cold:_cold,idle:_idle,refresh:_refresh,active:_active,...metadata}=current
-  return {...metadata,beforeIdleUploadVersionDelta:baseline.idleUploadVersionDelta,parity,timings}
+  if(current.activation)timings.activation={before:baseline.activation,after:current.activation,
+    speedup:baseline.activation.medianMs/Math.max(current.activation.medianMs,1e-9)}
+  const {states:_,cold:_cold,idle:_idle,refresh:_refresh,active:_active,activation:_activation,...metadata}=current
+  return {...metadata,beforeIdleUploadVersionDelta:baseline.idleUploadVersionDelta,
+    beforeActivationCandidates:baseline.activationCandidates,activationMatches:current.activated===baseline.activated,parity,timings}
 })
 const staticNames=cases.filter(row=>!['fire','stars'].includes(row.name)).map(row=>row.name)
 const gates={allFamiliesUseRuntime:cases.every(row=>row.stats!==undefined),
   cachedExecutionReused:cases.every(row=>row.stats.replayedRows>0 || row.stats.skippedPasses>0 ||
     (row.stats.projectionPasses>0 && row.idleProjectionPasses===0)),
   outputParity:cases.every(row=>Object.values(row.parity).every(Boolean)),
+  activationParity:cases.every(row=>row.activationMatches),
   staticIdleNoUploads:cases.filter(row=>staticNames.includes(row.name)).every(row=>row.idleUploadVersionDelta===0),
   warmIdleNoReflow:cases.every(row=>row.idleRebuiltRows===0),
   ownedBuffersDisposed:cases.every(row=>row.disposedMeshes===row.ownedMeshes && row.cachedRowsAfterDispose===0)}
@@ -53,5 +57,8 @@ await mkdir(path.dirname(output),{recursive:true})
 await writeFile(output,JSON.stringify(report,null,2)+'\n')
 if(!gates.outputParity)await writeFile('validation.local/preset-parity-debug.json',JSON.stringify({before:before.results.map(r=>({name:r.name,states:r.states})),after:after.results.map(r=>({name:r.name,states:r.states}))},null,2))
 console.log('Regression gates:',gates)
+console.table(cases.filter(row=>row.timings.activation).map(row=>({preset:row.name,
+  beforeMs:row.timings.activation.before.medianMs.toFixed(4),afterMs:row.timings.activation.after.medianMs.toFixed(4),
+  speedup:row.timings.activation.speedup.toFixed(2)+'x',candidates:`${row.beforeActivationCandidates} → ${row.activationCandidates}`})))
 console.log('Report:',output)
 if(Object.values(gates).some(value=>!value))process.exitCode=1

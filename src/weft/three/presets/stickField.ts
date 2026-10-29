@@ -1,3 +1,4 @@
+import { SpatialPointIndex } from '../../runtime'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
@@ -194,6 +195,7 @@ export class StickFieldEffect {
   private readonly runtime: SurfaceExecutionRuntime<StickTokenId, StickTokenMeta>
   private placementsDirty = true
   private readonly placements: StickPlacement[] = []
+  private readonly spatialIndex = new SpatialPointIndex(6)
   private readonly placementByKey = new Map<string, StickPlacement>()
   private readonly twigStates = new Map<string, StickTwigState>()
   private readonly pendingImpulses: PendingStickImpulse[] = []
@@ -304,6 +306,7 @@ export class StickFieldEffect {
     if (this.params.layoutDensity <= 0 || this.params.sizeScale <= 0 || this.params.lengthScale <= 0) {
       this.placements.length = 0
       this.placementByKey.clear()
+      this.spatialIndex.clear()
       this.twigStates.clear()
       this.stickMesh.count = 0
       updateInstanceMatrices(this.stickMesh)
@@ -335,6 +338,7 @@ export class StickFieldEffect {
       },
     }, [this.params.layoutDensity])
 
+    this.spatialIndex.rebuild(this.placements)
     this.stickMesh.count = instanceIndex
     updateInstanceMatrices(this.stickMesh)
     if (this.stickMesh.instanceColor) {
@@ -347,6 +351,7 @@ export class StickFieldEffect {
   getRuntimeStats() { return this.runtime.getStats() }
 
   dispose(): void {
+    this.spatialIndex.clear()
     this.runtime.dispose(this.group)
     this.stickGeometry.dispose()
     this.stickMaterial.dispose()
@@ -575,7 +580,14 @@ export class StickFieldEffect {
 
   private activateMotionNearPendingImpulses(): void {
     if (this.pendingImpulses.length === 0) return
-    for (const placement of this.placements) {
+    if (this.placements.length < 256) {
+      for (const placement of this.placements) {
+        if (this.shouldActivateMotionAt(placement.x, placement.z)) this.getTwigState(placement.key)
+      }
+      return
+    }
+    for (const index of this.spatialIndex.query(this.pendingImpulses)) {
+      const placement = this.placements[index]!
       if (this.shouldActivateMotionAt(placement.x, placement.z)) {
         this.getTwigState(placement.key)
       }

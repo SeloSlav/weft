@@ -1,7 +1,7 @@
 import {layoutNextLine} from '@chenglou/pretext'
 import * as THREE from 'three'
 import * as core from '../src/weft/core'
-import {createSurfaceMotionField, decayRecoveringStrength, updateRecoveringImpacts} from '../src/weft/runtime'
+import {createSurfaceMotionField, decayRecoveringStrength, updateRecoveringImpacts, SpatialCandidateSet, SpatialPointIndex} from '../src/weft/runtime'
 import {createSurfaceEffect, createSurfaceSource, fieldLayout, recoverableDamage, threeInstancedMeshRenderer} from '../src/weft/three/api'
 import {SurfaceExecutionRuntime} from '../src/weft/three/executionRuntime'
 
@@ -25,6 +25,24 @@ export function runCoreChecks(): Check[] {
       ...options,onLine:line=>lines.push(line)})
     return lines
   }
+
+  test('shared spatial candidates preserve order and include exact hits across overlap and rebuilds',()=>{
+    const points=Array.from({length:1600},(_,i)=>({x:(i%40)-20,z:Math.floor(i/40)-20}))
+    const index=new SpatialPointIndex(4);index.rebuild(points)
+    for(const discs of [[{x:0,z:0,radius:2},{x:1,z:0,radius:2}], [{x:-18,z:18,radius:0}],
+      [{x:0,z:0,radius:1e300}], [{x:NaN,z:0,radius:1}]]) {
+      const candidates=index.query(discs),actual=candidates.filter(i=>discs.some(d=>{
+        const p=points[i]!;return (p.x-d.x)**2+(p.z-d.z)**2<=d.radius**2
+      }))
+      const expected=points.map((p,i)=>discs.some(d=>(p.x-d.x)**2+(p.z-d.z)**2<=d.radius**2)?i:-1).filter(i=>i>=0)
+      equal(actual,expected)
+      assert(new Set(candidates).size===candidates.length,'overlapping discs duplicated candidates')
+    }
+    assert(index.query([{x:0,z:0,radius:2}]).length<points.length/10,'local query scanned the whole field')
+    index.rebuild(points.slice(0,3));assert(index.query([{x:0,z:0,radius:100}]).length===3)
+    index.clear();assert(index.query([{x:0,z:0,radius:100}]).length===0)
+    const set=new SpatialCandidateSet(4);set.add(2);set.add(2);equal(set.values,[2]);set.reset();set.add(2);equal(set.values,[2]);throws(()=>set.add(4))
+  })
 
   test('shared execution replays rows and rebuilds exactly the row whose width changes',()=>{
     const layout={surface:source(),rows:4,sectors:8,seedCursor:core.seedCursor,advanceForRow:(row:number)=>row*13+5}

@@ -24,3 +24,5 @@ export type {
   SurfaceMotionFieldSample,
   SurfaceMotionImpulseOptions,
 } from './motionField'
+
+export { SpatialCandidateSet, SpatialPointIndex } from './spatialCandidates'
