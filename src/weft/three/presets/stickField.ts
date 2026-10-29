@@ -1,3 +1,4 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
@@ -6,7 +7,7 @@ import type {
   SeedCursorFactory,
   SurfaceLayoutSlot,
 } from '../../core'
-import { createWorldField, SurfaceLayoutDriver } from '../../core'
+import { createWorldField } from '../../core'
 import { createSurfaceEffect, fieldLayout } from '../api'
 import {
   getPreparedStickSurface,
@@ -190,7 +191,7 @@ export class StickFieldEffect {
   private readonly fieldDepth: number
   private readonly fieldCenterX: number
   private readonly fieldCenterZ: number
-  private readonly layoutDriver: SurfaceLayoutDriver<StickTokenId, StickTokenMeta>
+  private readonly runtime: SurfaceExecutionRuntime<StickTokenId, StickTokenMeta>
   private placementsDirty = true
   private readonly placements: StickPlacement[] = []
   private readonly placementByKey = new Map<string, StickPlacement>()
@@ -215,7 +216,7 @@ export class StickFieldEffect {
       bounds,
       includeAtXZ: placementMask.includeAtXZ ?? (() => true),
     }
-    this.layoutDriver = new SurfaceLayoutDriver({
+    this.runtime = new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,
@@ -287,10 +288,10 @@ export class StickFieldEffect {
   ): void {
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
-    if (this.placementsDirty) {
+    this.runtime.run('placements', [getGroundHeight], () => {
       this.rebuildPlacements(getGroundHeight)
       this.placementsDirty = false
-    }
+    }, this.placementsDirty)
     if (this.pendingImpulses.length === 0 && this.twigStates.size === 0) {
       return
     }
@@ -315,7 +316,7 @@ export class StickFieldEffect {
     this.placements.length = 0
     this.placementByKey.clear()
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
@@ -332,7 +333,7 @@ export class StickFieldEffect {
           undefined,
         )
       },
-    })
+    }, [this.params.layoutDensity])
 
     this.stickMesh.count = instanceIndex
     updateInstanceMatrices(this.stickMesh)
@@ -341,7 +342,12 @@ export class StickFieldEffect {
     }
   }
 
+  invalidate(): void { this.placementsDirty = true; this.runtime.invalidate() }
+
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
+    this.runtime.dispose(this.group)
     this.stickGeometry.dispose()
     this.stickMaterial.dispose()
   }

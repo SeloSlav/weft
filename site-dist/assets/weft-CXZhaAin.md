@@ -111,6 +111,7 @@ Primary Three.js-facing entrypoint:
 
 - `createSurfaceSource()`
 - `createSurfaceEffect()`
+- `createSurfaceRuntime()` / `SurfaceEffectRuntime`
 - `fieldLayout()`
 - `wallLayout()`
 - `skyLayout()`
@@ -230,6 +231,9 @@ Lower-level source preparation and layout tools:
 - `seedCursor`
 - `WEFT_TEXT_FONT`
 - `SurfaceLayoutDriver`
+- `configureSurfaceCaches()`, `getSurfaceCacheStats()`
+- `releaseSurfaceSource()`, `clearSurfaceCaches()`
+- `clearSeedCursorCache()`, `getSeedCursorStats()`
 - `createBandSeeds`
 - `createWorldField`
 - `createFbmField`
@@ -305,6 +309,26 @@ Useful exported types:
 
 ## Preset Selection Guidance
 
+For a coordinated environment, start with `LANDSCAPE_PRESETS` from
+`weft-sdk/three`. Its `meadow`, `woodland`, and `autumn` entries provide full
+`grass`, `rocks`, `shrubs`, `trees`, and `leafPile` params. Spread the desired
+object into the matching factory's `initialParams`. These use SDK densities;
+the demo's quality multipliers are not part of the presets. Use the matching
+`leafPile.season` with `buildTreeSeasonSurface()` and `buildShrubSeasonSurface()`
+when creating seasonal tree and shrub sources.
+
+`DEFAULT_GRASS_FIELD_PARAMS.layoutDensity` is `8`. Wind is GPU-driven under
+WebGPU and has a WebGL shader path. `grass.update(elapsedSeconds, viewCull)` skips
+unchanged visible sets and updates local reactions using stable authored instance
+indices. Hidden blades retain collapsed instance slots until recovery, so the
+mesh instance count includes hidden blades. `grass.updateWind(elapsedSeconds)`
+can advance only wind uniforms when an application schedules reactions less often.
+Keep `update()` running during damage/recovery or camera movement. The authored
+cache spans the whole field; camera visibility is queried separately.
+
+Layout line caches use exact widths and cursors with bounded capacity. They do
+not quantize gameplay widths. Returned arrays and cursors are isolated from the cache.
+
 - Use `createBandFieldEffect()` for terrain-projected strips such as roadsides, root bands, shoreline foam, and narrow clutter corridors.
 - Use `createLeafPileBandEffect()` for verge drifts, gutter accumulations, or other leaf-heavy corridor surfaces with season-aware appearance.
 - Use `createFungusSeamEffect()` for glowing cracks, fungal seams, and other narrow recoverable growth bands.
@@ -320,6 +344,89 @@ Useful exported types:
 If a requested effect is close to one of these, adapt the preset before proposing a fully custom effect architecture.
 
 ## Preset Customization Guidance
+
+### Executing custom effects
+
+`createSurfaceEffect(config)` preserves the configuration fields used by existing
+preset factories and adds a lazy `.createRuntime(options)` method. This allocates
+the Three.js group/mesh and shares the SDK's cached layout, projection, visibility,
+damage, dirty rows and partial buffer writes. Use it for new custom effects rather
+than rebuilding the execution layer. `createSurfaceRuntime(config, options)` is
+also exported for direct construction.
+
+Runtime options supply `spanMin`, `spanMax`, `lineCoordAtRow`, `getMaxWidth` and
+`projectGlyph(context, target)`. The context contains the resolved glyph, slot,
+glyph index/count and current elapsed time. Fill `target.transform` (Object3D)
+and optional `target.color`; the runtime handles matrices and uploads. Projection
+targets are reused and reset before each glyph; copy data if retaining it.
+
+Call `runtime.update(elapsedSeconds)` before rendering. Projection is cached:
+changes to captured authoring inputs require `invalidate()` or
+`invalidateRows(start, end)` (end-exclusive). Width changes can reflow downstream
+sectors, so dirty rows preserve cursor dependencies. `onFrame(time, delta)` runs
+even when poses stay cached, for uniform animation. Time-dependent CPU transforms
+must invalidate their rows. `shouldVisitSlot` is a visibility predicate evaluated
+on every update; it does not change authored glyphs. Use `getStats()`,
+`getLayoutStats()`, `needsUpdate()` and `getInstanceIdentity(instanceId)` for
+scheduling, diagnostics and interaction. A visibility predicate or onFrame hook
+keeps `needsUpdate()` true because external state can change every frame.
+
+The runtime currently executes one `recoverableDamage()` descriptor via
+`addImpact(spanCoord, lineCoord, { radius?, strength? })` and `clearImpacts()`.
+Distances are in layout coordinates; custom projection/world transforms do not
+change this damage space. Unsupported descriptors throw instead of doing nothing.
+Impacts are capped at 64 by default (`maxImpacts` can override); overflow retires
+the oldest impact and invalidates its affected rows. Instance-capacity overflow
+throws. Geometry/material are borrowed unless `disposeResources: true`; textures
+remain caller-owned. Always call `dispose()` for runtime-owned buffers.
+
+All shipped presets now use `SurfaceExecutionRuntime`, which also backs the
+custom surface runtime. Specialized projectors retain their authored geometry,
+multi-mesh outputs, glyph buckets, physics and grass spatial cache. The kernel
+caches complete authored rows, skips unchanged projection passes, and disposes
+owned instance buffers. `effect.getRuntimeStats()` reports reused/rebuilt rows
+and executed/skipped passes.
+
+Static field presets cache their terrain projection. Reuse a stable ground-height
+callback; call `effect.invalidate()` after mutating terrain or placement callbacks
+in place. Passing a different ground-height callback also refreshes projection.
+Source setters and parameter changes refresh dependent work automatically.
+
+For specialized custom projectors, `SurfaceExecutionRuntime.run(name, dependencies,
+project, force?)` schedules named passes. Its `forEachLaidOutLine(options, widthKey?,
+mode?)` caches rows and returns borrowed lines; do not mutate or retain their arrays
+as writable storage. Omit `widthKey` for automatic exact effective-width checks,
+or supply every width dependency to avoid resampling unchanged widths. `mode:
+'stream'` avoids retaining continuously changing rows. `dispose(ownedGroup)`
+releases layout caches and all instance buffers in that group; geometry, materials
+and textures remain the projector's responsibility. See `tests/PRESETS.md` for
+the repeatable before/after benchmark and native rendering checks.
+
+### Core correctness and cache ownership
+
+`SurfaceLayoutDriver.shouldVisitSlot` suppresses emission and glyph decoding.
+It still evaluates widths and advances cursors in hidden slots, so visibility
+cannot change the remaining authored sequence. Return zero from `getMaxWidth`
+for intentional semantic removal/reflow. It supports `rowStart`/`rowEnd` intervals,
+`getStats()`, `resetStats()`, `clearCache()` and `dispose()`. A last exact transition
+per slot prevents stable large grids from thrashing the shared 2,048-line LRU;
+decoded lines use a 512-entry LRU. No width quantization is performed.
+
+Source/text caches each default to 128 entries / 1,000,000 UTF-16 text units.
+Configure both with `configureSurfaceCaches({ maxEntries, maxTextUnits })`;
+zero disables retention. Use `releaseSurfaceSource(key)`, `clearSurfaceCaches()`
+and `getSurfaceCacheStats()` for lifecycle/diagnostics. Key reuse compares font,
+repeat, glyph definitions, weights and metadata identity before returning a source.
+Token definitions are snapshotted; metadata itself remains caller-owned. Live
+prepared handles survive eviction/release. Clearing Pretext's shared measurement
+cache is opt-in with `clearSurfaceCaches({ measurements: true })`, useful after
+fonts load/change; recreate the affected prepared handles afterwards.
+
+Built-in seeding reuses bounded weakly owned checkpoints and detected rewind
+periods. Custom seed callbacks are still invoked per row. Motion fields and
+accelerating strength recovery account for the full elapsed delta, including slow
+update cadences. `sampleInto(x, z, target)` provides an allocation-free motion
+sample API alongside `sample()`.
 
 When a shipped preset is already close to the desired result, customize the preset before dropping to `createSurfaceEffect()`.
 

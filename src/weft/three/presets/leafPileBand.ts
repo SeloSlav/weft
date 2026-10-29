@@ -1,3 +1,4 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
@@ -6,7 +7,7 @@ import type {
   SeedCursorFactory,
   SurfaceLayoutSlot,
 } from '../../core'
-import { createWorldField, SurfaceLayoutDriver } from '../../core'
+import { createWorldField } from '../../core'
 import { updateRecoveringImpacts } from '../../runtime'
 import { createSurfaceEffect, fieldLayout } from '../api'
 import {
@@ -279,7 +280,7 @@ export class LeafPileBandEffect {
   private readonly fieldCenterX: number
   private readonly fieldCenterZ: number
   private readonly seedCursor: SeedCursorFactory
-  private layoutDriver: SurfaceLayoutDriver<LeafPileTokenId, LeafPileTokenMeta>
+  private runtime: SurfaceExecutionRuntime<LeafPileTokenId, LeafPileTokenMeta>
   private params: LeafPileBandParams
   private usesCustomSurface: boolean
   private readonly disturbances: Disturbance[] = []
@@ -309,7 +310,7 @@ export class LeafPileBandEffect {
       includeAtXZ: placementMask.includeAtXZ ?? (() => true),
       distanceToBandAtXZ: placementMask.distanceToBandAtXZ ?? ((_, z) => z),
     }
-    this.layoutDriver = this.createLayoutDriver(surface)
+    this.runtime = this.createRuntime(surface)
 
     this.leafMesh.frustumCulled = false
     this.leafMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
@@ -323,7 +324,9 @@ export class LeafPileBandEffect {
     const prevSeason = this.params.season
     this.params = { ...this.params, ...params }
     if (this.params.season !== prevSeason && !this.usesCustomSurface) {
-      this.layoutDriver = this.createLayoutDriver(buildLeafPileSeasonSurface(this.params.season))
+      const next = this.createRuntime(buildLeafPileSeasonSurface(this.params.season))
+      this.runtime.dispose()
+      this.runtime = next
     }
     for (const burn of this.burns) {
       burn.maxRadius = this.params.burnMaxRadius
@@ -332,15 +335,19 @@ export class LeafPileBandEffect {
 
   setSurface(surface: PreparedSurfaceSource<LeafPileTokenId, LeafPileTokenMeta>): void {
     this.usesCustomSurface = true
-    this.layoutDriver = this.createLayoutDriver(surface)
+    const next = this.createRuntime(surface)
+    this.runtime.dispose()
+    this.runtime = next
   }
 
   clearDisturbances(): void {
+    this.runtime.invalidate()
     this.disturbances.length = 0
     this.leafStates.clear()
   }
 
   clearBurns(): void {
+    this.runtime.invalidate()
     this.burns.length = 0
   }
 
@@ -421,6 +428,7 @@ export class LeafPileBandEffect {
     elapsedTime: number,
     getGroundHeight: (x: number, z: number) => number,
   ): void {
+    const hadReactions = this.burns.length > 0 || this.hasDisturbances()
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
     if (delta > 0) {
@@ -430,6 +438,11 @@ export class LeafPileBandEffect {
       }
       updateRecoveringImpacts(this.burns, this.params.recoveryRate, delta, 0.02)
     }
+    this.runtime.run('leaves', [this.params, getGroundHeight],
+      () => this.updateLeaves(delta, getGroundHeight), hadReactions || this.burns.length > 0)
+  }
+
+  private updateLeaves(delta: number, getGroundHeight: (x: number, z: number) => number): void {
     if (
       this.params.layoutDensity <= 0 ||
       this.params.sizeScale <= 0 ||
@@ -445,7 +458,7 @@ export class LeafPileBandEffect {
     let instanceIndex = 0
     const generation = ++this.updateGeneration
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
@@ -462,7 +475,7 @@ export class LeafPileBandEffect {
           generation,
         )
       },
-    })
+    }, [this.params.layoutDensity, this.params.season])
 
     for (const [key, state] of this.leafStates.entries()) {
       if (state.generation !== generation || this.leafInactive(state)) {
@@ -479,7 +492,13 @@ export class LeafPileBandEffect {
     }
   }
 
+  /** Refresh after mutating terrain or placement callbacks in place. */
+  invalidate(): void { this.runtime.invalidate() }
+
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
+    this.runtime.dispose(this.group)
     this.leafGeometry.dispose()
     this.leafMaterial.dispose()
   }
@@ -514,8 +533,8 @@ export class LeafPileBandEffect {
     return target
   }
 
-  private createLayoutDriver(surface: PreparedSurfaceSource<LeafPileTokenId, LeafPileTokenMeta>) {
-    return new SurfaceLayoutDriver({
+  private createRuntime(surface: PreparedSurfaceSource<LeafPileTokenId, LeafPileTokenMeta>) {
+    return new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,

@@ -1,3 +1,4 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
@@ -6,7 +7,7 @@ import type {
   SeedCursorFactory,
   SurfaceLayoutSlot,
 } from '../../core'
-import { createWorldField, SurfaceLayoutDriver } from '../../core'
+import { createWorldField } from '../../core'
 import { decayRecoveringStrength } from '../../runtime'
 import { createSurfaceEffect, fieldLayout } from '../api'
 import { createBarkGrainTexture, warmBarkColor } from './barkShared'
@@ -237,7 +238,7 @@ export class TreeFieldEffect {
   private readonly fieldDepth: number
   private readonly fieldCenterX: number
   private readonly fieldCenterZ: number
-  private layoutDriver: SurfaceLayoutDriver<TreeTokenId, TreeTokenMeta>
+  private runtime: SurfaceExecutionRuntime<TreeTokenId, TreeTokenMeta>
   private placementsDirty = true
   private params: TreeFieldParams
   private readonly treePlacements: TreePlacement[] = []
@@ -260,7 +261,7 @@ export class TreeFieldEffect {
       bounds,
       includeAtXZ: placementMask.includeAtXZ ?? (() => true),
     }
-    this.layoutDriver = this.createLayoutDriver(surface, seedCursor)
+    this.runtime = this.createRuntime(surface, seedCursor)
 
     this.trunkMesh = new THREE.InstancedMesh(this.trunkGeometry, this.trunkMaterial, MAX_INSTANCES)
     this.trunkMesh.frustumCulled = false
@@ -289,7 +290,9 @@ export class TreeFieldEffect {
   }
 
   setSurface(surface: PreparedSurfaceSource<TreeTokenId, TreeTokenMeta>, seedCursor: SeedCursorFactory): void {
-    this.layoutDriver = this.createLayoutDriver(surface, seedCursor)
+    const next = this.createRuntime(surface, seedCursor)
+    this.runtime.dispose()
+    this.runtime = next
     this.placementsDirty = true
   }
 
@@ -317,9 +320,11 @@ export class TreeFieldEffect {
       rebuildPlacements ||
       this.placementsDirty
 
-    if (needsTreeRebuild) {
+    const rebuilt = this.runtime.run('trees', [getGroundHeight], () => {
       this.updateTrees(getGroundHeight)
       this.placementsDirty = false
+    }, needsTreeRebuild)
+    if (rebuilt) {
       if (this.crownBurns.length > 0) {
         this.refreshCrownBurnVisuals()
       }
@@ -360,10 +365,12 @@ export class TreeFieldEffect {
     return this.crownBurns.length > 0
   }
 
+  invalidate(): void { this.placementsDirty = true; this.runtime.invalidate() }
+
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
-    this.trunkMesh.dispose()
-    this.crownWoodMesh.dispose()
-    this.crownLeafMesh.dispose()
+    this.runtime.dispose(this.group)
     this.trunkBarkTexture.dispose()
     this.trunkGeometry.dispose()
     this.trunkMaterial.dispose()
@@ -377,11 +384,11 @@ export class TreeFieldEffect {
     return slot.spanSize * BASE_LAYOUT_PX_PER_WORLD * this.params.layoutDensity
   }
 
-  private createLayoutDriver(
+  private createRuntime(
     surface: PreparedSurfaceSource<TreeTokenId, TreeTokenMeta>,
     seedCursor: SeedCursorFactory,
   ) {
-    return new SurfaceLayoutDriver({
+    return new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,
@@ -444,7 +451,7 @@ export class TreeFieldEffect {
     let instanceIndex = 0
     this.treePlacements.length = 0
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
@@ -459,7 +466,7 @@ export class TreeFieldEffect {
           instanceIndex,
         )
       },
-    })
+    }, [this.params.layoutDensity])
 
     this.trunkMesh.count = instanceIndex
     updateInstanceMatrices(this.trunkMesh)

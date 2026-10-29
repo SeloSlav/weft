@@ -1,3 +1,4 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
@@ -6,7 +7,7 @@ import type {
   SeedCursorFactory,
   SurfaceLayoutSlot,
 } from '../../core'
-import { createWorldField, SurfaceLayoutDriver } from '../../core'
+import { createWorldField } from '../../core'
 import { createSurfaceEffect, fieldLayout } from '../api'
 import {
   getPreparedBandSurface,
@@ -166,7 +167,7 @@ export class BandFieldEffect {
   private readonly fieldDepth: number
   private readonly fieldCenterX: number
   private readonly fieldCenterZ: number
-  private readonly layoutDriver: SurfaceLayoutDriver<BandTokenId, BandTokenMeta>
+  private readonly runtime: SurfaceExecutionRuntime<BandTokenId, BandTokenMeta>
   private params: BandFieldParams
 
   constructor(
@@ -194,7 +195,7 @@ export class BandFieldEffect {
       includeAtXZ: placementMask.includeAtXZ ?? (() => true),
       distanceToBandAtXZ: placementMask.distanceToBandAtXZ ?? ((_, z) => z),
     }
-    this.layoutDriver = new SurfaceLayoutDriver({
+    this.runtime = new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,
@@ -214,10 +215,16 @@ export class BandFieldEffect {
   }
 
   update(getGroundHeight: (x: number, z: number) => number): void {
-    this.updateBand(getGroundHeight)
+    this.runtime.run('band', [this.params, getGroundHeight], () => this.updateBand(getGroundHeight))
   }
 
+  /** Refresh after mutating terrain or placement callbacks in place. */
+  invalidate(): void { this.runtime.invalidate() }
+
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
+    this.runtime.dispose(this.group)
     this.bandGeometry.dispose()
     this.bandMaterial.dispose()
   }
@@ -241,7 +248,7 @@ export class BandFieldEffect {
     const backZ = this.fieldDepth * 0.48
     let instanceIndex = 0
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
@@ -249,7 +256,7 @@ export class BandFieldEffect {
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
         instanceIndex = this.projectLine(slot, resolvedGlyphs, tokenLineKey, rowStep, getGroundHeight, instanceIndex)
       },
-    })
+    }, [this.params.layoutDensity])
 
     this.bandMesh.count = instanceIndex
     updateInstanceMatrices(this.bandMesh)

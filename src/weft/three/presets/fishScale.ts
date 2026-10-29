@@ -1,3 +1,4 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
@@ -6,7 +7,6 @@ import type {
   SeedCursorFactory,
   SurfaceLayoutSlot,
 } from '../../core'
-import { SurfaceLayoutDriver } from '../../core'
 import { updateRecoveringImpacts } from '../../runtime'
 import { createSurfaceEffect, recoverableDamage, wallLayout } from '../api'
 import { smoothPulse } from './sharedMath'
@@ -231,7 +231,7 @@ export class ShellSurfaceEffect {
     uHoleThreshold: { value: FACADE_VISUAL_HOLE_THRESHOLD },
   }
   private readonly basePatchPositions: Float32Array
-  private readonly layoutDriver: SurfaceLayoutDriver<FishTokenId, FishTokenMeta>
+  private readonly runtime: SurfaceExecutionRuntime<FishTokenId, FishTokenMeta>
   private readonly wounds: Wound[] = []
   private readonly cachedWounds: CachedWoundSample[] = []
   private readonly damageSampleWounds: CachedWoundSample[] = []
@@ -258,7 +258,7 @@ export class ShellSurfaceEffect {
       this.patchGeometry.attributes.position.array as ArrayLike<number>,
     )
     this.scaleGeometry = createGlyphGeometry(appearance)
-    this.layoutDriver = new SurfaceLayoutDriver({
+    this.runtime = new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,
@@ -428,7 +428,8 @@ export class ShellSurfaceEffect {
           (this.appearance === 'glass'
             ? THREE.MathUtils.lerp(1 / 8, 1 / 3, this.glassDamageOptimization01)
             : THREE.MathUtils.lerp(1 / 12, 1 / 6, this.glassDamageOptimization01))
-      this.updatePatch(sampleElapsed, shouldRecomputeNormals)
+      this.runtime.run('patch', [sampleElapsed, shouldRecomputeNormals],
+        () => this.updatePatch(sampleElapsed, shouldRecomputeNormals), this.needsGeometryRefresh)
       this.patchUpdateAccumulator = 0
       if (shouldRecomputeNormals) this.patchNormalAccumulator = 0
       patchUpdated = true
@@ -440,7 +441,7 @@ export class ShellSurfaceEffect {
       this.needsGeometryRefresh ||
       this.scaleUpdateAccumulator >= woundedGlassScaleRefreshInterval
     if (shouldRefreshScales) {
-      this.updateScales(sampleElapsed)
+      this.runtime.run('scales', [sampleElapsed], () => this.updateScales(sampleElapsed), this.needsGeometryRefresh)
       this.scaleUpdateAccumulator = 0
     }
     this.updateBreachHoleUniforms()
@@ -600,7 +601,12 @@ export class ShellSurfaceEffect {
     }
   }
 
+  invalidate(): void { this.needsGeometryRefresh = true; this.runtime.invalidate() }
+
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
+    this.runtime.dispose(this.group)
     this.scaleGeometry.dispose()
     this.scaleMaterial.dispose()
     this.patchGeometry.dispose()
@@ -974,8 +980,11 @@ export class ShellSurfaceEffect {
     const rowStep = PATCH_HEIGHT / (ROWS + 2.6)
     const topY = PATCH_HEIGHT * 0.42
     let instanceIndex = 0
+    // Flat shells stay below the driver's 8px minimum width (unit-length tangents).
+    // Globe arc widths change continuously with deformation, so stream those rows.
+    const stableWidths = !this.isSphericalGlassSurface()
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: -PATCH_WIDTH * 0.5,
       spanMax: PATCH_WIDTH * 0.5,
       lineCoordAtRow: (row) => topY - row * rowStep,
@@ -983,7 +992,7 @@ export class ShellSurfaceEffect {
       onLine: ({ slot, resolvedGlyphs }) => {
         instanceIndex = this.projectLine(slot, resolvedGlyphs, elapsedTime, instanceIndex)
       },
-    })
+    }, stableWidths ? [] : undefined, stableWidths ? 'cached' : 'stream')
 
     this.scaleMesh.count = instanceIndex
     updateInstanceMatrices(this.scaleMesh)

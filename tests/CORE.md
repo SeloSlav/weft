@@ -100,8 +100,10 @@ Visibility predicates now suppress emission/decoding, while widths are evaluated
 for hidden slots so their cursors still advance. Do not use a side effect in a
 visibility predicate to mutate widths. Intentional zero-width removal still
 reflows the row. Custom effects opt into the shared runtime through
-`definition.createRuntime(options)`; existing preset classes retain their own
-specialized motion/appearance implementations.
+`definition.createRuntime(options)`. Existing preset classes now share its
+execution kernel while retaining specialized motion/appearance projectors.
+See [preset verification](./PRESETS.md) for the migration, callback invalidation
+contract, and per-preset comparisons.
 
 Source reuse now checks definitions, font, repeat and metadata identity. Metadata
 objects are borrowed, and prepared token definitions are snapshots. Configuration

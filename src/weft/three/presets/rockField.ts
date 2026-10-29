@@ -1,3 +1,4 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
@@ -6,7 +7,7 @@ import type {
   SeedCursorFactory,
   SurfaceLayoutSlot,
 } from '../../core'
-import { createWorldField, SurfaceLayoutDriver } from '../../core'
+import { createWorldField } from '../../core'
 import { createSurfaceEffect, fieldLayout } from '../api'
 import {
   getPreparedRockSurface,
@@ -207,7 +208,7 @@ export class RockFieldEffect {
   private readonly fieldDepth: number
   private readonly fieldCenterX: number
   private readonly fieldCenterZ: number
-  private readonly layoutDriver: SurfaceLayoutDriver<RockTokenId, RockTokenMeta>
+  private readonly runtime: SurfaceExecutionRuntime<RockTokenId, RockTokenMeta>
   private readonly destroyedRockKeys = new Set<string>()
   private readonly shardParticles: RockShardParticle[] = []
   /** Filled each layout pass: instance index → stable authored rock key (for raycast → destroy). */
@@ -232,7 +233,7 @@ export class RockFieldEffect {
       bounds,
       includeAtXZ: placementMask.includeAtXZ ?? (() => true),
     }
-    this.layoutDriver = new SurfaceLayoutDriver({
+    this.runtime = new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,
@@ -314,16 +315,19 @@ export class RockFieldEffect {
   update(elapsedTime: number, getGroundHeight: (x: number, z: number) => number): void {
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
-    if (this.rocksDirty) {
+    this.runtime.run('rocks', [getGroundHeight], () => {
       this.updateRocks(getGroundHeight)
       this.rocksDirty = false
-    }
+    }, this.rocksDirty)
     this.integrateShards(delta, getGroundHeight)
   }
 
+  invalidate(): void { this.rocksDirty = true; this.runtime.invalidate() }
+
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
-    this.rockMesh.dispose()
-    this.shardMesh.dispose()
+    this.runtime.dispose(this.group)
     this.rockGeometry.dispose()
     this.shardGeometry.dispose()
     this.rockMaterial.dispose()
@@ -338,7 +342,7 @@ export class RockFieldEffect {
     const backZ = this.fieldDepth * 0.48
     let instanceIndex = 0
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
@@ -346,7 +350,7 @@ export class RockFieldEffect {
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
         instanceIndex = this.projectLine(slot, resolvedGlyphs, tokenLineKey, rowStep, getGroundHeight, instanceIndex)
       },
-    })
+    }, [this.params.layoutDensity])
 
     this.rockMesh.count = instanceIndex
     updateInstanceMatrices(this.rockMesh)

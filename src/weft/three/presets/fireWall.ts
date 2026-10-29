@@ -1,10 +1,10 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
   PreparedSurfaceSource,
   SeedCursorFactory,
 } from '../../core'
-import { SurfaceLayoutDriver } from '../../core'
 import { updateRecoveringImpacts } from '../../runtime'
 import {
   createSurfaceEffect,
@@ -167,7 +167,7 @@ export class FireWallEffect {
     metalness: 0.0,
   })
   private readonly baseMesh = new THREE.Mesh(this.baseGeometry, this.baseMaterial)
-  private readonly layoutDriver: SurfaceLayoutDriver<FireTokenId, FireTokenMeta>
+  private readonly runtime: SurfaceExecutionRuntime<FireTokenId, FireTokenMeta>
   private readonly wounds: FireWound[] = []
   private params: FireWallParams = { ...DEFAULT_FIRE_WALL_PARAMS }
 
@@ -185,7 +185,7 @@ export class FireWallEffect {
     this.wallWidth = wallWidth
     this.wallHeight = wallHeight
     this.interactionGeometry = new THREE.PlaneGeometry(wallWidth, wallHeight)
-    this.layoutDriver = new SurfaceLayoutDriver({
+    this.runtime = new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,
@@ -267,10 +267,13 @@ export class FireWallEffect {
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, elapsedTime - this.lastElapsed)
     this.lastElapsed = elapsedTime
     updateRecoveringImpacts(this.wounds, this.params.recoveryRate, delta)
-    this.updateParticles(elapsedTime, delta)
+    this.runtime.run('animation', [elapsedTime], () => this.updateParticles(elapsedTime, delta), true)
   }
 
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
+    this.runtime.dispose(this.group)
     this.particleGeometry.dispose()
     this.particleTexture.dispose()
     this.baseGeometry.dispose()
@@ -295,7 +298,7 @@ export class FireWallEffect {
   private updateParticles(elapsedTime: number, delta: number): void {
     let instanceIndex = 0
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: -this.wallWidth * 0.5,
       spanMax: this.wallWidth * 0.5,
       lineCoordAtRow: (row) => (row / (ROWS - 1)) * this.wallHeight,
@@ -357,7 +360,7 @@ export class FireWallEffect {
           instanceIndex++
         }
       },
-    })
+    }, [])
 
     this.particleMesh.count = instanceIndex
     updateInstanceMatrices(this.particleMesh)

@@ -153,7 +153,24 @@ const trees = createTreeFieldEffect({
 })
 ```
 
-## Shared runtime for custom effects
+## Shared execution for presets and custom effects
+
+Every shipped preset uses `SurfaceExecutionRuntime`, the same execution kernel
+under the custom surface runtime. It caches authored rows, schedules projection
+passes and releases owned instance buffers. Grass keeps its spatial blade cache;
+trees keep their multiple meshes; the book keeps its glyph buckets. Continuously
+deforming globe widths stream through the shared layout driver instead of
+retaining rows that change every update.
+
+Presets expose `getRuntimeStats()` for cache/pass counts. Static field presets
+cache terrain projection: keep the ground-height callback stable between frames,
+and call `effect.invalidate()` after changing terrain or placement callbacks in
+place. `setParams()`, supported source setters, and reactions invalidate their
+dependent work automatically. Camera culling still follows mutable camera data.
+
+Run `npm run check:presets` for the pinned before/after comparison across all
+families, shell/band variants and the three landscape looks. See
+[preset verification](tests/PRESETS.md) for measurements and native WebGPU checks.
 
 `createSurfaceEffect()` retains its source/layout configuration and now provides
 `createRuntime()`. Custom effects can use the same layout cache, dirty-row updates,

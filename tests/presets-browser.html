@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Preset runtime migration checks</title>
+<style>body{margin:24px;background:#121b20;color:#e7eee9;font:14px system-ui}button,select{margin:0 12px 14px 0;padding:8px}canvas{width:960px;height:540px;max-width:100%;display:block}pre{white-space:pre-wrap;line-height:1.5}.pass{color:#a6e3a1}.fail{color:#ff9999}</style></head>
+<body><h1>Preset runtime migration checks</h1><p>Native browser fonts, exact output parity against commit 035a56b, and actual WebGPU draws. Fixed seed 17, 960 × 540, DPR 1.</p>
+<button id="checks">Run all preset checks</button><select id="preset" aria-label="Preview preset"></select><button id="damage">Preview reaction</button>
+<canvas id="scene"></canvas><pre id="results">Ready. Prepare the pinned baseline with npm run validate:baseline -- 035a56bb4a8f7cb7bcf8ecdc2baf269e7e359d6e.</pre>
+<script type="module" src="./presets-browser.mjs"></script></body></html>

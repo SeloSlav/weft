@@ -1,7 +1,7 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type { PreparedSurfaceSource, SeedCursorFactory } from '../../core'
-import { SurfaceLayoutDriver } from '../../core'
 import { updateRecoveringImpacts } from '../../runtime'
 import { createSurfaceEffect, recoverableDamage, skyLayout } from '../api'
 import { getPreparedStarSurface } from './starSkySource'
@@ -87,7 +87,7 @@ export class StarSkyEffect {
     blending: THREE.AdditiveBlending,
   })
   private readonly starMesh = new THREE.InstancedMesh(this.geometry, this.material, MAX_STARS)
-  private readonly layoutDriver: SurfaceLayoutDriver
+  private readonly runtime: SurfaceExecutionRuntime
   private readonly wounds: SkyWound[] = []
   private lastElapsed = 0
   private params: StarSkyParams
@@ -98,7 +98,7 @@ export class StarSkyEffect {
     initialParams: StarSkyParams,
   ) {
     this.params = { ...initialParams }
-    this.layoutDriver = new SurfaceLayoutDriver({
+    this.runtime = new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,
@@ -159,10 +159,13 @@ export class StarSkyEffect {
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, elapsedTime - this.lastElapsed)
     this.lastElapsed = elapsedTime
     updateRecoveringImpacts(this.wounds, this.params.recoveryRate, delta)
-    this.updateStars(elapsedTime)
+    this.runtime.run('animation', [elapsedTime], () => this.updateStars(elapsedTime), true)
   }
 
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
+    this.runtime.dispose(this.group)
     this.geometry.dispose()
     this.material.dispose()
   }
@@ -201,7 +204,7 @@ export class StarSkyEffect {
     const hasWounds = this.wounds.length > 0
     const polarJitterScale = ((MAX_POLAR - MIN_POLAR) / ROWS) * 0.55
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: 0,
       spanMax: Math.PI * 2,
       lineCoordAtRow: (row) => THREE.MathUtils.lerp(MIN_POLAR, MAX_POLAR, row / (ROWS - 1)),
@@ -241,7 +244,7 @@ export class StarSkyEffect {
           instanceIndex++
         }
       },
-    })
+    }, [this.params.layoutDensity])
 
     this.starMesh.count = instanceIndex
     updateInstanceMatrices(this.starMesh)

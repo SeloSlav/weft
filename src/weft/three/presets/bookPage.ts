@@ -1,3 +1,4 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateInstanceMatrices } from '../helpers/bufferUpdates'
 import { layoutNextLine, type LayoutCursor } from '@chenglou/pretext'
 import * as THREE from 'three'
@@ -102,6 +103,7 @@ type GlyphPlacement = {
 
 export class BookPageEffect {
   readonly group = new THREE.Group()
+  private readonly runtime = new SurfaceExecutionRuntime()
   readonly interactionMesh: THREE.Mesh
 
   private readonly surface: PreparedSurfaceSource<string, BookGlyphMeta>
@@ -164,10 +166,12 @@ export class BookPageEffect {
     this.playerWorld.copy(world)
   }
 
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
+    this.runtime.dispose(this.group)
     for (const mesh of this.buckets.values()) {
       const mat = mesh.material as THREE.MeshBasicMaterial
-      mat.map?.dispose()
       mat.dispose()
     }
     ;(this.interactionMesh.material as THREE.MeshBasicMaterial).dispose()
@@ -186,7 +190,9 @@ export class BookPageEffect {
 
     if (!canAffectGlyphs && !this.wasActiveLastFrame) return
 
-    this.renderPlacements(canAffectGlyphs)
+    this.runtime.run('glyphs', [this.params, canAffectGlyphs,
+      canAffectGlyphs ? tmpLocalPlayer.x : 0, canAffectGlyphs ? tmpLocalPlayer.y : 0,
+      canAffectGlyphs ? tmpLocalPlayer.z : 0], () => this.renderPlacements(canAffectGlyphs))
     this.wasActiveLastFrame = canAffectGlyphs
   }
 

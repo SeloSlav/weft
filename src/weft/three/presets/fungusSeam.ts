@@ -1,3 +1,4 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
@@ -6,7 +7,6 @@ import type {
   SeedCursorFactory,
   SurfaceLayoutSlot,
 } from '../../core'
-import { SurfaceLayoutDriver } from '../../core'
 import { updateRecoveringImpacts } from '../../runtime'
 import { createSurfaceEffect, fieldLayout } from '../api'
 import {
@@ -168,7 +168,7 @@ export class FungusSeamEffect {
   private readonly fieldDepth: number
   private readonly fieldCenterX: number
   private readonly fieldCenterZ: number
-  private readonly layoutDriver: SurfaceLayoutDriver<BandTokenId, BandTokenMeta>
+  private readonly runtime: SurfaceExecutionRuntime<BandTokenId, BandTokenMeta>
   private readonly burns: FungusBurn[] = []
   private params: FungusSeamParams
   private lastElapsed = 0
@@ -190,7 +190,7 @@ export class FungusSeamEffect {
       includeAtXZ: placementMask.includeAtXZ ?? (() => true),
       distanceToBandAtXZ: placementMask.distanceToBandAtXZ ?? ((_, z) => z),
     }
-    this.layoutDriver = new SurfaceLayoutDriver({
+    this.runtime = new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,
@@ -255,6 +255,7 @@ export class FungusSeamEffect {
   }
 
   clearBurns(): void {
+    this.runtime.invalidate()
     this.burns.length = 0
   }
 
@@ -263,13 +264,21 @@ export class FungusSeamEffect {
   }
 
   update(elapsedTime: number, getGroundHeight: (x: number, z: number) => number): void {
+    const hadBurns = this.burns.length > 0
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
     this.updateBurns(delta)
-    this.updateFungus(getGroundHeight)
+    this.runtime.run('projection', [this.params, getGroundHeight], () => this.updateFungus(getGroundHeight),
+      hadBurns || this.burns.length > 0)
   }
 
+  /** Refresh after mutating terrain or placement callbacks in place. */
+  invalidate(): void { this.runtime.invalidate() }
+
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
+    this.runtime.dispose(this.group)
     this.fungusGeometry.dispose()
     this.fungusMaterial.dispose()
   }
@@ -330,7 +339,7 @@ export class FungusSeamEffect {
     const backZ = this.fieldDepth * 0.48
     let instanceIndex = 0
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
@@ -345,7 +354,7 @@ export class FungusSeamEffect {
           instanceIndex,
         )
       },
-    })
+    }, [this.params.layoutDensity])
 
     this.fungusMesh.count = instanceIndex
     updateInstanceMatrices(this.fungusMesh)

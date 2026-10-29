@@ -1,3 +1,4 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
@@ -6,7 +7,7 @@ import type {
   SeedCursorFactory,
   SurfaceLayoutSlot,
 } from '../../core'
-import { createWorldField, SurfaceLayoutDriver } from '../../core'
+import { createWorldField } from '../../core'
 import { decayRecoveringStrength } from '../../runtime'
 import { createSurfaceEffect, fieldLayout } from '../api'
 import { createBarkGrainTexture, warmBarkColor } from './barkShared'
@@ -217,7 +218,7 @@ export class ShrubFieldEffect {
   private readonly fieldDepth: number
   private readonly fieldCenterX: number
   private readonly fieldCenterZ: number
-  private layoutDriver: SurfaceLayoutDriver<ShrubTokenId, ShrubTokenMeta>
+  private runtime: SurfaceExecutionRuntime<ShrubTokenId, ShrubTokenMeta>
   private placementsDirty = true
   private params: ShrubFieldParams
   private readonly placements: ShrubPlacement[] = []
@@ -240,7 +241,7 @@ export class ShrubFieldEffect {
       bounds,
       includeAtXZ: placementMask.includeAtXZ ?? (() => true),
     }
-    this.layoutDriver = this.createLayoutDriver(surface, seedCursor)
+    this.runtime = this.createRuntime(surface, seedCursor)
 
     this.woodMesh.frustumCulled = false
     this.leafMesh.frustumCulled = false
@@ -263,7 +264,9 @@ export class ShrubFieldEffect {
   }
 
   setSurface(surface: PreparedSurfaceSource<ShrubTokenId, ShrubTokenMeta>, seedCursor: SeedCursorFactory): void {
-    this.layoutDriver = this.createLayoutDriver(surface, seedCursor)
+    const next = this.createRuntime(surface, seedCursor)
+    this.runtime.dispose()
+    this.runtime = next
     this.placementsDirty = true
   }
 
@@ -286,9 +289,11 @@ export class ShrubFieldEffect {
         }
       }
     }
-    if (this.placementsDirty) {
+    const rebuilt = this.runtime.run('placements', [getGroundHeight], () => {
       this.rebuildShrubs(getGroundHeight)
       this.placementsDirty = false
+    }, this.placementsDirty)
+    if (rebuilt) {
       if (this.burns.length > 0) {
         this.refreshShrubBurnVisuals()
       }
@@ -328,9 +333,12 @@ export class ShrubFieldEffect {
     return this.burns.length > 0
   }
 
+  invalidate(): void { this.placementsDirty = true; this.runtime.invalidate() }
+
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
-    this.woodMesh.dispose()
-    this.leafMesh.dispose()
+    this.runtime.dispose(this.group)
     this.woodGeometry.dispose()
     this.leafGeometry.dispose()
     this.woodBarkTexture.dispose()
@@ -342,11 +350,11 @@ export class ShrubFieldEffect {
     return slot.spanSize * BASE_LAYOUT_PX_PER_WORLD * this.params.layoutDensity
   }
 
-  private createLayoutDriver(
+  private createRuntime(
     surface: PreparedSurfaceSource<ShrubTokenId, ShrubTokenMeta>,
     seedCursor: SeedCursorFactory,
   ) {
-    return new SurfaceLayoutDriver({
+    return new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,
@@ -402,7 +410,7 @@ export class ShrubFieldEffect {
     let instanceIndex = 0
     this.placements.length = 0
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
@@ -410,7 +418,7 @@ export class ShrubFieldEffect {
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
         instanceIndex = this.projectLine(slot, resolvedGlyphs, tokenLineKey, rowStep, getGroundHeight, instanceIndex)
       },
-    })
+    }, [this.params.layoutDensity])
 
     this.woodMesh.count = instanceIndex
     this.leafMesh.count = instanceIndex

@@ -1,3 +1,4 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
 import type {
@@ -6,7 +7,7 @@ import type {
   SeedCursorFactory,
   SurfaceLayoutSlot,
 } from '../../core'
-import { createWorldField, SurfaceLayoutDriver } from '../../core'
+import { createWorldField } from '../../core'
 import { updateRecoveringImpacts } from '../../runtime'
 import { createSurfaceEffect, fieldLayout } from '../api'
 import {
@@ -156,7 +157,7 @@ export class NeedleLitterFieldEffect {
   private readonly fieldDepth: number
   private readonly fieldCenterX: number
   private readonly fieldCenterZ: number
-  private readonly layoutDriver: SurfaceLayoutDriver<NeedleLitterTokenId, NeedleLitterTokenMeta>
+  private readonly runtime: SurfaceExecutionRuntime<NeedleLitterTokenId, NeedleLitterTokenMeta>
   private readonly burns: NeedleBurn[] = []
   private readonly tmpViewCullBox = new THREE.Box3()
   private params: NeedleLitterFieldParams
@@ -178,7 +179,7 @@ export class NeedleLitterFieldEffect {
       bounds,
       includeAtXZ: placementMask.includeAtXZ ?? (() => true),
     }
-    this.layoutDriver = new SurfaceLayoutDriver({
+    this.runtime = new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,
@@ -232,6 +233,7 @@ export class NeedleLitterFieldEffect {
   }
 
   clearBurns(): void {
+    this.runtime.invalidate()
     this.burns.length = 0
   }
 
@@ -244,6 +246,7 @@ export class NeedleLitterFieldEffect {
     getGroundHeight: (x: number, z: number) => number,
     viewCull?: PresetLayoutViewCull | null,
   ): void {
+    const hadBurns = this.burns.length > 0
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
     if (delta > 0) {
@@ -253,10 +256,17 @@ export class NeedleLitterFieldEffect {
       }
       updateRecoveringImpacts(this.burns, this.params.recoveryRate, delta, 0.02)
     }
-    this.updateNeedles(getGroundHeight, viewCull)
+    this.runtime.run('projection', [this.params, getGroundHeight, Boolean(viewCull)], () => this.updateNeedles(getGroundHeight, viewCull),
+      hadBurns || this.burns.length > 0 || Boolean(viewCull))
   }
 
+  /** Refresh after mutating terrain or placement callbacks in place. */
+  invalidate(): void { this.runtime.invalidate() }
+
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
+    this.runtime.dispose(this.group)
     this.needleGeometry.dispose()
     this.needleMaterial.dispose()
   }
@@ -316,7 +326,7 @@ export class NeedleLitterFieldEffect {
       this.group.updateMatrixWorld(true)
     }
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
@@ -327,7 +337,7 @@ export class NeedleLitterFieldEffect {
       onLine: ({ slot, resolvedGlyphs, tokenLineKey }) => {
         instanceIndex = this.projectLine(slot, resolvedGlyphs, tokenLineKey, rowStep, getGroundHeight, instanceIndex)
       },
-    })
+    }, [this.params.layoutDensity])
 
     this.needleMesh.count = instanceIndex
     updateInstanceMatrices(this.needleMesh)

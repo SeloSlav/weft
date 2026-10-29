@@ -64,7 +64,9 @@
     "validate:baseline": "node tests/prepare-baseline.mjs",
     "validate:types": "tsc -p tests/tsconfig.json",
     "pack:check": "npm pack --dry-run",
-    "prepack": "npm run build:sdk"
+    "prepack": "npm run build:sdk",
+    "bench:presets": "node tests/bench-presets.mjs",
+    "check:presets": "npm run validate:types && npm test && npm run bench:presets --"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

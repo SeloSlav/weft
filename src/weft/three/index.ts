@@ -1,3 +1,6 @@
+export { SurfaceExecutionRuntime } from './executionRuntime.ts'
+export type { SurfaceExecutionStats } from './executionRuntime.ts'
+
 export { LANDSCAPE_PRESETS } from './presets/landscapePresets.ts'
 export type { LandscapePreset, LandscapePresetId } from './presets/landscapePresets.ts'
 

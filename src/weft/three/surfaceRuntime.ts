@@ -1,5 +1,6 @@
+import { SurfaceExecutionRuntime } from './executionRuntime'
 import * as THREE from 'three'
-import { SurfaceLayoutDriver, seedCursor, type PreparedSurfaceSource, type ResolvedSurfaceGlyph,
+import { seedCursor, type PreparedSurfaceSource, type ResolvedSurfaceGlyph,
   type SeedCursorFactory, type SurfaceLayoutLine, type SurfaceLayoutSlot } from '../core'
 import { decayRecoveringStrength, type SurfaceBehavior } from '../runtime'
 import { createInstancedMesh, type ThreeInstancedMeshRendererConfig } from './helpers/instancing'
@@ -52,7 +53,7 @@ type SlotRecord<TokenId extends string, Meta> = {
 export class SurfaceEffectRuntime<TokenId extends string = string, Meta = unknown> {
   readonly group = new THREE.Group()
   readonly mesh: THREE.InstancedMesh
-  private driver: SurfaceLayoutDriver<TokenId, Meta>
+  private driver: SurfaceExecutionRuntime<TokenId, Meta>
   private readonly slots: (SlotRecord<TokenId, Meta> | undefined)[] = []
   private readonly dirtyRows = new Set<number>()
   private dirtyAll = true
@@ -106,7 +107,7 @@ export class SurfaceEffectRuntime<TokenId extends string = string, Meta = unknow
   }
 
   private createDriver(source: PreparedSurfaceSource<TokenId, Meta>) {
-    return new SurfaceLayoutDriver({ ...this.config.layout, surface: source,
+    return new SurfaceExecutionRuntime({ ...this.config.layout, surface: source,
       seedCursor: this.config.seedCursor ?? seedCursor })
   }
 
@@ -286,7 +287,7 @@ export class SurfaceEffectRuntime<TokenId extends string = string, Meta = unknow
   }
 
   getStats(): SurfaceRuntimeStats { return { ...this.stats } }
-  getLayoutStats() { return this.driver.getStats() }
+  getLayoutStats() { return this.driver.getLayoutStats()! }
   needsUpdate(): boolean { return !this.disposed && (this.dirtyAll || this.dirtyRows.size > 0 || Boolean(this.options.onFrame || this.options.shouldVisitSlot) || this.impacts.some((i) => i.recoveryRate > 0)) }
   getInstanceIdentity(index: number): { row: number; sector: number; glyphIndex: number; tokenId: TokenId } | null {
     if (!Number.isInteger(index) || index < 0 || index >= this.mesh.count) return null

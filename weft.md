@@ -380,6 +380,28 @@ the oldest impact and invalidates its affected rows. Instance-capacity overflow
 throws. Geometry/material are borrowed unless `disposeResources: true`; textures
 remain caller-owned. Always call `dispose()` for runtime-owned buffers.
 
+All shipped presets now use `SurfaceExecutionRuntime`, which also backs the
+custom surface runtime. Specialized projectors retain their authored geometry,
+multi-mesh outputs, glyph buckets, physics and grass spatial cache. The kernel
+caches complete authored rows, skips unchanged projection passes, and disposes
+owned instance buffers. `effect.getRuntimeStats()` reports reused/rebuilt rows
+and executed/skipped passes.
+
+Static field presets cache their terrain projection. Reuse a stable ground-height
+callback; call `effect.invalidate()` after mutating terrain or placement callbacks
+in place. Passing a different ground-height callback also refreshes projection.
+Source setters and parameter changes refresh dependent work automatically.
+
+For specialized custom projectors, `SurfaceExecutionRuntime.run(name, dependencies,
+project, force?)` schedules named passes. Its `forEachLaidOutLine(options, widthKey?,
+mode?)` caches rows and returns borrowed lines; do not mutate or retain their arrays
+as writable storage. Omit `widthKey` for automatic exact effective-width checks,
+or supply every width dependency to avoid resampling unchanged widths. `mode:
+'stream'` avoids retaining continuously changing rows. `dispose(ownedGroup)`
+releases layout caches and all instance buffers in that group; geometry, materials
+and textures remain the projector's responsibility. See `tests/PRESETS.md` for
+the repeatable before/after benchmark and native rendering checks.
+
 ### Core correctness and cache ownership
 
 `SurfaceLayoutDriver.shouldVisitSlot` suppresses emission and glyph decoding.

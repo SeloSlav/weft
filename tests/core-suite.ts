@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import * as core from '../src/weft/core'
 import {createSurfaceMotionField, decayRecoveringStrength, updateRecoveringImpacts} from '../src/weft/runtime'
 import {createSurfaceEffect, createSurfaceSource, fieldLayout, recoverableDamage, threeInstancedMeshRenderer} from '../src/weft/three/api'
+import {SurfaceExecutionRuntime} from '../src/weft/three/executionRuntime'
 
 type Check = {name:string; passed:boolean; error?:string}
 function assert(value:unknown, message = 'assertion failed'): asserts value { if (!value) throw new Error(message) }
@@ -24,6 +25,71 @@ export function runCoreChecks(): Check[] {
       ...options,onLine:line=>lines.push(line)})
     return lines
   }
+
+  test('shared execution replays rows and rebuilds exactly the row whose width changes',()=>{
+    const layout={surface:source(),rows:4,sectors:8,seedCursor:core.seedCursor,advanceForRow:(row:number)=>row*13+5}
+    const runtime=new SurfaceExecutionRuntime(layout)
+    let changed=false
+    const options={spanMin:0,spanMax:32,lineCoordAtRow:(row:number)=>row,
+      getMaxWidth:(slot:core.SurfaceLayoutSlot)=>changed && slot.row===2 && slot.sector===1 ? 91.001 : 40}
+    const read=()=>{const lines:core.SurfaceLayoutLine[]=[];runtime.forEachLaidOutLine({...options,onLine:l=>lines.push(l)});return lines}
+    const first=read();runtime.resetStats();equal(read(),first)
+    assert(runtime.getStats().rebuiltRows===0 && runtime.getStats().replayedRows===4)
+    assert(runtime.getLayoutStats()!.slotsVisited===0,'warm replay entered the line driver')
+    changed=true;const next=read()
+    equal(next,collect(new core.SurfaceLayoutDriver(layout),options))
+    assert(runtime.getStats().rebuiltRows===1,'local reflow rebuilt unrelated rows')
+    runtime.dispose();assert(runtime.getStats().cachedRows===0);throws(read)
+  })
+  test('shared execution tracks culling, geometry, zero widths and retry after invalid input',()=>{
+    const options={surface:source(),rows:4,sectors:8,seedCursor:core.seedCursor,advanceForRow:(row:number)=>row*7}
+    const runtime=new SurfaceExecutionRuntime(options)
+    const reference=new core.SurfaceLayoutDriver(options)
+    let hidden=false,invalid=false,width=40,shift=0
+    const traversal=()=>({spanMin:-3+shift,spanMax:29+shift,lineCoordAtRow:(row:number)=>row+shift,
+      rowOffsetAt:(row:number,step:number)=>(row%2)*step*.43,
+      getMaxWidth:(slot:core.SurfaceLayoutSlot)=>invalid && slot.sector===4 ? NaN : slot.sector===1 ? 0 : width+slot.row,
+      shouldVisitSlot:(slot:core.SurfaceLayoutSlot)=>!hidden || slot.sector>3})
+    const read=()=>{const lines:core.SurfaceLayoutLine[]=[];runtime.forEachLaidOutLine({...traversal(),onLine:l=>lines.push(l)});return lines}
+    for(const step of [0,1,2,3]) {
+      hidden=step===1;shift=step===2?5:0;width=step===3?52.7:40
+      equal(read(),collect(reference,traversal()))
+      equal(read(),collect(reference,traversal()))
+    }
+    width=84;invalid=true;throws(read);invalid=false
+    equal(read(),collect(reference,traversal()),'failed traversal poisoned row cache')
+    runtime.dispose();reference.dispose()
+  })
+  test('shared execution retries failed projections and disposes each mesh while borrowing assets',()=>{
+    const runtime=new SurfaceExecutionRuntime()
+    let calls=0
+    throws(()=>runtime.run('pose',[1],()=>{throw Error('retry')}))
+    runtime.run('pose',[1],()=>calls++);runtime.run('pose',[1],()=>calls++)
+    runtime.invalidate();runtime.run('pose',[1],()=>calls++)
+    assert(calls===2 && runtime.getStats().skippedPasses===1)
+    const group=new THREE.Group(),geometry=new THREE.PlaneGeometry(),material=new THREE.MeshBasicMaterial()
+    let buffers=0,assets=0
+    geometry.addEventListener('dispose',()=>assets++);material.addEventListener('dispose',()=>assets++)
+    for(let i=0;i<3;i++) {const mesh=new THREE.InstancedMesh(geometry,material,2);mesh.addEventListener('dispose',()=>buffers++);group.add(mesh)}
+    runtime.dispose(group);runtime.dispose(group)
+    assert(buffers===3 && assets===0)
+    throws(()=>runtime.run('pose',[],()=>{}))
+    geometry.dispose();material.dispose()
+  })
+  test('shared execution width dependencies skip sampling without losing minimum-width or zero-width semantics',()=>{
+    const runtime=new SurfaceExecutionRuntime({surface:source(),rows:2,sectors:4,seedCursor:core.seedCursor,advanceForRow:r=>r*3})
+    let width=1,samples=0
+    const traversal={spanMin:0,spanMax:16,lineCoordAtRow:(row:number)=>row,getMaxWidth:()=>{samples++;return width},onLine:()=>{}}
+    runtime.forEachLaidOutLine(traversal,[width]);runtime.resetStats();samples=0
+    runtime.forEachLaidOutLine(traversal,[width]);assert(samples===0)
+    width=2;runtime.forEachLaidOutLine(traversal,[width])
+    assert(runtime.getStats().rebuiltRows===0,'equivalent clamped widths reflowed')
+    width=0;runtime.forEachLaidOutLine(traversal,[width])
+    assert(runtime.getStats().rebuiltRows===2,'zero width retained stale lines')
+    width=30;let restored=0
+    runtime.forEachLaidOutLine({...traversal,onLine:()=>restored++},[width])
+    assert(restored>0);runtime.dispose()
+  })
 
   test('visibility preserves tokens, widths and cursors of the complete authored layout',()=>{
     const layout=driver()

@@ -1,3 +1,4 @@
+import { SurfaceExecutionRuntime } from '../executionRuntime'
 import * as THREE from 'three'
 import { attribute, uniform, positionLocal, uv, vec2, vec3, float, sin, smoothstep, mix, materialColor } from 'three/tsl'
 import { updateActiveAttribute, updateAttributeSpan, trackInstanceUploads } from '../helpers/bufferUpdates'
@@ -6,7 +7,7 @@ import type {
   SeedCursorFactory,
   SurfaceLayoutSlot,
 } from '../../core'
-import { createWorldField, SurfaceLayoutDriver } from '../../core'
+import { createWorldField } from '../../core'
 import { decayRecoveringStrength } from '../../runtime'
 import {
   createSurfaceEffect,
@@ -544,7 +545,7 @@ export class GrassFieldEffect {
   private readonly groundSurfaceMesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>
   private readonly baseGroundPositions: Float32Array
   private readonly seedCursor: SeedCursorFactory
-  private layoutDriver: SurfaceLayoutDriver<GrassTokenId, GrassTokenMeta>
+  private runtime: SurfaceExecutionRuntime<GrassTokenId, GrassTokenMeta>
   private readonly disturbances: Disturbance[] = []
   private readonly burns: GrassBurn[] = []
   private readonly cachedBlades: CachedBladeInstance[] = []
@@ -597,7 +598,7 @@ export class GrassFieldEffect {
     this.groundGeometry = new THREE.PlaneGeometry(this.fieldWidth, this.fieldDepth, 40, 32)
     this.groundSurfaceMesh = new THREE.Mesh(this.groundGeometry, this.groundMaterial)
     this.baseGroundPositions = Float32Array.from(this.groundGeometry.attributes.position.array as ArrayLike<number>)
-    this.layoutDriver = this.createLayoutDriver(surface)
+    this.runtime = this.createRuntime(surface)
 
     this.bladeMesh.frustumCulled = false
     this.bladeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
@@ -735,7 +736,9 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
   }
 
   setSurface(surface: PreparedSurfaceSource<GrassTokenId, GrassTokenMeta>): void {
-    this.layoutDriver = this.createLayoutDriver(surface)
+    const next = this.createRuntime(surface)
+    this.runtime.dispose()
+    this.runtime = next
     this.bladeCacheDirty = true
   }
 
@@ -888,8 +891,12 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     this.gpuWindStrength.value = this.params.wind
   }
 
+  invalidate(): void { this.runtime.invalidate(); this.refreshTerrain() }
+
+  getRuntimeStats() { return this.runtime.getStats() }
+
   dispose(): void {
-    this.bladeMesh.dispose()
+    this.runtime.dispose(this.group)
     this.bladeGeometry.dispose()
     this.bladeMaterial.dispose()
     this.groundTexture.dispose()
@@ -1062,8 +1069,8 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     return this.tintColor(STATE_GROUND_TINT[this.stateIndex()]!, SEASON_GROUND_TINT, 0.97)
   }
 
-  private createLayoutDriver(surface: PreparedSurfaceSource<GrassTokenId, GrassTokenMeta>) {
-    return new SurfaceLayoutDriver({
+  private createRuntime(surface: PreparedSurfaceSource<GrassTokenId, GrassTokenMeta>) {
+    return new SurfaceExecutionRuntime({
       surface,
       rows: ROWS,
       sectors: SECTORS,
@@ -1093,9 +1100,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
   }
 
   private updateBlades(elapsedTime: number): void {
-    if (this.bladeCacheDirty) {
-      this.rebuildBladeCache()
-    }
+    this.runtime.run('blades', [], () => this.rebuildBladeCache(), this.bladeCacheDirty)
     if (this.bladeRestMatricesDirty) this.rebuildRestMatrices()
 
     const hasDisturbances = this.disturbances.length > 0
@@ -1418,7 +1423,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     const bladeBaseColor = this.tintColor(STATE_BLADE_BASE[stateIndex]!, SEASON_BLADE_TINT, 0.72, tmpSeasonColorA)
     const bladeTipColor = this.tintColor(STATE_BLADE_TIP[stateIndex]!, SEASON_BLADE_TINT, 0.88, tmpSeasonColorB)
 
-    this.layoutDriver.forEachLaidOutLine({
+    this.runtime.forEachLaidOutLine({
       spanMin: -this.fieldWidth * 0.5,
       spanMax: this.fieldWidth * 0.5,
       lineCoordAtRow: (row) => backZ - row * rowStep,
@@ -1531,7 +1536,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
           }
         }
       },
-    })
+    }, [this.params.layoutDensity, this.stateIndex()])
 
     this.bladeCacheDirty = false
     this.baseBladeColorsDirty = true

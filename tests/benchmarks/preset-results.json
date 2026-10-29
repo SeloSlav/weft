@@ -1,0 +1,3331 @@
+{
+  "baselineRevision": "035a56bb4a8f7cb7bcf8ecdc2baf269e7e359d6e",
+  "generatedAt": "2026-10-29T19:50:15.868Z",
+  "environment": {
+    "node": "v24.22.1",
+    "platform": "win32",
+    "arch": "x64",
+    "backend": "CPU only; deterministic measurement and no-op texture canvas"
+  },
+  "cases": [
+    {
+      "name": "band-generic",
+      "hasReaction": false,
+      "initialCounts": [
+        55
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 20,
+        "replayedRows": 720,
+        "emittedLines": 20720,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 20
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 864,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.617999999999995,
+            "p95Ms": 1.617999999999995,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.4914999999999878,
+            "p95Ms": 1.4914999999999878,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.0848139456922616
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.23486500000000063,
+            "p95Ms": 0.3192399999999992,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00018999999999991246,
+            "p95Ms": 0.0006000000000000227,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 1236.1315789479413
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.21659999999999968,
+            "p95Ms": 0.377900000000011,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.22719999999998208,
+            "p95Ms": 0.2913000000000068,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.953345070422609
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.22419999999999618,
+            "p95Ms": 0.3476999999999748,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.00029999999998153726,
+            "p95Ms": 0.0016999999999995907,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 747.3333333793133
+        }
+      }
+    },
+    {
+      "name": "band-scrub",
+      "hasReaction": false,
+      "initialCounts": [
+        55
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 20,
+        "replayedRows": 720,
+        "emittedLines": 20720,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 20
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 864,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.9662999999999897,
+            "p95Ms": 0.9662999999999897,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.8310999999999922,
+            "p95Ms": 0.8310999999999922,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.162675971603897
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.22121000000000207,
+            "p95Ms": 0.2897799999999989,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0001300000000000523,
+            "p95Ms": 0.00014500000000055023,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 1701.615384614716
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.21009999999995443,
+            "p95Ms": 0.23619999999999663,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.261099999999999,
+            "p95Ms": 0.38649999999998386,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.8046725392568183
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.20519999999999072,
+            "p95Ms": 0.345799999999997,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0002000000000066393,
+            "p95Ms": 0.0004000000000132786,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1025.999999965894
+        }
+      }
+    },
+    {
+      "name": "band-fungus",
+      "hasReaction": false,
+      "initialCounts": [
+        55
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 20,
+        "replayedRows": 720,
+        "emittedLines": 20720,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 20
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 864,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.5770999999999731,
+            "p95Ms": 0.5770999999999731,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.8756999999999948,
+            "p95Ms": 0.8756999999999948,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 0.6590156446271286
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.22083500000000242,
+            "p95Ms": 0.3407900000000012,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00015500000000088222,
+            "p95Ms": 0.00030500000000017736,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 1424.7419354757774
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.20680000000004384,
+            "p95Ms": 0.33539999999993597,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.21539999999998827,
+            "p95Ms": 0.2353999999999985,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.960074280408798
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.2035999999999376,
+            "p95Ms": 0.31979999999998654,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0002000000000066393,
+            "p95Ms": 0.0002000000000066393,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1017.999999965894
+        }
+      }
+    },
+    {
+      "name": "shell-fish",
+      "hasReaction": true,
+      "initialCounts": [
+        null,
+        448
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 71,
+        "rebuiltRows": 16,
+        "replayedRows": 1120,
+        "emittedLines": 31808,
+        "projectionPasses": 120,
+        "skippedPasses": 314,
+        "cachedRows": 16
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 314,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 2.4932000000000016,
+            "p95Ms": 2.4932000000000016,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.807200000000023,
+            "p95Ms": 1.807200000000023,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.3795927401504924
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.23773500000000353,
+            "p95Ms": 0.35846000000000233,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0006000000000000227,
+            "p95Ms": 0.0008400000000008845,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 396.22499999999087
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.5914999999999964,
+            "p95Ms": 0.9610999999999876,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.38769999999999527,
+            "p95Ms": 0.5746000000000038,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.5256641733299035
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.5744999999999436,
+            "p95Ms": 0.831600000000094,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.2849999999999966,
+            "p95Ms": 0.5677000000000021,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 2.0157894736840367
+        }
+      }
+    },
+    {
+      "name": "shell-shutter",
+      "hasReaction": true,
+      "initialCounts": [
+        null,
+        448
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 71,
+        "rebuiltRows": 16,
+        "replayedRows": 1120,
+        "emittedLines": 31808,
+        "projectionPasses": 120,
+        "skippedPasses": 314,
+        "cachedRows": 16
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 314,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.0374000000000478,
+            "p95Ms": 1.0374000000000478,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.0132000000000119,
+            "p95Ms": 1.0132000000000119,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.0238847216739397
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.2568200000000047,
+            "p95Ms": 0.3757249999999999,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.002205000000000723,
+            "p95Ms": 0.0029650000000003727,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 116.47165532876214
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.4797999999999547,
+            "p95Ms": 0.6718000000000757,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.3608999999999867,
+            "p95Ms": 0.7399000000000058,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.329454142421647
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.4561999999999671,
+            "p95Ms": 0.7011999999999716,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.2655000000000314,
+            "p95Ms": 0.5331000000000472,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.718267419962008
+        }
+      }
+    },
+    {
+      "name": "shell-ivy",
+      "hasReaction": true,
+      "initialCounts": [
+        null,
+        448
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 71,
+        "rebuiltRows": 16,
+        "replayedRows": 1120,
+        "emittedLines": 31808,
+        "projectionPasses": 120,
+        "skippedPasses": 314,
+        "cachedRows": 16
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 314,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.5369000000000597,
+            "p95Ms": 1.5369000000000597,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.0631999999999948,
+            "p95Ms": 1.0631999999999948,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.4455417607224108
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.2632000000000005,
+            "p95Ms": 0.3973799999999983,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0011449999999996407,
+            "p95Ms": 0.0038050000000026786,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 229.86899563326034
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.5404000000000906,
+            "p95Ms": 0.9322999999999411,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.35019999999997253,
+            "p95Ms": 0.6646000000000072,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.5431182181614305
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.5839999999998327,
+            "p95Ms": 0.9857999999999265,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.2563999999999851,
+            "p95Ms": 0.5135999999999967,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 2.277691107643786
+        }
+      }
+    },
+    {
+      "name": "shell-glass",
+      "hasReaction": true,
+      "initialCounts": [
+        null,
+        448
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 47,
+        "rebuiltRows": 16,
+        "replayedRows": 736,
+        "emittedLines": 21056,
+        "projectionPasses": 94,
+        "skippedPasses": 314,
+        "cachedRows": 16
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 314,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.0303000000001248,
+            "p95Ms": 1.0303000000001248,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.9286999999999921,
+            "p95Ms": 0.9286999999999921,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.1094002368904206
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.10232999999999493,
+            "p95Ms": 0.15031999999999926,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0006249999999994316,
+            "p95Ms": 0.0015150000000005547,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 163.72800000014078
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.34120000000007167,
+            "p95Ms": 1.018199999999979,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.198599999999999,
+            "p95Ms": 0.23850000000004457,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.7180261832833503
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.01089999999999236,
+            "p95Ms": 0.6374000000000706,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0024000000000228283,
+            "p95Ms": 0.23849999999998772,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 4.541666666620284
+        }
+      }
+    },
+    {
+      "name": "shell-glassBulb",
+      "hasReaction": true,
+      "initialCounts": [
+        null,
+        448
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 49,
+        "rebuiltRows": 0,
+        "replayedRows": 0,
+        "emittedLines": 21952,
+        "projectionPasses": 98,
+        "skippedPasses": 314,
+        "cachedRows": 0
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 314,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.9488000000001193,
+            "p95Ms": 1.9488000000001193,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.5027000000000044,
+            "p95Ms": 1.5027000000000044,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.2968656418447553
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.18106000000000222,
+            "p95Ms": 0.25671999999999573,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0005200000000002092,
+            "p95Ms": 0.0005800000000022009,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 348.1923076921719
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 1.2359999999998763,
+            "p95Ms": 2.343399999999974,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.0863999999999692,
+            "p95Ms": 1.8729000000000156,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.1377025036818036
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.010300000000142973,
+            "p95Ms": 1.5746000000001459,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.00529999999997699,
+            "p95Ms": 1.1940000000000168,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.9433962264505076
+        }
+      }
+    },
+    {
+      "name": "fungus-seam",
+      "hasReaction": true,
+      "initialCounts": [
+        58
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 70,
+        "rebuiltRows": 20,
+        "replayedRows": 1380,
+        "emittedLines": 39200,
+        "projectionPasses": 70,
+        "skippedPasses": 436,
+        "cachedRows": 20
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 1296,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.134800000000041,
+            "p95Ms": 1.134800000000041,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.1277999999999793,
+            "p95Ms": 1.1277999999999793,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.0062067742508087
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.12755499999999528,
+            "p95Ms": 0.28678499999999757,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0002800000000007685,
+            "p95Ms": 0.0002999999999985903,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 455.55357142730423
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.09239999999999782,
+            "p95Ms": 0.15380000000004657,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0775000000000432,
+            "p95Ms": 0.08729999999997062,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.1922580645154364
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.10439999999994143,
+            "p95Ms": 0.1994000000001961,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.07980000000003429,
+            "p95Ms": 0.09250000000002956,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.3082706766904333
+        }
+      }
+    },
+    {
+      "name": "needle-litter",
+      "hasReaction": true,
+      "initialCounts": [
+        687
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 70,
+        "rebuiltRows": 20,
+        "replayedRows": 1380,
+        "emittedLines": 33600,
+        "projectionPasses": 70,
+        "skippedPasses": 436,
+        "cachedRows": 20
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 864,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.4777000000001408,
+            "p95Ms": 1.4777000000001408,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.8272000000000048,
+            "p95Ms": 1.8272000000000048,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 0.8087237302977982
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.3773500000000013,
+            "p95Ms": 0.5514900000000011,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0003200000000020964,
+            "p95Ms": 0.000380000000001246,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 1179.2187499922788
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.322400000000016,
+            "p95Ms": 0.3573999999998705,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.3487999999999829,
+            "p95Ms": 0.5498999999999796,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.9243119266055958
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.46280000000001564,
+            "p95Ms": 0.848700000000008,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.37360000000001037,
+            "p95Ms": 1.047300000000007,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.2387580299785943
+        }
+      }
+    },
+    {
+      "name": "leaf-pile",
+      "hasReaction": true,
+      "initialCounts": [
+        823
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 70,
+        "rebuiltRows": 22,
+        "replayedRows": 1518,
+        "emittedLines": 46200,
+        "projectionPasses": 70,
+        "skippedPasses": 436,
+        "cachedRows": 22
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 1296,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 2.5107000000000426,
+            "p95Ms": 2.5107000000000426,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.9273000000000025,
+            "p95Ms": 1.9273000000000025,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.3027032636330822
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.36756500000000186,
+            "p95Ms": 0.5190650000000006,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0003000000000014325,
+            "p95Ms": 0.00032500000000084127,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 1225.2166666608225
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.4157000000000153,
+            "p95Ms": 0.5266999999998916,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.3593999999999937,
+            "p95Ms": 0.5015999999999963,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.1566499721759114
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.47929999999996653,
+            "p95Ms": 0.7860000000000582,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.42799999999999727,
+            "p95Ms": 0.6492999999999824,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.1198598130840411
+        }
+      }
+    },
+    {
+      "name": "grass",
+      "hasReaction": true,
+      "initialCounts": [
+        null,
+        null,
+        128298
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 1,
+        "rebuiltRows": 52,
+        "replayedRows": 0,
+        "emittedLines": 3536,
+        "projectionPasses": 1,
+        "skippedPasses": 505,
+        "cachedRows": 52
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 92.10230000000001,
+            "p95Ms": 92.10230000000001,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 88.85990000000004,
+            "p95Ms": 88.85990000000004,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.0364888999424935
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00045500000001084116,
+            "p95Ms": 0.0006399999999985084,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0005049999999982901,
+            "p95Ms": 0.0011099999999999,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.9009900990344193
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.001099999999951251,
+            "p95Ms": 0.0012000000001535227,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.001100000000064938,
+            "p95Ms": 0.002200000000016189,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.9999999998966483
+        },
+        "active": {
+          "before": {
+            "medianMs": 3.3596999999999753,
+            "p95Ms": 4.4823999999998705,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 3.468499999999949,
+            "p95Ms": 3.9873000000000047,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.968631973475573
+        }
+      }
+    },
+    {
+      "name": "rocks",
+      "hasReaction": true,
+      "initialCounts": [
+        396,
+        0
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 38,
+        "rebuiltRows": 18,
+        "replayedRows": 666,
+        "emittedLines": 15048,
+        "projectionPasses": 38,
+        "skippedPasses": 468,
+        "cachedRows": 18
+      },
+      "ownedMeshes": 2,
+      "disposedMeshes": 2,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.2156999999997424,
+            "p95Ms": 1.2156999999997424,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.5505000000000564,
+            "p95Ms": 1.5505000000000564,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 0.7840696549498215
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00009000000000014552,
+            "p95Ms": 0.0000950000000102591,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0001699999999971169,
+            "p95Ms": 0.00018000000000029104,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.5294117647157168
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.47870000000011714,
+            "p95Ms": 0.6302000000000589,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.40980000000001837,
+            "p95Ms": 0.7524000000000797,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.1681307955102385
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.010500000000320142,
+            "p95Ms": 0.019099999999980355,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.019800000000032014,
+            "p95Ms": 0.04919999999992797,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.5303030303183417
+        }
+      }
+    },
+    {
+      "name": "logs",
+      "hasReaction": true,
+      "initialCounts": [
+        136
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 14,
+        "replayedRows": 504,
+        "emittedLines": 8029,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 14
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.7630999999996675,
+            "p95Ms": 1.7630999999996675,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.4823000000000093,
+            "p95Ms": 1.4823000000000093,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.1894353369760888
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00008999999997740815,
+            "p95Ms": 0.0000950000000102591,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00016499999999837202,
+            "p95Ms": 0.00018000000000029104,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.5454545453230069
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.6653999999998632,
+            "p95Ms": 0.729399999999714,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.6299999999998818,
+            "p95Ms": 0.8173999999999069,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.0561904761904573
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.0363999999999578,
+            "p95Ms": 0.054799999999886495,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.03350000000000364,
+            "p95Ms": 0.034099999999853026,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.0865671641777268
+        }
+      }
+    },
+    {
+      "name": "sticks",
+      "hasReaction": true,
+      "initialCounts": [
+        878
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 17,
+        "replayedRows": 612,
+        "emittedLines": 11951,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 17
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 2.5763999999999214,
+            "p95Ms": 2.5763999999999214,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 2.31230000000005,
+            "p95Ms": 2.31230000000005,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.1142152834839187
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00008499999999003193,
+            "p95Ms": 0.0000850000000127693,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00017000000000280124,
+            "p95Ms": 0.00018000000000029104,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.4999999999331254
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.9131000000002132,
+            "p95Ms": 1.1003999999998086,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.8508999999999105,
+            "p95Ms": 1.0248999999998887,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.0730990715716409
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.044200000000273576,
+            "p95Ms": 0.08019999999987704,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.03300000000012915,
+            "p95Ms": 0.04320000000006985,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.3393939393969878
+        }
+      }
+    },
+    {
+      "name": "shrubs",
+      "hasReaction": true,
+      "initialCounts": [
+        383,
+        383
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 22,
+        "replayedRows": 792,
+        "emittedLines": 22792,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 22
+      },
+      "ownedMeshes": 2,
+      "disposedMeshes": 2,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.3578000000002248,
+            "p95Ms": 1.3578000000002248,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.3669999999999618,
+            "p95Ms": 1.3669999999999618,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 0.9932699341625917
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.0000850000000127693,
+            "p95Ms": 0.00018000000000029104,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00013999999999896317,
+            "p95Ms": 0.0002950000000055297,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.607142857238563
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.501299999999901,
+            "p95Ms": 0.6555999999995947,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.4621999999999389,
+            "p95Ms": 0.5383999999999105,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.0845954132409505
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.07069999999976062,
+            "p95Ms": 0.0805000000000291,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.06909999999993488,
+            "p95Ms": 0.07809999999994943,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.0231548480438097
+        }
+      }
+    },
+    {
+      "name": "trees",
+      "hasReaction": true,
+      "initialCounts": [
+        257,
+        257,
+        257
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 20,
+        "replayedRows": 720,
+        "emittedLines": 17390,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 20
+      },
+      "ownedMeshes": 3,
+      "disposedMeshes": 3,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.1190999999998894,
+            "p95Ms": 1.1190999999998894,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.3076000000000931,
+            "p95Ms": 1.3076000000000931,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 0.8558427653715278
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00009999999999763532,
+            "p95Ms": 0.00010500000000774889,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00018499999999903592,
+            "p95Ms": 0.0002000000000066393,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.5405405405305753
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.5097000000000662,
+            "p95Ms": 0.7292999999999665,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.44869999999991705,
+            "p95Ms": 0.6324999999999363,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.1359482950750177
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.05319999999983338,
+            "p95Ms": 0.08449999999993452,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.049999999999954525,
+            "p95Ms": 0.0704000000000633,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.0639999999976353
+        }
+      }
+    },
+    {
+      "name": "fire",
+      "hasReaction": true,
+      "initialCounts": [
+        null,
+        2872,
+        null
+      ],
+      "idleUploadVersionDelta": 864,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 432,
+      "stats": {
+        "traversals": 506,
+        "rebuiltRows": 18,
+        "replayedRows": 9090,
+        "emittedLines": 364320,
+        "projectionPasses": 506,
+        "skippedPasses": 0,
+        "cachedRows": 18
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 864,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.632799999999861,
+            "p95Ms": 1.632799999999861,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.6241999999999734,
+            "p95Ms": 1.6241999999999734,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.0052949144193373
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.8170899999999847,
+            "p95Ms": 0.9181949999999915,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.7146449999999959,
+            "p95Ms": 0.7469449999999938,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 1.1433508945000517
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.8752999999996973,
+            "p95Ms": 1.1259000000000015,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.677599999999984,
+            "p95Ms": 0.7039999999999509,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.2917650531282734
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.8980999999998858,
+            "p95Ms": 1.1619000000000597,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.5975000000000819,
+            "p95Ms": 0.7104999999999109,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.5030962343092262
+        }
+      }
+    },
+    {
+      "name": "stars",
+      "hasReaction": true,
+      "initialCounts": [
+        2279
+      ],
+      "idleUploadVersionDelta": 864,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 432,
+      "stats": {
+        "traversals": 506,
+        "rebuiltRows": 18,
+        "replayedRows": 9090,
+        "emittedLines": 582912,
+        "projectionPasses": 506,
+        "skippedPasses": 0,
+        "cachedRows": 18
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 864,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 2.2532000000001062,
+            "p95Ms": 2.2532000000001062,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 2.1387999999999465,
+            "p95Ms": 2.1387999999999465,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.0534879371611008
+        },
+        "idle": {
+          "before": {
+            "medianMs": 1.0012199999999893,
+            "p95Ms": 1.120004999999992,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.6563400000000001,
+            "p95Ms": 0.7072300000000041,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 1.525459365572705
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 1.1975999999999658,
+            "p95Ms": 1.481499999999869,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.6177000000000135,
+            "p95Ms": 0.6548000000000229,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.938805245264594
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.935399999999845,
+            "p95Ms": 1.2489000000000487,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.656400000000076,
+            "p95Ms": 0.7302999999999429,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.4250457038387214
+        }
+      }
+    },
+    {
+      "name": "book",
+      "hasReaction": true,
+      "initialCounts": [
+        14,
+        93,
+        163,
+        54,
+        55,
+        28,
+        55,
+        14,
+        80,
+        40,
+        41,
+        27,
+        106,
+        14,
+        14,
+        40,
+        27,
+        27,
+        13,
+        13,
+        26,
+        26,
+        26,
+        26,
+        null
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 0,
+        "rebuiltRows": 0,
+        "replayedRows": 0,
+        "emittedLines": 0,
+        "projectionPasses": 1,
+        "skippedPasses": 32,
+        "cachedRows": 0
+      },
+      "ownedMeshes": 24,
+      "disposedMeshes": 24,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.010300000000370346,
+            "p95Ms": 0.010300000000370346,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.008700000000089858,
+            "p95Ms": 0.008700000000089858,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.183908046007352
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00017000000000280124,
+            "p95Ms": 0.00029499999998279237,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00018999999999778084,
+            "p95Ms": 0.00020499999999401552,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.8947368421304569
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.0003999999998995918,
+            "p95Ms": 0.0004999999996471161,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0003999999998995918,
+            "p95Ms": 0.00040000000012696546,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.083299999999781,
+            "p95Ms": 0.12080000000014479,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0005999999998493877,
+            "p95Ms": 0.0010000000002037268,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 138.83333336781834
+        }
+      }
+    },
+    {
+      "name": "meadow/grass",
+      "hasReaction": true,
+      "initialCounts": [
+        null,
+        null,
+        63390
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 1,
+        "rebuiltRows": 52,
+        "replayedRows": 0,
+        "emittedLines": 3536,
+        "projectionPasses": 1,
+        "skippedPasses": 505,
+        "cachedRows": 52
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 52.846700000000055,
+            "p95Ms": 52.846700000000055,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 54.5951,
+            "p95Ms": 54.5951,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 0.9679751479528392
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00014499999999770808,
+            "p95Ms": 0.00028500000000803994,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00018000000000029104,
+            "p95Ms": 0.0001900000000205182,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.8055555555415201
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.001799999999548163,
+            "p95Ms": 0.0027000000000043656,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0010000000002037268,
+            "p95Ms": 0.001099999999951251,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.7999999991814548
+        },
+        "active": {
+          "before": {
+            "medianMs": 2.020300000000134,
+            "p95Ms": 2.8921000000000276,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.8020999999998821,
+            "p95Ms": 2.695299999999861,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.1210809611010855
+        }
+      }
+    },
+    {
+      "name": "meadow/rocks",
+      "hasReaction": false,
+      "initialCounts": [
+        396,
+        0
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 18,
+        "replayedRows": 648,
+        "emittedLines": 14652,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 18
+      },
+      "ownedMeshes": 2,
+      "disposedMeshes": 2,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.631800000000112,
+            "p95Ms": 0.631800000000112,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.5808999999999287,
+            "p95Ms": 0.5808999999999287,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.0876226545019618
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00008000000000265572,
+            "p95Ms": 0.00009000000000014552,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00010499999998501153,
+            "p95Ms": 0.00011500000000523869,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.7619047620388143
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.3431000000000495,
+            "p95Ms": 0.5183000000001812,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.2790999999997439,
+            "p95Ms": 0.3321000000000822,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.229308491581384
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.00010000000020227162,
+            "p95Ms": 0.0001999999999497959,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0001999999999497959,
+            "p95Ms": 0.0001999999999497959,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.5000000011368684
+        }
+      }
+    },
+    {
+      "name": "meadow/shrubs",
+      "hasReaction": true,
+      "initialCounts": [
+        55,
+        55
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 22,
+        "replayedRows": 792,
+        "emittedLines": 22792,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 22
+      },
+      "ownedMeshes": 2,
+      "disposedMeshes": 2,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.636199999999917,
+            "p95Ms": 0.636199999999917,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.5493999999998778,
+            "p95Ms": 0.5493999999998778,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.1579905351293385
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00009000000000014552,
+            "p95Ms": 0.0000950000000102591,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00027000000000043656,
+            "p95Ms": 0.00028999999999541616,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.3333333333333333
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.279700000000048,
+            "p95Ms": 0.44020000000000437,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.23169999999981883,
+            "p95Ms": 0.3556000000003223,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.2071644367728387
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.014400000000023283,
+            "p95Ms": 0.016300000000228465,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.009199999999964348,
+            "p95Ms": 0.014699999999720603,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.5652173913129441
+        }
+      }
+    },
+    {
+      "name": "meadow/trees",
+      "hasReaction": true,
+      "initialCounts": [
+        28,
+        28,
+        28
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 20,
+        "replayedRows": 720,
+        "emittedLines": 17390,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 20
+      },
+      "ownedMeshes": 3,
+      "disposedMeshes": 3,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.36850000000004,
+            "p95Ms": 0.36850000000004,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.41859999999996944,
+            "p95Ms": 0.41859999999996944,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 0.8803153368372358
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00009000000000014552,
+            "p95Ms": 0.00009499999998752173,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00016000000000531144,
+            "p95Ms": 0.00016500000001542502,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.5624999999822364
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.25880000000006476,
+            "p95Ms": 0.42410000000018044,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.16589999999996508,
+            "p95Ms": 0.2284999999997126,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.559975889090532
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.008499999999912689,
+            "p95Ms": 0.01389999999992142,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.005099999999856664,
+            "p95Ms": 0.008500000000367436,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.6666666666963887
+        }
+      }
+    },
+    {
+      "name": "meadow/leafPile",
+      "hasReaction": true,
+      "initialCounts": [
+        272
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 70,
+        "rebuiltRows": 22,
+        "replayedRows": 1518,
+        "emittedLines": 46200,
+        "projectionPasses": 70,
+        "skippedPasses": 436,
+        "cachedRows": 22
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 1296,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.126800000000003,
+            "p95Ms": 1.126800000000003,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.7089999999998327,
+            "p95Ms": 0.7089999999998327,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.5892806770102523
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.3020099999999729,
+            "p95Ms": 0.36657999999997626,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00025499999999283317,
+            "p95Ms": 0.0004200000000082582,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 1184.352941209651
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.38429999999971187,
+            "p95Ms": 0.47559999999975844,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.23430000000007567,
+            "p95Ms": 0.40639999999984866,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.6402048655552188
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.3860999999997148,
+            "p95Ms": 0.45380000000022847,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.20520000000033178,
+            "p95Ms": 0.3506999999999607,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.8815789473639888
+        }
+      }
+    },
+    {
+      "name": "woodland/grass",
+      "hasReaction": true,
+      "initialCounts": [
+        null,
+        null,
+        62124
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 1,
+        "rebuiltRows": 52,
+        "replayedRows": 0,
+        "emittedLines": 3536,
+        "projectionPasses": 1,
+        "skippedPasses": 505,
+        "cachedRows": 52
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 63.25500000000011,
+            "p95Ms": 63.25500000000011,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 50.78830000000016,
+            "p95Ms": 50.78830000000016,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.2454640143497597
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00007499999996980477,
+            "p95Ms": 0.0000750000000152795,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0001099999999951251,
+            "p95Ms": 0.00011499999998250132,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.6818181815738961
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.0007000000005064066,
+            "p95Ms": 0.0007999999997991836,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0008000000002539309,
+            "p95Ms": 0.0009000000000014552,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.8750000003552714
+        },
+        "active": {
+          "before": {
+            "medianMs": 2.18119999999999,
+            "p95Ms": 2.577400000000125,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.4764000000000124,
+            "p95Ms": 1.803899999999885,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.4773774044974068
+        }
+      }
+    },
+    {
+      "name": "woodland/rocks",
+      "hasReaction": false,
+      "initialCounts": [
+        396,
+        0
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 18,
+        "replayedRows": 648,
+        "emittedLines": 14652,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 18
+      },
+      "ownedMeshes": 2,
+      "disposedMeshes": 2,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.6387999999997191,
+            "p95Ms": 0.6387999999997191,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.7485999999998967,
+            "p95Ms": 0.7485999999998967,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 0.8533262089230661
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00004500000000007276,
+            "p95Ms": 0.00005000000001018634,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00009499999998752173,
+            "p95Ms": 0.0000950000000102591,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.4736842105893002
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.34400000000005093,
+            "p95Ms": 0.5421000000005733,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.27870000000029904,
+            "p95Ms": 0.32860000000027867,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.2343021169705124
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.00010000000020227162,
+            "p95Ms": 0.00010000000020227162,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0001999999999497959,
+            "p95Ms": 0.00020000000040454324,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.5000000011368684
+        }
+      }
+    },
+    {
+      "name": "woodland/shrubs",
+      "hasReaction": true,
+      "initialCounts": [
+        127,
+        127
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 22,
+        "replayedRows": 792,
+        "emittedLines": 22792,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 22
+      },
+      "ownedMeshes": 2,
+      "disposedMeshes": 2,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.5925000000006548,
+            "p95Ms": 0.5925000000006548,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.5187000000000808,
+            "p95Ms": 0.5187000000000808,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.1422787738588058
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00006499999999505235,
+            "p95Ms": 0.00006500000004052708,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00008000000000265572,
+            "p95Ms": 0.00008000000000265572,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.8124999999111822
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.33659999999963475,
+            "p95Ms": 0.5492999999996755,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.22879999999986467,
+            "p95Ms": 0.24130000000013752,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.47115384615312
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.030099999999947613,
+            "p95Ms": 0.0488999999997759,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.019099999999980355,
+            "p95Ms": 0.03140000000030341,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.5759162303653702
+        }
+      }
+    },
+    {
+      "name": "woodland/trees",
+      "hasReaction": true,
+      "initialCounts": [
+        88,
+        88,
+        88
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 20,
+        "replayedRows": 720,
+        "emittedLines": 17390,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 20
+      },
+      "ownedMeshes": 3,
+      "disposedMeshes": 3,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.41150000000016007,
+            "p95Ms": 0.41150000000016007,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.41309999999975844,
+            "p95Ms": 0.41309999999975844,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 0.9961268458010184
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.0000349999999798456,
+            "p95Ms": 0.00003500000002532033,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00008000000000265572,
+            "p95Ms": 0.00009499999998752173,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.43749999973354653
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.3345999999992273,
+            "p95Ms": 0.4558999999999287,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.24589999999989232,
+            "p95Ms": 0.3200000000001637,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.3607157381023742
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.02449999999953434,
+            "p95Ms": 0.046000000000276486,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.017800000000079308,
+            "p95Ms": 0.04059999999981301,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.3764044943497291
+        }
+      }
+    },
+    {
+      "name": "woodland/leafPile",
+      "hasReaction": true,
+      "initialCounts": [
+        267
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 70,
+        "rebuiltRows": 22,
+        "replayedRows": 1518,
+        "emittedLines": 46200,
+        "projectionPasses": 70,
+        "skippedPasses": 436,
+        "cachedRows": 22
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 1296,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.8105999999997948,
+            "p95Ms": 0.8105999999997948,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.6033999999999651,
+            "p95Ms": 0.6033999999999651,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.3433874709974176
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.3168899999999667,
+            "p95Ms": 0.3739950000000135,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.000215000000002874,
+            "p95Ms": 0.00022999999998774,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 1473.9069767243288
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.3852999999999156,
+            "p95Ms": 0.41040000000066357,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.15160000000014406,
+            "p95Ms": 0.1617999999998574,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 2.541556728229218
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.365099999999984,
+            "p95Ms": 0.45129999999971915,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.1898999999998523,
+            "p95Ms": 0.2559999999998581,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.9225908372841916
+        }
+      }
+    },
+    {
+      "name": "autumn/grass",
+      "hasReaction": true,
+      "initialCounts": [
+        null,
+        null,
+        42276
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 1,
+        "rebuiltRows": 52,
+        "replayedRows": 0,
+        "emittedLines": 3536,
+        "projectionPasses": 1,
+        "skippedPasses": 505,
+        "cachedRows": 52
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 51.38370000000032,
+            "p95Ms": 51.38370000000032,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 29.99260000000004,
+            "p95Ms": 29.99260000000004,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.7132125924394768
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00008499999999003193,
+            "p95Ms": 0.00014000000001033187,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00008499999999003193,
+            "p95Ms": 0.0000950000000102591,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 1
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.0007999999997991836,
+            "p95Ms": 0.0008000000007086783,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0007999999997991836,
+            "p95Ms": 0.0008000000002539309,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.8959999999997308,
+            "p95Ms": 1.3890000000001237,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 1.033600000000206,
+            "p95Ms": 1.338799999999992,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.8668730650150467
+        }
+      }
+    },
+    {
+      "name": "autumn/rocks",
+      "hasReaction": false,
+      "initialCounts": [
+        396,
+        0
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 18,
+        "replayedRows": 648,
+        "emittedLines": 14652,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 18
+      },
+      "ownedMeshes": 2,
+      "disposedMeshes": 2,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.005099999999402,
+            "p95Ms": 1.005099999999402,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.6601999999998043,
+            "p95Ms": 0.6601999999998043,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.5224174492573461
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.0000750000000152795,
+            "p95Ms": 0.00008000000002539309,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00009499999998752173,
+            "p95Ms": 0.00010500000000774889,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.7894736844750607
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.4508000000005268,
+            "p95Ms": 0.7502000000004045,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.26929999999993015,
+            "p95Ms": 0.2826999999997497,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.6739695506893566
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.00010000000020227162,
+            "p95Ms": 0.00019999999949504854,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.0001999999999497959,
+            "p95Ms": 0.0001999999999497959,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.5000000011368684
+        }
+      }
+    },
+    {
+      "name": "autumn/shrubs",
+      "hasReaction": true,
+      "initialCounts": [
+        85,
+        85
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 22,
+        "replayedRows": 792,
+        "emittedLines": 22792,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 22
+      },
+      "ownedMeshes": 2,
+      "disposedMeshes": 2,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.7186999999994441,
+            "p95Ms": 0.7186999999994441,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.4758999999999105,
+            "p95Ms": 0.4758999999999105,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.5101912166412677
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00005000000001018634,
+            "p95Ms": 0.00005000000001018634,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00008000000000265572,
+            "p95Ms": 0.00010499999998501153,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.6250000001065814
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.2899999999999636,
+            "p95Ms": 0.3236000000006243,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.22060000000010405,
+            "p95Ms": 0.29619999999977153,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.314596554849623
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.009500000000116415,
+            "p95Ms": 0.009700000000520959,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.010000000000218279,
+            "p95Ms": 0.010800000000017462,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 0.949999999990905
+        }
+      }
+    },
+    {
+      "name": "autumn/trees",
+      "hasReaction": true,
+      "initialCounts": [
+        67,
+        67,
+        67
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 37,
+        "rebuiltRows": 20,
+        "replayedRows": 720,
+        "emittedLines": 17390,
+        "projectionPasses": 37,
+        "skippedPasses": 469,
+        "cachedRows": 20
+      },
+      "ownedMeshes": 3,
+      "disposedMeshes": 3,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 0,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 0.410200000000259,
+            "p95Ms": 0.410200000000259,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.4252999999998792,
+            "p95Ms": 0.4252999999998792,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 0.9644956501302034
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.00003500000002532033,
+            "p95Ms": 0.00003999999998995918,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.00008499999999003193,
+            "p95Ms": 0.00009000000000014552,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 0.4117647062285274
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.33770000000004075,
+            "p95Ms": 0.44350000000031287,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.1801999999997861,
+            "p95Ms": 0.18879999999990105,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.8740288568282
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.011099999999714782,
+            "p95Ms": 0.018199999999524152,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.010499999999865395,
+            "p95Ms": 0.010900000000219734,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.0571428571292456
+        }
+      }
+    },
+    {
+      "name": "autumn/leafPile",
+      "hasReaction": true,
+      "initialCounts": [
+        657
+      ],
+      "idleUploadVersionDelta": 0,
+      "idleRebuiltRows": 0,
+      "idleProjectionPasses": 0,
+      "stats": {
+        "traversals": 70,
+        "rebuiltRows": 22,
+        "replayedRows": 1518,
+        "emittedLines": 46200,
+        "projectionPasses": 70,
+        "skippedPasses": 436,
+        "cachedRows": 22
+      },
+      "ownedMeshes": 1,
+      "disposedMeshes": 1,
+      "cachedRowsAfterDispose": 0,
+      "beforeIdleUploadVersionDelta": 1296,
+      "parity": {
+        "initial": true,
+        "idle": true,
+        "params": true,
+        "damage": true,
+        "reaction": true,
+        "clear": true
+      },
+      "timings": {
+        "cold": {
+          "before": {
+            "medianMs": 1.0430000000005748,
+            "p95Ms": 1.0430000000005748,
+            "samples": 1,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.6170000000001892,
+            "p95Ms": 0.6170000000001892,
+            "samples": 1,
+            "batch": 1
+          },
+          "speedup": 1.6904376012970097
+        },
+        "idle": {
+          "before": {
+            "medianMs": 0.427034999999978,
+            "p95Ms": 0.5094650000000002,
+            "samples": 21,
+            "batch": 20
+          },
+          "after": {
+            "medianMs": 0.0001099999999951251,
+            "p95Ms": 0.00011500000000523869,
+            "samples": 21,
+            "batch": 20
+          },
+          "speedup": 3882.1363638082094
+        },
+        "refresh": {
+          "before": {
+            "medianMs": 0.32659999999941647,
+            "p95Ms": 0.4558999999999287,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.23030000000017026,
+            "p95Ms": 0.28549999999995634,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.4181502388153495
+        },
+        "active": {
+          "before": {
+            "medianMs": 0.35010000000056607,
+            "p95Ms": 0.3877999999995154,
+            "samples": 21,
+            "batch": 1
+          },
+          "after": {
+            "medianMs": 0.2652000000002772,
+            "p95Ms": 0.379399999999805,
+            "samples": 21,
+            "batch": 1
+          },
+          "speedup": 1.3201357466070893
+        }
+      }
+    }
+  ],
+  "gates": {
+    "allFamiliesUseRuntime": true,
+    "sharedCacheReused": true,
+    "outputParity": true,
+    "staticIdleNoUploads": true,
+    "warmIdleNoReflow": true,
+    "ownedBuffersDisposed": true
+  },
+  "note": "Same authored densities, seeds and projection math. Timings are observations, not pass/fail thresholds. Cold update is a single observation excluding construction. Refresh includes setParams. CPU-only: GPU rendering and native fonts are checked separately."
+}
