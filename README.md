@@ -174,6 +174,25 @@ authoritative CPU buffers and wind inputs; GPU arithmetic and rasterization can
 still differ between hardware or drivers, so pixel-identical rendering and exact
 independent simulation are not guaranteed.
 
+For smaller, faster-to-serialize full frames, use the binary transport instead:
+
+```ts
+import { captureSurfaceAnimationBinary, applySurfaceAnimationBinary } from 'weft-sdk/three'
+
+const bytes = captureSurfaceAnimationBinary(authorityEffect, tick) // Uint8Array
+socket.send(bytes)
+// On the replica, when the binary message is received as an ArrayBuffer:
+applySurfaceAnimationBinary(replicaEffect, new Uint8Array(event.data))
+```
+
+The binary format carries the same state and bit patterns as the JSON frame and
+uses explicit little-endian 32-bit blocks. Each frame is self-contained; it does
+not compress or send deltas, and callers must handle ordering, delivery and
+transport integrity. Pass the `Uint8Array` itself when sending so a subarray's
+offset and length are respected. Malformed or incompatible frames are checked
+before they modify the replica. See [animation frame benchmarks](tests/ANIMATION-FRAMES.md)
+for workload sizes, CPU costs and gzip comparisons.
+
 ## Package layers
 
 - `weft-sdk/three`: preset factories, layouts, behaviors, and Three.js-facing helpers

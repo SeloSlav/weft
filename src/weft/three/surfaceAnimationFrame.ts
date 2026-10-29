@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { updateAttributeSpan } from './helpers/bufferUpdates'
-import { applySurfaceTransformFrame, captureSurfaceTransformFrame, decodeDoubles, encodeDoubles,
-  nodesOf, validBits, validateSurfaceTransformFrame, type SurfaceTransformFrame } from './surfaceTransformFrame'
+import { applySurfaceTransformFrame, captureSurfaceTransformFrameWords, decodeDoubles, encodeDoubles,
+  nodesOf, validBits, validateSurfaceTransformFrame, type SurfaceFrameWords, type SurfaceTransformFrame } from './surfaceTransformFrame'
 
 export type SurfaceAnimationUniforms = Record<string, number | readonly number[]>
 export type SurfaceAnimationTarget = {
@@ -10,12 +10,12 @@ export type SurfaceAnimationTarget = {
   validateAnimationUniforms?: (uniforms: SurfaceAnimationUniforms) => void
   setAnimationUniforms?: (uniforms: SurfaceAnimationUniforms) => void
 }
-type AttributeFrame = { name: string; itemSize: number; normalized: boolean; instanced: boolean; meshPerAttribute: number; words: number[] }
+type AttributeFrame = { name: string; itemSize: number; normalized: boolean; instanced: boolean; meshPerAttribute: number; words: SurfaceFrameWords }
 type UniformFrame = { name: string; scalar: boolean; bits: number[] }
 export type SurfaceAnimationFrame = {
   version: 1
   transform: SurfaceTransformFrame
-  nodes: Array<null | { attributes: AttributeFrame[]; instanceColor: number[] | null }>
+  nodes: Array<null | { attributes: AttributeFrame[]; instanceColor: SurfaceFrameWords | null }>
   uniforms: UniformFrame[]
 }
 
@@ -46,14 +46,14 @@ function describeAttribute(mesh: THREE.Mesh, name: string, count: number) {
   return { attribute, words, name, itemSize:attribute.itemSize, normalized:attribute.normalized, instanced,
     meshPerAttribute:instanced ? (attribute as THREE.InstancedBufferAttribute).meshPerAttribute : 1 }
 }
-function attributesFor(mesh: THREE.Mesh, count: number): AttributeFrame[] {
+function attributesFor(mesh: THREE.Mesh, count: number, copy: boolean): AttributeFrame[] {
   if (!(mesh.geometry as THREE.BufferGeometry)?.isBufferGeometry) throw new TypeError('Animation frames require BufferGeometry')
   if ((mesh as THREE.SkinnedMesh).isSkinnedMesh || Object.values(mesh.geometry.morphAttributes).some(attributes => attributes.length > 0)) {
     throw new TypeError('Animation frames do not support skinned meshes or morph attributes')
   }
   return Object.keys(mesh.geometry.attributes).sort().map(name=>{
     const {attribute:_,words,...data}=describeAttribute(mesh,name,count)
-    return {...data,words:Array.from(words)}
+    return {...data,words:copy ? Array.from(words) : words}
   })
 }
 function readUniforms(target: SurfaceAnimationTarget): UniformFrame[] {
@@ -69,7 +69,12 @@ function readUniforms(target: SurfaceAnimationTarget): UniformFrame[] {
 
 /** Captures transforms, geometry attributes, instance colors and explicitly exposed animation uniforms. */
 export function captureSurfaceAnimationFrame(target: SurfaceAnimationTarget, tick: number): SurfaceAnimationFrame {
-  const transform=captureSurfaceTransformFrame(target.group,tick)
+  return captureSurfaceAnimationFrameWords(target,tick,true)
+}
+
+/** Internal zero-copy variant; consumers must copy its buffer views before returning. */
+export function captureSurfaceAnimationFrameWords(target: SurfaceAnimationTarget, tick: number, copy: boolean): SurfaceAnimationFrame {
+  const transform=captureSurfaceTransformFrameWords(target.group,tick,copy)
   const nodes=nodesOf(target.group).map(node=>{
     const mesh=meshAttribute(node)
     if (!mesh) return null
@@ -77,7 +82,8 @@ export function captureSurfaceAnimationFrame(target: SurfaceAnimationTarget, tic
     const count=instanced?.count ?? 0
     const color=instanced?.instanceColor
     if (color && (color.itemSize!==3 || color.normalized || color.count<count)) throw new Error('Unsupported instance color attribute')
-    return {attributes:attributesFor(mesh,count),instanceColor:color ? Array.from(attributeWords(color,count*3)) : null}
+    const colorWords=color ? attributeWords(color,count*3) : null
+    return {attributes:attributesFor(mesh,count,copy),instanceColor:colorWords ? (copy ? Array.from(colorWords) : colorWords) : null}
   })
   return {version:1,transform,nodes,uniforms:readUniforms(target)}
 }

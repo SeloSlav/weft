@@ -69,7 +69,8 @@
     "prepack": "npm run build:sdk",
     "bench:presets": "node tests/bench-presets.mjs",
     "check:presets": "npm run validate:types && npm test && npm run bench:presets --",
-    "bench:fungus-paired": "node tests/bench-fungus-paired.mjs"
+    "bench:fungus-paired": "node tests/bench-fungus-paired.mjs",
+    "bench:animation-frames": "node tests/bench-animation-frames.mjs"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",

@@ -1,0 +1,213 @@
+{
+  "generatedAt": "2026-10-29T21:50:06.341Z",
+  "environment": {
+    "node": "v24.22.1",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "note": "Same current effect state and output; JSON capture+stringify versus binary capture; JSON parse+apply versus binary decode+apply. Alternating paired samples, deterministic canvas metrics; CPU-only, not GPU or network time. Gzip sizes are reported separately, excluding compression CPU cost. Timing ratios are observations, not CI gates.",
+  "cases": [
+    {
+      "name": "fungus",
+      "instances": 58,
+      "parity": true,
+      "jsonBytes": 14635,
+      "binaryBytes": 7424,
+      "jsonGzipBytes": 5048,
+      "binaryGzipBytes": 4226,
+      "captureAndEncode": {
+        "json": {
+          "medianMs": 0.12180000000000746,
+          "p95Ms": 0.1407999999999845,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 0.05469999999999686,
+          "p95Ms": 0.06660000000002242,
+          "samples": 9
+        }
+      },
+      "decodeAndApply": {
+        "json": {
+          "medianMs": 0.10500000000001819,
+          "p95Ms": 0.22809999999998354,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 0.050399999999996226,
+          "p95Ms": 0.06480000000001951,
+          "samples": 9
+        }
+      }
+    },
+    {
+      "name": "grass-low",
+      "instances": 21216,
+      "parity": true,
+      "jsonBytes": 4535372,
+      "binaryBytes": 1957276,
+      "jsonGzipBytes": 1751295,
+      "binaryGzipBytes": 1441448,
+      "captureAndEncode": {
+        "json": {
+          "medianMs": 33.08879999999999,
+          "p95Ms": 40.543499999999995,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 0.6763999999999442,
+          "p95Ms": 0.7949999999999591,
+          "samples": 9
+        }
+      },
+      "decodeAndApply": {
+        "json": {
+          "medianMs": 17.059099999999944,
+          "p95Ms": 20.979100000000017,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 0.3200000000001637,
+          "p95Ms": 0.404700000000048,
+          "samples": 9
+        }
+      }
+    },
+    {
+      "name": "grass-medium",
+      "instances": 63420,
+      "parity": true,
+      "jsonBytes": 13177421,
+      "binaryBytes": 5671232,
+      "jsonGzipBytes": 5144327,
+      "binaryGzipBytes": 4250796,
+      "captureAndEncode": {
+        "json": {
+          "medianMs": 148.35390000000007,
+          "p95Ms": 172.0239999999999,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 1.6965000000000146,
+          "p95Ms": 3.4600000000000364,
+          "samples": 9
+        }
+      },
+      "decodeAndApply": {
+        "json": {
+          "medianMs": 73.11009999999987,
+          "p95Ms": 91.45820000000003,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 0.9238000000000284,
+          "p95Ms": 2.233700000000681,
+          "samples": 9
+        }
+      }
+    },
+    {
+      "name": "grass-default",
+      "instances": 128298,
+      "parity": true,
+      "jsonBytes": 26462768,
+      "binaryBytes": 11380500,
+      "jsonGzipBytes": 10335788,
+      "binaryGzipBytes": 8560386,
+      "captureAndEncode": {
+        "json": {
+          "medianMs": 246.47479999999996,
+          "p95Ms": 319.54190000000017,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 2.859200000000783,
+          "p95Ms": 3.516899999999623,
+          "samples": 9
+        }
+      },
+      "decodeAndApply": {
+        "json": {
+          "medianMs": 114.51319999999942,
+          "p95Ms": 160.97129999999925,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 1.1618999999991502,
+          "p95Ms": 2.484999999998763,
+          "samples": 9
+        }
+      }
+    },
+    {
+      "name": "leaf-pile",
+      "instances": 809,
+      "parity": true,
+      "jsonBytes": 151063,
+      "binaryBytes": 66484,
+      "jsonGzipBytes": 55480,
+      "binaryGzipBytes": 44969,
+      "captureAndEncode": {
+        "json": {
+          "medianMs": 1.532599999998638,
+          "p95Ms": 2.08810000000085,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 0.1033000000006723,
+          "p95Ms": 0.19000000000050932,
+          "samples": 9
+        }
+      },
+      "decodeAndApply": {
+        "json": {
+          "medianMs": 0.6113999999997759,
+          "p95Ms": 0.9668999999994412,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 0.038799999998445855,
+          "p95Ms": 0.06850000000122236,
+          "samples": 9
+        }
+      }
+    },
+    {
+      "name": "shell-shutter",
+      "instances": 396,
+      "parity": true,
+      "jsonBytes": 498908,
+      "binaryBytes": 190332,
+      "jsonGzipBytes": 87554,
+      "binaryGzipBytes": 70946,
+      "captureAndEncode": {
+        "json": {
+          "medianMs": 3.617000000000189,
+          "p95Ms": 4.889400000000023,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 0.24380000000019209,
+          "p95Ms": 0.31229999999959546,
+          "samples": 9
+        }
+      },
+      "decodeAndApply": {
+        "json": {
+          "medianMs": 3.0582999999987805,
+          "p95Ms": 4.190099999999802,
+          "samples": 9
+        },
+        "binary": {
+          "medianMs": 0.2260999999998603,
+          "p95Ms": 0.41340000000127475,
+          "samples": 9
+        }
+      }
+    }
+  ],
+  "gates": {
+    "exactParity": true,
+    "binarySmaller": true
+  }
+}

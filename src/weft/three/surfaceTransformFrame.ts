@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { updateInstanceMatrices } from './helpers/bufferUpdates'
 
+export type SurfaceFrameWords = number[] | Uint32Array
+
 /** JSON-safe bit patterns. Order is root-first depth-first, including non-mesh ancestors. */
 export type SurfaceTransformFrame = {
   version: 1
@@ -12,7 +14,7 @@ export type SurfaceTransformFrame = {
     visible: boolean
     matrixBits: number[]
     poseBits: number[]
-    instances?: { count: number; matrixBits: number[] }
+    instances?: { count: number; matrixBits: SurfaceFrameWords }
   }>
 }
 
@@ -25,7 +27,7 @@ export function encodeDoubles(values: readonly number[]): number[] {
   }
   return bits
 }
-export function decodeDoubles(bits: readonly number[]): number[] {
+export function decodeDoubles(bits: ArrayLike<number>): number[] {
   const view = new DataView(new ArrayBuffer(8))
   const values: number[] = []
   for (let i = 0; i < bits.length; i += 2) {
@@ -34,7 +36,8 @@ export function decodeDoubles(bits: readonly number[]): number[] {
   }
   return values
 }
-export function validBits(bits: unknown, length: number): bits is number[] {
+export function validBits(bits: unknown, length: number): bits is SurfaceFrameWords {
+  if (bits instanceof Uint32Array) return bits.length === length
   if (!Array.isArray(bits) || bits.length !== length) return false
   for (let i = 0; i < length; i++) {
     const value = bits[i]
@@ -55,6 +58,11 @@ function matrixWords(mesh: THREE.InstancedMesh, count: number): Uint32Array {
 
 /** Capture current local transforms and live instance matrices. Does not advance the effect. */
 export function captureSurfaceTransformFrame(root: THREE.Object3D, tick: number): SurfaceTransformFrame {
+  return captureSurfaceTransformFrameWords(root,tick,true)
+}
+
+/** Internal zero-copy variant; consumers must copy its instance views before returning. */
+export function captureSurfaceTransformFrameWords(root: THREE.Object3D, tick: number, copy: boolean): SurfaceTransformFrame {
   if (!Number.isSafeInteger(tick) || tick < 0) throw new RangeError('Frame tick must be a non-negative safe integer')
   const nodes = nodesOf(root).map(node => {
     if (node.matrixAutoUpdate) node.updateMatrix()
@@ -66,7 +74,8 @@ export function captureSurfaceTransformFrame(root: THREE.Object3D, tick: number)
       if (!Number.isSafeInteger(mesh.count) || mesh.count < 0 || mesh.count > mesh.instanceMatrix.count) {
         throw new RangeError('Invalid instance count')
       }
-      entry.instances = { count: mesh.count, matrixBits: Array.from(matrixWords(mesh, mesh.count)) }
+      const words=matrixWords(mesh, mesh.count)
+      entry.instances = { count: mesh.count, matrixBits: copy ? Array.from(words) : words }
     }
     return entry
   })
