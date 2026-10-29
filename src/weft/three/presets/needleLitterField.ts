@@ -2,6 +2,7 @@ import { LineOutputCache } from '../helpers/lineOutputCache'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
+import { InputVersionTracker } from '../helpers/inputVersion'
 import type {
   PreparedSurfaceSource,
   ResolvedSurfaceGlyph,
@@ -165,12 +166,17 @@ export class NeedleLitterFieldEffect {
   private params: NeedleLitterFieldParams
   private lastElapsed = 0
 
+  private readonly inputVersionTracker = new InputVersionTracker()
+  private readonly inputVersion?: () => unknown
+
   constructor(
     surface: PreparedSurfaceSource<NeedleLitterTokenId, NeedleLitterTokenMeta>,
     seedCursor: SeedCursorFactory,
     initialParams: NeedleLitterFieldParams,
     placementMask: NeedleLitterFieldPlacementMask = {},
+    inputVersion?: () => unknown,
   ) {
+    this.inputVersion = inputVersion
     this.params = { ...initialParams }
     const bounds = placementMask.bounds ?? DEFAULT_NEEDLE_LITTER_FIELD_BOUNDS
     this.fieldWidth = bounds.maxX - bounds.minX
@@ -248,6 +254,7 @@ export class NeedleLitterFieldEffect {
     getGroundHeight: (x: number, z: number) => number,
     viewCull?: PresetLayoutViewCull | null,
   ): void {
+    if (this.inputVersion) this.inputVersionTracker.sync(this.inputVersion, () => this.invalidate())
     const hadBurns = this.burns.length > 0
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
@@ -445,6 +452,8 @@ export type CreateNeedleLitterFieldEffectOptions = {
   surface?: PreparedSurfaceSource<NeedleLitterTokenId, NeedleLitterTokenMeta>
   initialParams?: NeedleLitterFieldParams
   placementMask?: NeedleLitterFieldPlacementMask
+  /** Return a stable revision; change it whenever mutable terrain or mask data changes. */
+  inputVersion?: () => unknown
 }
 
 export function createNeedleLitterFieldEffect({
@@ -452,6 +461,7 @@ export function createNeedleLitterFieldEffect({
   surface = getPreparedNeedleLitterSurface(),
   initialParams = DEFAULT_NEEDLE_LITTER_FIELD_PARAMS,
   placementMask,
+  inputVersion,
 }: CreateNeedleLitterFieldEffectOptions): NeedleLitterFieldEffect {
   const effect = createSurfaceEffect({
     id: 'needle-litter-field',
@@ -466,5 +476,5 @@ export function createNeedleLitterFieldEffect({
     seedCursor,
   })
 
-  return new NeedleLitterFieldEffect(effect.source, seedCursor, initialParams, placementMask)
+  return new NeedleLitterFieldEffect(effect.source, seedCursor, initialParams, placementMask, inputVersion)
 }

@@ -2,6 +2,7 @@ import { LineOutputCache } from '../helpers/lineOutputCache'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
+import { InputVersionTracker } from '../helpers/inputVersion'
 import type {
   PreparedSurfaceSource,
   ResolvedSurfaceGlyph,
@@ -179,12 +180,17 @@ export class FungusSeamEffect {
   private params: FungusSeamParams
   private lastElapsed = 0
 
+  private readonly inputVersionTracker = new InputVersionTracker()
+  private readonly inputVersion?: () => unknown
+
   constructor(
     surface: PreparedSurfaceSource<BandTokenId, BandTokenMeta>,
     seedCursor: SeedCursorFactory,
     initialParams: FungusSeamParams,
     placementMask: FungusSeamPlacementMask = {},
+    inputVersion?: () => unknown,
   ) {
+    this.inputVersion = inputVersion
     this.params = { ...initialParams }
     const bounds = placementMask.bounds ?? DEFAULT_BOUNDS
     this.fieldWidth = bounds.maxX - bounds.minX
@@ -270,6 +276,7 @@ export class FungusSeamEffect {
   }
 
   update(elapsedTime: number, getGroundHeight: (x: number, z: number) => number): void {
+    if (this.inputVersion) this.inputVersionTracker.sync(this.inputVersion, () => this.invalidate())
     const hadBurns = this.burns.length > 0
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
@@ -509,6 +516,8 @@ export type CreateFungusSeamEffectOptions = {
   surface?: PreparedSurfaceSource<BandTokenId, BandTokenMeta>
   initialParams?: FungusSeamParams
   placementMask?: FungusSeamPlacementMask
+  /** Return a stable revision; change it whenever mutable terrain or mask data changes. */
+  inputVersion?: () => unknown
 }
 
 export function createFungusSeamEffect({
@@ -516,6 +525,7 @@ export function createFungusSeamEffect({
   surface = getPreparedFungusBandSurface(),
   initialParams = DEFAULT_FUNGUS_SEAM_PARAMS,
   placementMask,
+  inputVersion,
 }: CreateFungusSeamEffectOptions): FungusSeamEffect {
   const effect = createSurfaceEffect({
     id: 'fungus-seam',
@@ -530,5 +540,5 @@ export function createFungusSeamEffect({
     seedCursor,
   })
 
-  return new FungusSeamEffect(effect.source, seedCursor, initialParams, placementMask)
+  return new FungusSeamEffect(effect.source, seedCursor, initialParams, placementMask, inputVersion)
 }

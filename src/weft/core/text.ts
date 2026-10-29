@@ -3,6 +3,7 @@ import {
   prepareWithSegments,
   clearCache as clearMeasurementCache,
   type LayoutCursor,
+  type LayoutLine,
   type PreparedTextWithSegments,
 } from '@chenglou/pretext'
 import { BoundedCache } from './cache'
@@ -78,6 +79,58 @@ export type PreparedSurfaceSource<TokenId extends string = string, Meta = unknow
   prepared: PreparedTextWithSegments
   palette: readonly SurfacePaletteEntry<TokenId, Meta>[]
   glyphLookup: ReadonlyMap<string, ResolvedSurfaceGlyph<TokenId, Meta>>
+  /** Repetition count for palette-based sources; absent for free-form text. */
+  repeat?: number
+}
+
+type PortableStream = { glyphs: string[]; tokenAdvance: number; spaceAdvance: number }
+const portableStreams = new WeakMap<PreparedTextWithSegments, PortableStream>()
+export type PortableSurfaceOptions = { tokenAdvance?: number; spaceAdvance?: number; repeat?: number }
+
+/** Use fixed advances and opaque palette tokens for placement independent of font metrics. */
+export function makeSurfacePortable<TokenId extends string, Meta>(
+  source: PreparedSurfaceSource<TokenId, Meta>, options: PortableSurfaceOptions = {},
+): PreparedSurfaceSource<TokenId, Meta> {
+  const repeat = options.repeat ?? source.repeat
+  if (repeat === undefined) throw new Error('Portable palette sources require a repeat count')
+  validateRepeat(repeat)
+  const tokenAdvance = options.tokenAdvance ?? 12
+  const spaceAdvance = options.spaceAdvance ?? 6
+  if (!Number.isFinite(tokenAdvance) || tokenAdvance <= 0 || !Number.isFinite(spaceAdvance) || spaceAdvance < 0) {
+    throw new RangeError('Portable tokenAdvance must be positive and spaceAdvance non-negative, both finite')
+  }
+  const glyphs: string[] = []
+  for (const entry of source.palette) {
+    if (!entry.glyph || /\s/u.test(entry.glyph)) throw new Error('Portable palette tokens must be nonempty and contain no whitespace')
+    if (!Number.isFinite(entry.weight ?? 1) || (entry.weight ?? 1) < 0) throw new RangeError('Portable token weight must be finite and non-negative')
+  }
+  for (let r = 0; r < repeat; r++) for (const entry of source.palette) {
+    const weight = Math.max(1, Math.floor(entry.weight ?? 1))
+    for (let i = 0; i < weight; i++) glyphs.push(entry.glyph)
+  }
+  // Keep the real Pretext handle available to consumers, while isolating the portable cursor registry.
+  const prepared = { ...source.prepared }
+  portableStreams.set(prepared, { glyphs, tokenAdvance, spaceAdvance })
+  return { ...source, prepared, repeat }
+}
+
+export function isPortableSurface(source: PreparedSurfaceSource): boolean {
+  return portableStreams.has(source.prepared)
+}
+
+/** Internal portable cursor semantics: segmentIndex is the next opaque palette token. */
+export function layoutSurfaceNextLine(prepared: PreparedTextWithSegments, cursor: LayoutCursor, maxWidth: number): LayoutLine | null {
+  const stream = portableStreams.get(prepared)
+  if (!stream) return layoutNextLine(prepared, cursor, maxWidth)
+  const start = cursor.segmentIndex
+  if (!Number.isSafeInteger(start) || start < 0 || cursor.graphemeIndex !== 0) throw new RangeError('Invalid portable surface cursor')
+  if (start >= stream.glyphs.length) return null
+  let end = start + 1
+  let width = stream.tokenAdvance
+  const nextAdvance = stream.spaceAdvance + stream.tokenAdvance
+  while (end < stream.glyphs.length && width + nextAdvance <= maxWidth) { width += nextAdvance; end++ }
+  return { text: stream.glyphs.slice(start, end).join(' '), width,
+    start: { segmentIndex: start, graphemeIndex: 0 }, end: { segmentIndex: end, graphemeIndex: 0 } }
 }
 
 export type SeedCursorFactory = (
@@ -217,6 +270,7 @@ function prepareSurfaceFromPalette<TokenId extends string, Meta>(
   const text = buildWeightedPaletteStream(snapshot, repeat)
   const preparedSurface: PreparedSurfaceSource<TokenId, Meta> = {
     cacheKey,
+    repeat,
     prepared: prepareCachedSurfaceText(
       cacheKey,
       text,
@@ -322,7 +376,7 @@ export function seedCursor(prepared: PreparedTextWithSegments, advance: number):
     else at = 0
   }
   for (; at < target; at++) {
-    const line = layoutNextLine(prepared, cursor, 400)
+    const line = layoutSurfaceNextLine(prepared, cursor, 400)
     seedLayoutSteps++
     if (line === null) {
       index.period = at + 1

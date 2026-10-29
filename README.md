@@ -41,6 +41,139 @@ Weft is strongest when the thing you are placing can honestly be treated as a re
 
 It is not trying to replace every biome or world-simulation system. It works best when deterministic layout, thinning, recovery, and semantic state are the main problem.
 
+## Portable placement
+
+By default, palette layout uses Pretext and the available fonts, so placement can
+change with font metrics and browser text layout. To make the authored token and
+row layout independent of those metrics, opt into fixed advances:
+
+```ts
+import { makeSurfacePortable, seedCursor } from 'weft-sdk/core'
+import { createGrassEffect, buildGrassStateSurface } from 'weft-sdk/three'
+
+const surface = makeSurfacePortable(buildGrassStateSurface(0))
+const grass = createGrassEffect({ surface, seedCursor })
+```
+
+This works with the built-in palette sources and custom palette sources prepared
+with `createSurfaceSource()` or `prepareSurfaceText()`. `tokenAdvance` (default
+12) and `spaceAdvance` (default 6) set fixed layout widths; they may change the
+appearance and density compared with the measured layout. Tokens are treated
+as opaque strings, so composite Unicode glyphs are not split by the browser.
+Palette tokens must be nonempty and contain no whitespace. A palette source's
+repeat count is retained; for a manually assembled source, pass `{ repeat }`.
+Use the SDK's built-in `seedCursor`: custom cursor factories are rejected for
+portable sources because their cursor semantics may depend on Pretext.
+
+The book preset uses literal prose rather than a repeated palette. Its portable
+variant accepts an explicit list of glyph tokens so the caller controls Unicode
+segmentation. A space token advances the cursor and a newline token starts a new
+row; wrapping occurs at token boundaries, including within words. Other
+whitespace within tokens is rejected:
+
+```ts
+import { createBookPageEffect, createPortableBookPageSurface } from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
+
+const tokens = [...Array.from('A fixed page\n'), '👩‍👩‍👧‍👦']
+const surface = createPortableBookPageSurface('page-1', tokens)
+const page = createBookPageEffect({ surface, seedCursor, wallWidth: 12, wallHeight: 8 })
+```
+
+Portable mode makes layout independent of native font measurements and browser
+grapheme segmentation for the supplied tokens. Use the same SDK version, input
+tokens, parameters, callbacks and update sequence on each machine. It does not
+make caller-provided terrain or masks deterministic, standardize font artwork,
+or guarantee bit-identical floating-point transforms and animated simulation on
+every JavaScript engine. Use authoritative placements if exact synchronization
+is required. Preparing a source still requires the normal Pretext environment;
+the exposed `prepared` handle continues to describe native measured text and
+must not be used to reproduce portable cursor layout with Pretext directly.
+
+`npm run test:portable` compares placement across deliberately different font
+metrics and browser-profile simulations. For a native check, run the development
+server and compare the results from `/tests/portable-browser.html` in each
+browser; these checks do not establish identical rendering across devices.
+
+To make simulation steps independent of rendering cadence, drive effects with
+`FixedStepClock` and assign gameplay events to shared integer ticks:
+
+```ts
+import { FixedStepClock } from 'weft-sdk/runtime'
+
+const clock = new FixedStepClock({ ticksPerSecond: 60, maxStepsPerAdvance: 600 })
+// targetTick and the events for each tick must come from the same timeline on each peer.
+const result = clock.advanceTo(targetTick, (tick, elapsedSeconds) => {
+  applyEventsForTick(tick)
+  grass.update(elapsedSeconds)
+})
+// If result.complete is false, call advanceTo(targetTick, ...) again to catch up.
+```
+
+The first step is tick 0. The clock never silently drops steps, does not support
+rewinding, and leaves a failed tick uncommitted; the callback must handle any
+partial side effects if it throws. Matching ticks and event ordering alone do not
+guarantee bit-identical simulation across different CPU or GPU math implementations.
+
+For exact CPU-side transforms, one authoritative simulation can send frames to
+replicas. Each frame contains root-first local object transforms, visibility,
+instance counts and live instance matrices as JSON-safe IEEE bit patterns:
+
+```ts
+import { captureSurfaceTransformFrame, applySurfaceTransformFrame } from 'weft-sdk/three'
+
+// Authority: update the effect, then send JSON.stringify(frame) with its tick.
+const frame = captureSurfaceTransformFrame(authorityEffect.group, tick)
+// Replica: build the same effect hierarchy and apply received frames in tick order.
+applySurfaceTransformFrame(replicaEffect.group, JSON.parse(message))
+```
+
+Do not independently update the replica effect: applying a frame sets
+`matrixAutoUpdate = false` on its nodes so the received local matrices are used
+as-is. The receiver must discard stale/out-of-order frames, and matching effect
+hierarchies, materials, geometry and ancestor transforms are the application's
+responsibility. The frame checks node types, names, child counts and instance
+capacities before applying it. It invalidates instance bounds and schedules matrix
+uploads. Full frames are uncompressed and can be large for dense fields; use a
+transport appropriate to that cost or synchronize a smaller authoritative set.
+
+These frames synchronize **transforms only**. They do not synchronize gameplay
+state, instance colors and other attributes, deformed vertex buffers, material
+uniforms, textures, shader-driven grass wind, or GPU results. Replicate those
+separately when needed. Different GPUs can still render the same inputs differently;
+exact independent simulation and pixel-identical animation are not guaranteed.
+
+For animated rendering, use the larger animation frame instead:
+
+```ts
+import { captureSurfaceAnimationFrame, applySurfaceAnimationFrame } from 'weft-sdk/three'
+
+const frame = captureSurfaceAnimationFrame(authorityEffect, tick)
+// Send JSON.stringify(frame), then apply it to an initialized replica:
+applySurfaceAnimationFrame(replicaEffect, JSON.parse(message))
+```
+
+Animation frames include the transform frame, geometry attributes (including
+deformed positions and normals), live instance colors and per-instance attributes
+such as grass wind phases and burn rims. They also carry the exposed shader
+inputs for grass wind and shell breaches. Replica effects must be created with
+the same hierarchy and compatible geometry, initialized, and then driven only by
+received frames. As with transform frames, apply frames in order and keep the
+replica's external ancestor transforms consistent. The whole frame is checked
+before application; incompatible schemas and unsupported attribute formats fail
+explicitly. Custom effects may expose numeric shader values through
+`getAnimationUniforms`, `validateAnimationUniforms`, and `setAnimationUniforms`.
+Custom validators should reject invalid values before application; a custom
+setter that throws can leave a frame partially applied.
+
+Animation frames currently require non-interleaved Float32 attributes and do not
+support skinned meshes or morph attributes. They do not carry geometry indices,
+textures, material properties, arbitrary uniforms or gameplay state. Full frames
+are uncompressed and can be very large for dense effects. They reproduce the
+authoritative CPU buffers and wind inputs; GPU arithmetic and rasterization can
+still differ between hardware or drivers, so pixel-identical rendering and exact
+independent simulation are not guaranteed.
+
 ## Package layers
 
 - `weft-sdk/three`: preset factories, layouts, behaviors, and Three.js-facing helpers
@@ -163,9 +296,37 @@ deforming globe widths stream through the shared layout driver instead of
 retaining rows that change every update.
 
 Presets expose `getRuntimeStats()` for cache/pass counts. Static field presets
-cache terrain projection: keep the ground-height callback stable between frames,
-and call `effect.invalidate()` after changing terrain or placement callbacks in
-place. `setParams()`, supported source setters, and reactions invalidate their
+cache terrain projection. Keep the ground-height callback stable between frames.
+When terrain or placement callbacks read mutable data, you can supply an
+`inputVersion` reader at creation time. Advance the shared revision whenever any
+of those inputs changes; the next update refreshes the effect automatically:
+
+```ts
+import { createRockFieldEffect } from 'weft-sdk/three'
+import { seedCursor } from 'weft-sdk/core'
+
+let terrainRevision = 0
+const rocks = createRockFieldEffect({
+  seedCursor,
+  placementMask: { includeAtXZ: (x, z) => terrain.isAllowed(x, z) },
+  inputVersion: () => terrainRevision,
+})
+// After changing terrain heights or the placement mask's underlying data:
+terrainRevision++
+rocks.update(elapsedSeconds, getGroundHeight)
+```
+
+This option is available on band, fungus, grass, leaf pile, needle litter,
+rock, log, stick, shrub, and tree effects. The reader must return a stable
+revision (such as a number or string), and change it whenever the data used by
+the terrain or mask callbacks changes. Versions are compared with `Object.is`;
+mutating an object returned as the version does not change its identity. The
+reader is called on updates, so it should be cheap and free of side effects.
+Sharing a revision between effects lets one change refresh each effect on its
+next update. If no version is supplied, call `effect.invalidate()` after
+mutating those inputs. Bounds and callback functions supplied at construction
+are captured; changing the original options object does not replace them.
+`setParams()`, supported source setters, and reactions invalidate their
 dependent work automatically. Camera culling still follows mutable camera data.
 
 Run `npm run check:presets` for the pinned before/after comparison across all
@@ -222,6 +383,13 @@ checked every update without changing authored glyph identities. Shader uniforms
 can advance through `onFrame(time, delta)` while poses remain cached; time-driven
 CPU poses need explicit invalidation. `getStats()` and `getLayoutStats()` expose
 work counts. Capacity overflow throws rather than silently dropping cells.
+
+Custom runtimes also accept `inputVersion: () => revision` in `createRuntime()`
+options for mutable layout and projection inputs. A changed version invalidates
+the whole surface; use `invalidateRows()` for more targeted updates. The version
+reader is also consulted by `needsUpdate()`, which lets an application skip idle
+updates without missing a revision change. The caller still has to advance the
+revision when its data changes; the runtime cannot inspect callback closures.
 
 Meshes and instance buffers belong to the runtime. Geometry/material are borrowed
 unless `disposeResources: true`; textures remain caller-owned. The runtime currently

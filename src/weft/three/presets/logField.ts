@@ -2,6 +2,7 @@ import { SpatialPointIndex } from '../../runtime'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
+import { InputVersionTracker } from '../helpers/inputVersion'
 import type {
   PreparedSurfaceSource,
   ResolvedSurfaceGlyph,
@@ -201,12 +202,17 @@ export class LogFieldEffect {
   private params: LogFieldParams
   private lastElapsed = 0
 
+  private readonly inputVersionTracker = new InputVersionTracker()
+  private readonly inputVersion?: () => unknown
+
   constructor(
     surface: PreparedSurfaceSource<LogTokenId, LogTokenMeta>,
     seedCursor: SeedCursorFactory,
     initialParams: LogFieldParams,
     placementMask: LogFieldPlacementMask = {},
+    inputVersion?: () => unknown,
   ) {
+    this.inputVersion = inputVersion
     this.params = { ...initialParams }
     const bounds = placementMask.bounds ?? DEFAULT_LOG_FIELD_BOUNDS
     this.fieldWidth = bounds.maxX - bounds.minX
@@ -280,6 +286,7 @@ export class LogFieldEffect {
     elapsedTime: number,
     getGroundHeight: (x: number, z: number) => number,
   ): void {
+    if (this.inputVersion) this.inputVersionTracker.sync(this.inputVersion, () => this.invalidate())
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
     this.runtime.run('placements', [getGroundHeight], () => {
@@ -838,6 +845,8 @@ export type CreateLogFieldEffectOptions = {
   surface?: PreparedSurfaceSource<LogTokenId, LogTokenMeta>
   initialParams?: LogFieldParams
   placementMask?: LogFieldPlacementMask
+  /** Return a stable revision; change it whenever mutable terrain or mask data changes. */
+  inputVersion?: () => unknown
 }
 
 export function createLogFieldEffect({
@@ -845,6 +854,7 @@ export function createLogFieldEffect({
   surface = getPreparedLogSurface(),
   initialParams = DEFAULT_LOG_FIELD_PARAMS,
   placementMask,
+  inputVersion,
 }: CreateLogFieldEffectOptions): LogFieldEffect {
   const effect = createSurfaceEffect({
     id: 'log-field',
@@ -859,5 +869,5 @@ export function createLogFieldEffect({
     seedCursor,
   })
 
-  return new LogFieldEffect(effect.source, seedCursor, initialParams, placementMask)
+  return new LogFieldEffect(effect.source, seedCursor, initialParams, placementMask, inputVersion)
 }

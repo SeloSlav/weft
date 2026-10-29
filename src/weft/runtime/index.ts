@@ -26,3 +26,4 @@ export type {
 } from './motionField'
 
 export { SpatialCandidateSet, SpatialPointIndex } from './spatialCandidates'
+export { FixedStepClock } from './fixedStepClock'

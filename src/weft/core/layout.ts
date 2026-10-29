@@ -1,6 +1,7 @@
-import { layoutNextLine, type LayoutCursor, type PreparedTextWithSegments } from '@chenglou/pretext'
+import { type LayoutCursor, type PreparedTextWithSegments } from '@chenglou/pretext'
 import { graphemesOf } from '../../samples/graphemes'
 import { BoundedCache } from './cache'
+import { isPortableSurface, layoutSurfaceNextLine, seedCursor as builtinSeedCursor } from './text'
 import type {
   PreparedSurfaceSource,
   ResolvedSurfaceGlyph,
@@ -87,10 +88,10 @@ function layoutNextLineOrRewind(
   maxWidth: number,
 ) {
   let activeCursor = cloneCursor(cursor)
-  let line = layoutNextLine(prepared, activeCursor, maxWidth)
+  let line = layoutSurfaceNextLine(prepared, activeCursor, maxWidth)
   if (line === null) {
     activeCursor = cloneCursor(ROOT_CURSOR)
-    line = layoutNextLine(prepared, activeCursor, maxWidth)
+    line = layoutSurfaceNextLine(prepared, activeCursor, maxWidth)
   }
   if (line === null) return null
 
@@ -106,6 +107,7 @@ export function createBandSeeds<TokenId extends string, Meta>({
   advanceForRow,
   seedCursor,
 }: SurfaceLayoutBandOptions<TokenId, Meta>): LayoutCursor[] {
+  if (isPortableSurface(surface) && seedCursor !== builtinSeedCursor) throw new Error('Portable surfaces require the built-in seedCursor')
   return Array.from({ length: rows }, (_, row) => seedCursor(surface.prepared, advanceForRow(row)))
 }
 
@@ -118,6 +120,7 @@ export class SurfaceLayoutDriver<TokenId extends string = string, Meta = unknown
   private readonly minSpanFactor: number
   private readonly minLayoutWidth: number
   private readonly bandSeeds: LayoutCursor[]
+  private readonly portable: boolean
   // Exact widths and cursors only: damage must never be quantized to a cached width.
   private readonly lineCache = new BoundedCache<string, ReturnType<typeof layoutNextLineOrRewind>>(MAX_LINE_CACHE)
   // One last transition per authored slot avoids LRU thrashing on stable surfaces larger than 2048 slots.
@@ -143,6 +146,7 @@ export class SurfaceLayoutDriver<TokenId extends string = string, Meta = unknown
     if (!Number.isSafeInteger(rows) || rows < 0 || !Number.isSafeInteger(sectors) || sectors <= 0 ||
       !Number.isSafeInteger(rows * sectors)) throw new RangeError('Layout rows/sectors must form a finite integer grid')
     this.surface = surface
+    this.portable = isPortableSurface(surface)
     this.prepared = surface.prepared
     this.rows = rows
     this.sectors = sectors
@@ -235,7 +239,8 @@ export class SurfaceLayoutDriver<TokenId extends string = string, Meta = unknown
         let decoded = this.glyphCache.get(laidOut.line.text)
         if (!decoded) {
           this.stats.glyphDecodes++
-          const glyphs = graphemesOf(laidOut.line.text).filter((glyph) => !/^\s+$/.test(glyph))
+          const glyphs = this.portable ? laidOut.line.text.split(' ') :
+            graphemesOf(laidOut.line.text).filter((glyph) => !/^\s+$/.test(glyph))
           if (glyphs.length === 0) continue
           const resolvedGlyphs = glyphs
             .map((glyph) => this.surface.glyphLookup.get(glyph))

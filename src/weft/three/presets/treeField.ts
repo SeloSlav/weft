@@ -1,6 +1,7 @@
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
+import { InputVersionTracker } from '../helpers/inputVersion'
 import type {
   PreparedSurfaceSource,
   ResolvedSurfaceGlyph,
@@ -245,12 +246,17 @@ export class TreeFieldEffect {
   private readonly crownBurns: TreeCrownBurn[] = []
   private lastElapsed = 0
 
+  private readonly inputVersionTracker = new InputVersionTracker()
+  private readonly inputVersion?: () => unknown
+
   constructor(
     surface: PreparedSurfaceSource<TreeTokenId, TreeTokenMeta>,
     seedCursor: SeedCursorFactory,
     initialParams: TreeFieldParams,
     placementMask: TreeFieldPlacementMask = {},
+    inputVersion?: () => unknown,
   ) {
+    this.inputVersion = inputVersion
     this.params = { ...initialParams }
     const bounds = placementMask.bounds ?? DEFAULT_TREE_FIELD_BOUNDS
     this.fieldWidth = bounds.maxX - bounds.minX
@@ -297,6 +303,7 @@ export class TreeFieldEffect {
   }
 
   update(elapsedTime: number, getGroundHeight: (x: number, z: number) => number, rebuildPlacements = false): void {
+    if (this.inputVersion) this.inputVersionTracker.sync(this.inputVersion, () => this.invalidate())
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
     const hadCrownBurnsBeforeRecovery = this.crownBurns.length > 0
@@ -666,6 +673,8 @@ export type CreateTreeFieldEffectOptions = {
   surface?: PreparedSurfaceSource<TreeTokenId, TreeTokenMeta>
   initialParams?: TreeFieldParams
   placementMask?: TreeFieldPlacementMask
+  /** Return a stable revision; change it whenever mutable terrain or mask data changes. */
+  inputVersion?: () => unknown
 }
 
 export function createTreeFieldEffect({
@@ -673,6 +682,7 @@ export function createTreeFieldEffect({
   surface = getPreparedTreeSurface(),
   initialParams = DEFAULT_TREE_FIELD_PARAMS,
   placementMask,
+  inputVersion,
 }: CreateTreeFieldEffectOptions): TreeFieldEffect {
   const effect = createSurfaceEffect({
     id: 'tree-field',
@@ -687,5 +697,5 @@ export function createTreeFieldEffect({
     seedCursor,
   })
 
-  return new TreeFieldEffect(effect.source, seedCursor, initialParams, placementMask)
+  return new TreeFieldEffect(effect.source, seedCursor, initialParams, placementMask, inputVersion)
 }

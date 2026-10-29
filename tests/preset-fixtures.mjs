@@ -33,7 +33,8 @@ export function presetCases(sdk) {
     const effect=sdk.createFungusSeamEffect({...options,placementMask:{includeAtXZ:x=>right ? x>=0 : x<0}})
     return {name:'fungus-mask',effect,update:t=>effect.update(t,ground),params:()=>effect.setParams({...sdk.DEFAULT_FUNGUS_SEAM_PARAMS}),
       damage:()=>effect.addBurnFromWorldPoint(point),clear:()=>effect.clearBurns(),
-      toggleMask:()=>{right=!right;effect.invalidate()}}
+      // Older benchmark baselines recompute every update and have no invalidate method.
+      toggleMask:()=>{right=!right;effect.invalidate?.()}}
   })
   cases.push(()=>field('needle-dense',sdk.createNeedleLitterFieldEffect,{...sdk.DEFAULT_NEEDLE_LITTER_FIELD_PARAMS,layoutDensity:5}))
   cases.push(()=>field('leaf-dense',sdk.createLeafPileBandEffect,{...sdk.DEFAULT_LEAF_PILE_BAND_PARAMS,layoutDensity:5,bandWidth:14}))

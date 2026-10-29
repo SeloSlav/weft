@@ -1,4 +1,4 @@
-import './headless-measurement.mjs'
+import './headless-preset-canvas.mjs'
 import {build} from './build-tools.mjs'
 import {mkdir} from 'node:fs/promises'
 import {pathToFileURL} from 'node:url'

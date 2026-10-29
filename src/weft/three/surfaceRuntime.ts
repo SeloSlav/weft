@@ -6,6 +6,7 @@ import { decayRecoveringStrength, type SurfaceBehavior } from '../runtime'
 import { createInstancedMesh, type ThreeInstancedMeshRendererConfig } from './helpers/instancing'
 import type { FieldLayoutConfig, WallLayoutConfig, SkyLayoutConfig } from './helpers/layouts'
 import { updateAttributeSpan } from './helpers/bufferUpdates'
+import { InputVersionTracker } from './helpers/inputVersion'
 
 export type SurfaceRuntimeConfig<TokenId extends string = string, Meta = unknown> = {
   id: string
@@ -32,6 +33,8 @@ export type SurfaceRuntimeOptions<TokenId extends string = string, Meta = unknow
   getMaxWidth: (slot: SurfaceLayoutSlot) => number
   shouldVisitSlot?: (slot: SurfaceLayoutSlot) => boolean
   projectGlyph: (context: SurfaceProjectionContext<TokenId, Meta>, target: SurfaceProjectionTarget) => void
+  /** Return a stable revision; change it when mutable layout or projection inputs change. */
+  inputVersion?: () => unknown
   /** Runs each update, including idle frames; use for shader uniforms, or invalidate time-driven poses. */
   onFrame?: (elapsedTime: number, delta: number) => void
   /** Geometry/material are borrowed by default. The runtime always owns its mesh and buffers. */
@@ -56,6 +59,7 @@ export class SurfaceEffectRuntime<TokenId extends string = string, Meta = unknow
   private driver: SurfaceExecutionRuntime<TokenId, Meta>
   private readonly slots: (SlotRecord<TokenId, Meta> | undefined)[] = []
   private readonly dirtyRows = new Set<number>()
+  private readonly inputVersionTracker = new InputVersionTracker()
   private dirtyAll = true
   private previousVisible: number[] = []
   private nextVisible: number[] = []
@@ -236,6 +240,7 @@ export class SurfaceEffectRuntime<TokenId extends string = string, Meta = unknow
     this.lastElapsed = elapsedTime
     this.stats.updates++
     this.options.onFrame?.(elapsedTime, delta)
+    if (this.options.inputVersion) this.inputVersionTracker.sync(this.options.inputVersion, () => this.invalidate())
     for (let i = this.impacts.length - 1; i >= 0; i--) {
       const impact = this.impacts[i]!
       const next = decayRecoveringStrength(impact.strength, impact.recoveryRate, delta)
@@ -288,7 +293,7 @@ export class SurfaceEffectRuntime<TokenId extends string = string, Meta = unknow
 
   getStats(): SurfaceRuntimeStats { return { ...this.stats } }
   getLayoutStats() { return this.driver.getLayoutStats()! }
-  needsUpdate(): boolean { return !this.disposed && (this.dirtyAll || this.dirtyRows.size > 0 || Boolean(this.options.onFrame || this.options.shouldVisitSlot) || this.impacts.some((i) => i.recoveryRate > 0)) }
+  needsUpdate(): boolean { return !this.disposed && (this.dirtyAll || this.dirtyRows.size > 0 || Boolean(this.options.onFrame || this.options.shouldVisitSlot) || this.impacts.some((i) => i.recoveryRate > 0) || Boolean(this.options.inputVersion && this.inputVersionTracker.changed(this.options.inputVersion))) }
   getInstanceIdentity(index: number): { row: number; sector: number; glyphIndex: number; tokenId: TokenId } | null {
     if (!Number.isInteger(index) || index < 0 || index >= this.mesh.count) return null
     let low = 0

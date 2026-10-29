@@ -1,6 +1,7 @@
 import { SpatialCandidateSet } from '../../runtime'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import * as THREE from 'three'
+import { InputVersionTracker } from '../helpers/inputVersion'
 import { attribute, uniform, positionLocal, uv, vec2, vec3, float, sin, smoothstep, mix, materialColor } from 'three/tsl'
 import { updateActiveAttribute, updateAttributeSpan, trackInstanceUploads } from '../helpers/bufferUpdates'
 import type {
@@ -578,13 +579,18 @@ export class GrassFieldEffect {
   private readonly tmpViewCullBox = new THREE.Box3()
   private params: GrassFieldParams
 
+  private readonly inputVersionTracker = new InputVersionTracker()
+  private readonly inputVersion?: () => unknown
+
   constructor(
     surface: PreparedSurfaceSource<GrassTokenId, GrassTokenMeta>,
     seedCursor: SeedCursorFactory,
     initialParams: GrassFieldParams,
     placementMask: GrassFieldPlacementMask = {},
     terrainRelief: TerrainHeightSampler | null = null,
+    inputVersion?: () => unknown,
   ) {
+    this.inputVersion = inputVersion
     this.params = { ...initialParams }
     this.seedCursor = seedCursor
     this.terrainRelief = terrainRelief
@@ -667,15 +673,11 @@ vGrassEdge = abs( uv.x - 0.5 ) * 2.0;
   float gGpu = uGrassGpuWind;
   vec2 wp = windPhase;
   float gust = sin( uGrassWindTime * 1.55 + wp.x ) + 0.55 * sin( uGrassWindTime * 2.8 + wp.y );
-  float tip = smoothstep( 0.14, 1.0, uv.y );
-  float edgeSigned = uv.x - 0.5;
   float windMask = pow( smoothstep( 0.0, 1.0, uv.y ), 2.0 );
-  float sway = gust * uGrassWindStrength * 0.15 * windMask * gGpu;
-  float bendAmt = ( 0.26 + abs( gust ) * 0.2 ) * uGrassWindStrength * windMask * gGpu;
-  transformed.x += edgeSigned * tip * 0.035;
-  transformed.z += tip * 0.04 + edgeSigned * edgeSigned * tip * 0.05;
-  transformed.x += sway;
-  transformed.z += bendAmt * 0.62;
+  float sway = gust * uGrassWindStrength * windMask * gGpu;
+  transformed.x += sway * 0.12;
+  transformed.y -= windMask * abs( gust ) * uGrassWindStrength * gGpu * 0.025;
+  transformed.z += sway * 0.07;
 }
 `,
       )
@@ -876,6 +878,7 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
   }
 
   update(elapsedTime: number, layoutViewCull?: PresetLayoutViewCull | null): void {
+    if (this.inputVersion) this.inputVersionTracker.sync(this.inputVersion, () => this.invalidate())
     this.frameLayoutViewCull = layoutViewCull ?? null
     const delta = this.lastElapsedTime === 0 ? 0 : Math.max(0, elapsedTime - this.lastElapsedTime)
     this.lastElapsedTime = elapsedTime
@@ -890,6 +893,27 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     this.bladeShaderUniforms.uGrassWindStrength.value = this.params.wind
     this.gpuWindTime.value = elapsedTime
     this.gpuWindStrength.value = this.params.wind
+  }
+
+  /** Renderer-facing wind inputs for authoritative animation frames. */
+  getAnimationUniforms(): Record<string, number> {
+    return { grassWindTime: this.gpuWindTime.value, grassWindStrength: this.gpuWindStrength.value,
+      grassGpuWind: this.bladeShaderUniforms.uGrassGpuWind.value }
+  }
+
+  validateAnimationUniforms(values: Record<string, number | readonly number[]>): void {
+    const { grassWindTime, grassWindStrength, grassGpuWind } = values
+    if (typeof grassWindTime !== 'number' || typeof grassWindStrength !== 'number' || typeof grassGpuWind !== 'number' ||
+      ![grassWindTime, grassWindStrength, grassGpuWind].every(Number.isFinite)) throw new RangeError('Invalid grass animation uniforms')
+    if (grassGpuWind !== 1) throw new RangeError('Grass GPU wind must remain enabled')
+  }
+
+  setAnimationUniforms(values: Record<string, number | readonly number[]>): void {
+    this.validateAnimationUniforms(values)
+    const { grassWindTime, grassWindStrength, grassGpuWind } = values as { grassWindTime: number; grassWindStrength: number; grassGpuWind: number }
+    this.gpuWindTime.value = this.bladeShaderUniforms.uGrassWindTime.value = grassWindTime
+    this.gpuWindStrength.value = this.bladeShaderUniforms.uGrassWindStrength.value = grassWindStrength
+    this.bladeShaderUniforms.uGrassGpuWind.value = grassGpuWind
   }
 
   invalidate(): void { this.runtime.invalidate(); this.refreshTerrain() }
@@ -1595,6 +1619,8 @@ export type CreateGrassEffectOptions = {
   surface?: PreparedSurfaceSource<GrassTokenId, GrassTokenMeta>
   initialParams?: GrassFieldParams
   placementMask?: GrassFieldPlacementMask
+  /** Return a stable revision; change it whenever mutable terrain or mask data changes. */
+  inputVersion?: () => unknown
   terrainRelief?: TerrainHeightSampler | null
 }
 
@@ -1603,6 +1629,7 @@ export function createGrassEffect({
   surface = buildGrassStateSurface(DEFAULT_GRASS_FIELD_PARAMS.state),
   initialParams = DEFAULT_GRASS_FIELD_PARAMS,
   placementMask,
+  inputVersion,
   terrainRelief = null,
 }: CreateGrassEffectOptions): GrassFieldEffect {
   const effect = createSurfaceEffect({
@@ -1625,5 +1652,5 @@ export function createGrassEffect({
     seedCursor,
   })
 
-  return new GrassFieldEffect(effect.source, seedCursor, initialParams, placementMask, terrainRelief)
+  return new GrassFieldEffect(effect.source, seedCursor, initialParams, placementMask, terrainRelief, inputVersion)
 }

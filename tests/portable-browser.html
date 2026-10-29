@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Weft portable placement verification</title>
+<pre id="result">RUNNING</pre>
+<script type="module">
+import * as sdk from '/src/weft/index.ts'
+import {runPortableFixtures} from '/tests/portable-fixtures.mjs'
+try { document.querySelector('#result').textContent=JSON.stringify(runPortableFixtures(sdk)) }
+catch(error) { document.querySelector('#result').textContent='ERROR: '+(error.stack||error) }
+</script>

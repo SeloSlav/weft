@@ -1,5 +1,9 @@
 export { SurfaceExecutionRuntime } from './executionRuntime.ts'
 export type { SurfaceExecutionStats } from './executionRuntime.ts'
+export { captureSurfaceTransformFrame, applySurfaceTransformFrame } from './surfaceTransformFrame.ts'
+export type { SurfaceTransformFrame } from './surfaceTransformFrame.ts'
+export { captureSurfaceAnimationFrame, applySurfaceAnimationFrame } from './surfaceAnimationFrame.ts'
+export type { SurfaceAnimationFrame, SurfaceAnimationTarget, SurfaceAnimationUniforms } from './surfaceAnimationFrame.ts'
 
 export { LANDSCAPE_PRESETS } from './presets/landscapePresets.ts'
 export type { LandscapePreset, LandscapePresetId } from './presets/landscapePresets.ts'
@@ -228,5 +232,5 @@ export {
   DEFAULT_BOOK_PAGE_PARAMS,
 } from './presets/bookPage.ts'
 export type { BookPageParams, CreateBookPageEffectOptions } from './presets/bookPage.ts'
-export { createBookPageSurface } from './presets/bookPageSource.ts'
-export type { BookGlyphMeta } from './presets/bookPageSource.ts'
+export { createBookPageSurface, createPortableBookPageSurface } from './presets/bookPageSource.ts'
+export type { BookGlyphMeta, PortableBookPageSurface } from './presets/bookPageSource.ts'

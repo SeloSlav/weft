@@ -2,6 +2,7 @@ import { LineOutputCache } from '../helpers/lineOutputCache'
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
+import { InputVersionTracker } from '../helpers/inputVersion'
 import type {
   PreparedSurfaceSource,
   ResolvedSurfaceGlyph,
@@ -292,13 +293,18 @@ export class LeafPileBandEffect {
   private lastElapsed = 0
   private updateGeneration = 0
 
+  private readonly inputVersionTracker = new InputVersionTracker()
+  private readonly inputVersion?: () => unknown
+
   constructor(
     surface: PreparedSurfaceSource<LeafPileTokenId, LeafPileTokenMeta>,
     seedCursor: SeedCursorFactory,
     initialParams: LeafPileBandParams,
     placementMask: LeafPileBandPlacementMask = {},
     usesCustomSurface = false,
+    inputVersion?: () => unknown,
   ) {
+    this.inputVersion = inputVersion
     this.params = { ...initialParams }
     this.seedCursor = seedCursor
     this.usesCustomSurface = usesCustomSurface
@@ -432,6 +438,7 @@ export class LeafPileBandEffect {
     elapsedTime: number,
     getGroundHeight: (x: number, z: number) => number,
   ): void {
+    if (this.inputVersion) this.inputVersionTracker.sync(this.inputVersion, () => this.invalidate())
     const hadReactions = this.burns.length > 0 || this.hasDisturbances()
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
@@ -879,6 +886,8 @@ export type CreateLeafPileBandEffectOptions = {
   surface?: PreparedSurfaceSource<LeafPileTokenId, LeafPileTokenMeta>
   initialParams?: LeafPileBandParams
   placementMask?: LeafPileBandPlacementMask
+  /** Return a stable revision; change it whenever mutable terrain or mask data changes. */
+  inputVersion?: () => unknown
 }
 
 export function createLeafPileBandEffect({
@@ -886,6 +895,7 @@ export function createLeafPileBandEffect({
   surface,
   initialParams = DEFAULT_LEAF_PILE_BAND_PARAMS,
   placementMask,
+  inputVersion,
 }: CreateLeafPileBandEffectOptions): LeafPileBandEffect {
   const resolvedSurface = surface ?? buildLeafPileSeasonSurface(initialParams.season)
   const effect = createSurfaceEffect({
@@ -907,5 +917,6 @@ export function createLeafPileBandEffect({
     initialParams,
     placementMask,
     surface !== undefined,
+    inputVersion,
   )
 }

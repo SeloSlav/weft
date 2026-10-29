@@ -3,8 +3,8 @@ import { updateInstanceMatrices, updateAttributeSpan } from '../helpers/bufferUp
 import { SpatialCandidateSet, SpatialPointIndex } from '../../runtime'
 import { layoutNextLine, type LayoutCursor } from '@chenglou/pretext'
 import * as THREE from 'three'
-import type { PreparedSurfaceSource, SeedCursorFactory } from '../../core'
-import type { BookGlyphMeta } from './bookPageSource'
+import { isPortableSurface, type PreparedSurfaceSource, type SeedCursorFactory } from '../../core'
+import type { BookGlyphMeta, PortableBookPageSurface } from './bookPageSource'
 import { graphemesOf } from '../../../samples/graphemes'
 
 const ROWS = 18
@@ -109,6 +109,7 @@ export class BookPageEffect {
   readonly interactionMesh: THREE.Mesh
 
   private readonly surface: PreparedSurfaceSource<string, BookGlyphMeta>
+  private readonly portableBook?: PortableBookPageSurface['portableBook']
   private readonly wallWidth: number
   private readonly wallHeight: number
   private readonly buckets = new Map<string, THREE.InstancedMesh>()
@@ -128,7 +129,9 @@ export class BookPageEffect {
 
   constructor(options: CreateBookPageEffectOptions) {
     const { surface, seedCursor: _seedCursor, wallWidth, wallHeight } = options
+    if (isPortableSurface(surface)) throw new Error('Use createPortableBookPageSurface for portable book layouts')
     this.surface = surface
+    this.portableBook = (surface as Partial<PortableBookPageSurface>).portableBook
     this.wallWidth = wallWidth
     this.wallHeight = wallHeight
     this.params = { ...DEFAULT_BOOK_PAGE_PARAMS, ...options.initialParams }
@@ -222,21 +225,41 @@ export class BookPageEffect {
     }> = []
 
     let cursor: LayoutCursor = { segmentIndex: 0, graphemeIndex: 0 }
+    let portableIndex = 0
     for (let row = 0; row < ROWS; row++) {
-      const laidOut = layoutNextLine(this.surface.prepared, cursor, LAYOUT_PX_PER_SLOT)
-      if (laidOut === null) break
-      cursor = laidOut.end
+      let lineTokens: string[]
+      if (this.portableBook) {
+        const { tokens, tokenAdvance, spaceAdvance } = this.portableBook
+        if (portableIndex >= tokens.length) break
+        lineTokens = []
+        let width = 0
+        while (portableIndex < tokens.length && tokens[portableIndex] !== '\n') {
+          const glyph = tokens[portableIndex]!
+          const advance = glyph === ' ' ? spaceAdvance : tokenAdvance
+          if (lineTokens.length && width + advance > LAYOUT_PX_PER_SLOT) break
+          width += advance
+          lineTokens.push(glyph)
+          portableIndex++
+        }
+        if (tokens[portableIndex] === '\n') portableIndex++
+      } else {
+        const laidOut = layoutNextLine(this.surface.prepared, cursor, LAYOUT_PX_PER_SLOT)
+        if (laidOut === null) break
+        cursor = laidOut.end
+        lineTokens = graphemesOf(laidOut.text).filter((glyph) => glyph !== '\n' && glyph !== '\r')
+      }
 
-      const resolvedGlyphs = graphemesOf(laidOut.text)
-        .filter((glyph) => glyph !== '\n' && glyph !== '\r')
+      const resolvedGlyphs = lineTokens
         .map((glyph) => this.surface.glyphLookup.get(glyph))
         .filter((glyph): glyph is NonNullable<typeof glyph> => glyph !== undefined)
 
       const lineGlyphs = resolvedGlyphs.map((token) => {
         const isSpace = /^\s+$/.test(token.glyph)
         const { sx, sy } = isSpace
-          ? { sx: this.baseGlyphHeight * 0.38, sy: this.baseGlyphHeight }
-          : getCharPlaneScale(token.glyph, this.baseGlyphHeight)
+          ? { sx: this.baseGlyphHeight * 0.38 * (this.portableBook ? this.portableBook.spaceAdvance / 6 : 1), sy: this.baseGlyphHeight }
+          : this.portableBook
+            ? { sx: this.baseGlyphHeight * 0.6 * this.portableBook.tokenAdvance / 12, sy: this.baseGlyphHeight }
+            : getCharPlaneScale(token.glyph, this.baseGlyphHeight)
         return { glyph: token.glyph, isSpace, sx, sy }
       })
 

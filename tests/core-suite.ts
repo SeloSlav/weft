@@ -1,11 +1,13 @@
 import {layoutNextLine} from '@chenglou/pretext'
 import * as THREE from 'three'
 import * as core from '../src/weft/core'
-import {createSurfaceMotionField, decayRecoveringStrength, updateRecoveringImpacts, SpatialCandidateSet, SpatialPointIndex} from '../src/weft/runtime'
+import {createSurfaceMotionField, decayRecoveringStrength, updateRecoveringImpacts, SpatialCandidateSet, SpatialPointIndex, FixedStepClock} from '../src/weft/runtime'
 import {createSurfaceEffect, createSurfaceSource, fieldLayout, recoverableDamage, threeInstancedMeshRenderer} from '../src/weft/three/api'
 import {SurfaceExecutionRuntime} from '../src/weft/three/executionRuntime'
 import {LineOutputCache} from '../src/weft/three/helpers/lineOutputCache'
+import {InputVersionTracker} from '../src/weft/three/helpers/inputVersion'
 import {createFungusSeamEffect, DEFAULT_FUNGUS_SEAM_PARAMS} from '../src/weft/three/presets/fungusSeam'
+import * as presets from '../src/weft/three'
 
 type Check = {name:string; passed:boolean; error?:string}
 function assert(value:unknown, message = 'assertion failed'): asserts value { if (!value) throw new Error(message) }
@@ -27,6 +29,161 @@ export function runCoreChecks(): Check[] {
       ...options,onLine:line=>lines.push(line)})
     return lines
   }
+
+  test('fixed ticks preserve the same steps and ordered events across render cadences',()=>{
+    const run=(targets:number[])=>{
+      const clock=new FixedStepClock({ticksPerSecond:60,maxStepsPerAdvance:7})
+      const seen:unknown[]=[]
+      for(const target of targets) {
+        let done=false
+        while(!done) done=clock.advanceTo(target,(tick,time)=>seen.push([tick,time,tick===8?'impact':tick===40?'clear':''])).complete
+      }
+      return seen
+    }
+    equal(run([0,1,2,10,15,43,60]),run([0,20,40,60]))
+    assert(run([60]).length===61,'tick zero or a catch-up tick was skipped')
+    const clock=new FixedStepClock({maxStepsPerAdvance:2})
+    throws(()=>clock.advanceTo(2,()=>{throw new Error('failure')}))
+    assert(clock.currentTick===-1,'failed tick was committed')
+    throws(()=>clock.advanceTo(2,()=>clock.advanceTo(2,()=>{})))
+    assert(clock.advanceTo(2,()=>{}).complete===false && Number(clock.currentTick)===1)
+    assert(clock.advanceTo(2,()=>{}).complete && Number(clock.currentTick)===2)
+    throws(()=>clock.advanceTo(1,()=>{}));throws(()=>clock.advanceTo(NaN,()=>{}))
+  })
+  test('fixed-tick fungus reactions produce the same poses for different render cadences',()=>{
+    const run=(targets:number[])=>{
+      const effect=presets.createFungusSeamEffect({seedCursor:core.seedCursor,
+        surface:core.makeSurfacePortable(presets.getPreparedFungusBandSurface())})
+      const clock=new FixedStepClock({ticksPerSecond:30,maxStepsPerAdvance:12})
+      const ground=()=>0, point=new THREE.Vector3(0,0,0), outputs:unknown[]=[]
+      try {
+        const step=(tick:number,time:number)=>{
+          if(tick===3) effect.addBurnFromWorldPoint(point)
+          if(tick===40) effect.clearBurns()
+          effect.update(time,ground)
+          if(tick===30 || tick===60){
+            const mesh=effect.group.children.find(o=>(o as THREE.InstancedMesh).isInstancedMesh) as THREE.InstancedMesh
+            outputs.push({count:mesh.count,matrices:Array.from(mesh.instanceMatrix.array.slice(0,mesh.count*16))})
+          }
+        }
+        for(const target of targets) while(!clock.advanceTo(target,step).complete) { /* catch up */ }
+        return outputs
+      } finally {effect.dispose()}
+    }
+    equal(run(Array.from({length:61},(_,i)=>i)),run([0,7,23,60]))
+  })
+  test('authoritative transform frames survive JSON and reject incompatible replicas atomically',()=>{
+    function scene(){
+      const root=new THREE.Group(),child=new THREE.Group()
+      const mesh=new THREE.InstancedMesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial(),3)
+      root.add(child);child.add(mesh);return {root,child,mesh}
+    }
+    const source=scene(),replica=scene()
+    try {
+      source.root.position.set(1.25,-0,3);source.child.rotation.set(.1,.2,.3)
+      source.mesh.count=2;source.mesh.visible=false
+      const words=new Uint32Array(source.mesh.instanceMatrix.array.buffer,source.mesh.instanceMatrix.array.byteOffset,32)
+      words[0]=0x80000000;words[5]=0x3f800000;words[12]=0x40490fdb
+      const frame=JSON.parse(JSON.stringify(presets.captureSurfaceTransformFrame(source.root,12)))
+      replica.mesh.computeBoundingSphere()
+      presets.applySurfaceTransformFrame(replica.root,frame)
+      equal(presets.captureSurfaceTransformFrame(replica.root,12),frame,'serialized bits were not preserved')
+      assert(replica.mesh.count===2 && !replica.mesh.visible && replica.mesh.boundingSphere===null)
+      assert(!replica.root.matrixAutoUpdate && replica.mesh.instanceMatrix.updateRanges.length>0)
+      const before=presets.captureSurfaceTransformFrame(replica.root,12)
+      const invalid=JSON.parse(JSON.stringify(frame));invalid.nodes[2].instances.count=4
+      throws(()=>presets.applySurfaceTransformFrame(replica.root,invalid))
+      equal(presets.captureSurfaceTransformFrame(replica.root,12),before,'invalid frame partly changed the replica')
+      invalid.nodes[2].instances.count=2;invalid.nodes[0].matrixBits[0]=-1
+      throws(()=>presets.applySurfaceTransformFrame(replica.root,invalid))
+      equal(presets.captureSurfaceTransformFrame(replica.root,12),before)
+    } finally {
+      for(const {mesh} of [source,replica]) {mesh.dispose();mesh.geometry.dispose();(mesh.material as THREE.Material).dispose()}
+    }
+  })
+  test('animation frames synchronize wind, instance attributes and deformed geometry',()=>{
+    const grass=()=>presets.createGrassEffect({seedCursor:core.seedCursor,
+      initialParams:{...presets.DEFAULT_GRASS_FIELD_PARAMS,layoutDensity:.2}})
+    const shell=()=>presets.createShellSurfaceEffect({seedCursor:core.seedCursor,appearance:'shutter'})
+    for(const [kind,create] of [['grass',grass],['shell',shell]] as const){
+      const source=create(),replica=create()
+      try {
+        source.update(0);replica.update(0)
+        if(kind==='grass') (source as ReturnType<typeof grass>).addBurnFromWorldPoint(new THREE.Vector3(0,0,0))
+        else (source as ReturnType<typeof shell>).addWoundFromWorldPoint(new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,-1))
+        source.update(.2);source.update(.4)
+        const frame=JSON.parse(JSON.stringify(presets.captureSurfaceAnimationFrame(source,24)))
+        presets.applySurfaceAnimationFrame(replica,frame)
+        equal(presets.captureSurfaceAnimationFrame(replica,24),frame,`${kind}: state changed during transfer`)
+        const invalid=JSON.parse(JSON.stringify(frame))
+        const node=invalid.nodes.find((item:any)=>item?.attributes.length)
+        node.attributes[0].words[0]=-1
+        throws(()=>presets.applySurfaceAnimationFrame(replica,invalid))
+        equal(presets.captureSurfaceAnimationFrame(replica,24),frame,`${kind}: invalid frame partially applied`)
+        if(kind==='grass'){
+          const state=(replica as ReturnType<typeof grass>).getAnimationUniforms()
+          assert(state.grassWindTime===.4,'wind time did not reach GPU state')
+        } else {
+          const state=(replica as ReturnType<typeof shell>).getAnimationUniforms()
+          assert((state.woundCount as number)>0,'breach uniforms were not transferred')
+          const badUniform=JSON.parse(JSON.stringify(frame))
+          const bits=new DataView(new ArrayBuffer(8));bits.setFloat64(0,9,false)
+          badUniform.uniforms.find((item:any)=>item.name==='woundCount').bits=[bits.getUint32(0,false),bits.getUint32(4,false)]
+          throws(()=>presets.applySurfaceAnimationFrame(replica,badUniform))
+          equal(presets.captureSurfaceAnimationFrame(replica,24),frame,'invalid uniform partially applied')
+        }
+      } finally {source.dispose();replica.dispose()}
+    }
+  })
+  test('animation frames reject unsupported geometry and color buffers before mutation',()=>{
+    const mesh=()=>new THREE.InstancedMesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial(),2)
+    const source=mesh(),replica=mesh(),a=new THREE.Group(),b=new THREE.Group()
+    a.add(source);b.add(replica)
+    try {
+      source.setColorAt(0,new THREE.Color('red'))
+      const frame=presets.captureSurfaceAnimationFrame({group:a},1)
+      replica.instanceColor=new THREE.InstancedBufferAttribute(new Uint16Array(6),3)
+      const before=presets.captureSurfaceTransformFrame(b,1)
+      throws(()=>presets.applySurfaceAnimationFrame({group:b},frame))
+      equal(presets.captureSurfaceTransformFrame(b,1),before,'unsupported color buffer changed transforms')
+      replica.instanceColor=null
+      presets.applySurfaceAnimationFrame({group:b},frame)
+      equal(presets.captureSurfaceAnimationFrame({group:b},1),frame,'missing instance colors were not created')
+      source.geometry.setAttribute('unsupported',new THREE.BufferAttribute(new Uint16Array(4),1))
+      throws(()=>presets.captureSurfaceAnimationFrame({group:a},2))
+    } finally {
+      for(const m of [source,replica]) {m.dispose();m.geometry.dispose();(m.material as THREE.Material).dispose()}
+    }
+  })
+
+  test('portable palette layouts use fixed token advances, preserve opaque Unicode tokens and rewind',()=>{
+    const original=core.prepareSurfaceText('portable-test', ['👩‍👩‍👧‍👦','e\u0301','Z'], 8)
+    const portable=core.makeSurfacePortable(original,{tokenAdvance:10,spaceAdvance:2})
+    assert(core.isPortableSurface(portable) && !core.isPortableSurface(original))
+    const layout=new core.SurfaceLayoutDriver({surface:portable,rows:3,sectors:5,seedCursor:core.seedCursor,advanceForRow:r=>r*7})
+    const all=collect(layout,{getMaxWidth:()=>23})
+    assert(all.length>0 && all.every(line=>line.glyphs.length===2),'fixed advances were not applied')
+    assert(all.some(line=>line.glyphs.includes('👩‍👩‍👧‍👦')),'multi-codepoint token was split')
+    equal(collect(layout,{getMaxWidth:()=>23,shouldVisitSlot:s=>s.sector>0}),all.filter(line=>line.slot.sector>0))
+    equal(core.seedCursor(portable.prepared,10000),core.seedCursor(portable.prepared,10000))
+    throws(()=>new core.SurfaceLayoutDriver({surface:portable,rows:1,sectors:1,seedCursor:()=>({segmentIndex:0,graphemeIndex:0}),advanceForRow:()=>0}))
+    throws(()=>core.makeSurfacePortable(original,{tokenAdvance:0}))
+    throws(()=>core.makeSurfacePortable(core.prepareSurfaceText('portable-space',['a b'],1)))
+    layout.dispose()
+  })
+  test('portable book placement preserves caller tokens and explicit blank lines',()=>{
+    const source=presets.createPortableBookPageSurface('portable-test-book',['A','\n','\n','👩‍👩‍👧‍👦'])
+    assert(source.glyphLookup.has('👩‍👩‍👧‍👦'))
+    const effect=presets.createBookPageEffect({surface:source,seedCursor:core.seedCursor,wallWidth:12,wallHeight:8})
+    try {
+      effect.update(0)
+      // Bucket names are internal; inspect their texture-backed meshes by insertion order.
+      const meshes=effect.group.children.filter(o=>(o as THREE.InstancedMesh).isInstancedMesh) as THREE.InstancedMesh[]
+      assert(meshes.length===2 && meshes[0]!.count===1 && meshes[1]!.count===1)
+      assert(meshes[0]!.instanceMatrix.array[13]! > meshes[1]!.instanceMatrix.array[13]!,'blank lines were lost')
+      throws(()=>presets.createPortableBookPageSurface('bad',['x\ty']))
+    } finally {effect.dispose()}
+  })
 
   test('persistent line outputs preserve compacted order and restore shifted cached lines',()=>{
     const geometry=new THREE.BoxGeometry(),material=new THREE.MeshBasicMaterial()
@@ -346,6 +503,76 @@ export function runCoreChecks(): Check[] {
       renderer:threeInstancedMeshRenderer({geometry:new THREE.PlaneGeometry(0.1,0.2),material:new THREE.MeshBasicMaterial(),maxInstances:256}),
       behaviors:[recoverableDamage({radius:2,recoveryRate:1})]})
   }
+  test('versioned inputs refresh custom layout and projection and wake needsUpdate',()=>{
+    let revision=0, offset=0, width=32
+    const runtime=makeRuntime({inputVersion:()=>revision, getMaxWidth:()=>width,
+      projectGlyph:(_,{transform})=>transform.position.set(offset,0,0), disposeResources:true})
+    runtime.update(0)
+    const originalCount=runtime.mesh.count, projections=runtime.getStats().projectedInstances
+    assert(!runtime.needsUpdate())
+    runtime.update(1);assert(runtime.getStats().projectedInstances===projections,'stable revision projected again')
+    offset=7;width=16;revision++
+    assert(runtime.needsUpdate(),'changed revision did not wake runtime')
+    runtime.update(2)
+    assert(runtime.mesh.count < originalCount,'changed layout width was not applied')
+    near(runtime.mesh.instanceMatrix.array[12],7)
+    assert(!runtime.needsUpdate())
+    runtime.dispose()
+  })
+  test('input revisions compare by identity and failed invalidation is retryable',()=>{
+    const tracker=new InputVersionTracker()
+    let value:unknown=NaN, invalidations=0
+    const read=()=>value
+    tracker.sync(read,()=>invalidations++)
+    tracker.sync(read,()=>invalidations++)
+    assert(invalidations===1 && !tracker.changed(read),'stable NaN revision changed')
+    value=1;assert(tracker.changed(read))
+    throws(()=>tracker.sync(read,()=>{throw new Error('refresh failed')}))
+    assert(tracker.changed(read),'failed invalidation committed the revision')
+    tracker.sync(read,()=>invalidations++);assert(!tracker.changed(read))
+    value={};assert(tracker.changed(read))
+  })
+  test('versioned terrain and masks refresh all field presets without idle reprojection',()=>{
+    const factories = [
+      ['band',presets.createBandFieldEffect], ['fungus',presets.createFungusSeamEffect],
+      ['grass',presets.createGrassEffect], ['leaf',presets.createLeafPileBandEffect],
+      ['needle',presets.createNeedleLitterFieldEffect], ['rocks',presets.createRockFieldEffect],
+      ['logs',presets.createLogFieldEffect], ['sticks',presets.createStickFieldEffect],
+      ['shrubs',presets.createShrubFieldEffect], ['trees',presets.createTreeFieldEffect],
+    ] as const
+    for(const [name,factory] of factories) {
+      let revision=0, height=0, right=false
+      const ground=()=>height
+      const mask={includeAtXZ:(x:number)=>right ? x>=0 : x<0,
+        excludeAtXZ:(x:number)=>right ? x<0 : x>=0}
+      const effect=(factory as (options:any)=>any)({seedCursor:core.seedCursor,placementMask:mask,
+        terrainRelief:{sampleHeightAtXZ:ground},inputVersion:()=>revision})
+      const update=()=>name==='band' ? effect.update(ground) : name==='grass' ? effect.update(1) : effect.update(1,ground)
+      const snapshot=()=>{
+        const meshes:unknown[]=[]
+        effect.group.traverse((object:THREE.Object3D)=>{
+          const mesh=object as THREE.InstancedMesh
+          if(!mesh.isInstancedMesh) return
+          meshes.push({count:mesh.count,matrix:Array.from(mesh.instanceMatrix.array.slice(0,mesh.count*16)),
+            color:mesh.instanceColor && Array.from(mesh.instanceColor.array.slice(0,mesh.count*3))})
+        })
+        return meshes
+      }
+      try {
+        // Grass constructs terrain before its first update; the first version check must refresh it.
+        height=1;revision++;update();const initial=snapshot()
+        effect.invalidate();update();equal(snapshot(),initial,`${name}: first update missed constructor input changes`)
+        const before=effect.getRuntimeStats().projectionPasses
+        update();assert(effect.getRuntimeStats().projectionPasses===before,`${name}: stable input projected again`)
+        height=2;revision++;update();const terrainChanged=snapshot()
+        assert(JSON.stringify(terrainChanged)!==JSON.stringify(initial),`${name}: terrain revision did not refresh output`)
+        effect.invalidate();update();equal(snapshot(),terrainChanged,`${name}: terrain refresh differs from manual invalidation`)
+        right=true;revision++;update();const maskChanged=snapshot()
+        assert(JSON.stringify(maskChanged)!==JSON.stringify(terrainChanged),`${name}: mask revision did not refresh output`)
+        effect.invalidate();update();equal(snapshot(),maskChanged,`${name}: mask refresh differs from manual invalidation`)
+      } finally {effect.dispose()}
+    }
+  })
   test('custom runtime inherits idle caching, per-row projection and partial buffer writes',()=>{
     let offset=0
     const runtime=makeRuntime({projectGlyph:({slot},{transform})=>transform.position.set(offset,0,slot.lineCoord),disposeResources:true})

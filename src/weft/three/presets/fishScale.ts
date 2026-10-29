@@ -520,7 +520,14 @@ export class ShellSurfaceEffect {
         shader.vertexShader = shader.vertexShader.replace(
           '#include <worldpos_vertex>',
           `#include <worldpos_vertex>
-      vWorldPosBreach = worldPosition.xyz;
+      vec4 breachWorldPosition = vec4( transformed, 1.0 );
+      #ifdef USE_BATCHING
+        breachWorldPosition = batchingMatrix * breachWorldPosition;
+      #endif
+      #ifdef USE_INSTANCING
+        breachWorldPosition = instanceMatrix * breachWorldPosition;
+      #endif
+      vWorldPosBreach = ( modelMatrix * breachWorldPosition ).xyz;
       `,
         )
 
@@ -602,6 +609,41 @@ export class ShellSurfaceEffect {
   }
 
   invalidate(): void { this.needsGeometryRefresh = true; this.runtime.invalidate() }
+
+  /** Renderer-facing breach state for authoritative animation frames. */
+  getAnimationUniforms(): Record<string, number | readonly number[]> {
+    const u = this.breachHoleUniforms
+    return { fishInverseWorld: u.uFishInvWorldMatrix.value.toArray(), woundCount: u.uWoundCount.value,
+      woundXY: Array.from(u.uWoundXY.value), woundRadius: Array.from(u.uWoundRadius.value),
+      woundStrength: Array.from(u.uWoundStrength.value), patchHalfW: u.uPatchHalfW.value,
+      patchHalfH: u.uPatchHalfH.value, holeThreshold: u.uHoleThreshold.value }
+  }
+
+  validateAnimationUniforms(values: Record<string, number | readonly number[]>): void {
+    const expected = this.getAnimationUniforms()
+    for (const [key, example] of Object.entries(expected)) {
+      const value = values[key]
+      if (typeof example === 'number') {
+        if (typeof value !== 'number' || !Number.isFinite(value)) throw new RangeError(`Invalid shell uniform ${key}`)
+      } else if (!Array.isArray(value) || value.length !== example.length || !value.every(Number.isFinite)) {
+        throw new RangeError(`Invalid shell uniform ${key}`)
+      }
+    }
+    if (!Number.isInteger(values.woundCount) || (values.woundCount as number) < 0 || (values.woundCount as number) > 8) throw new RangeError('Invalid wound count')
+  }
+
+  setAnimationUniforms(values: Record<string, number | readonly number[]>): void {
+    this.validateAnimationUniforms(values)
+    const u = this.breachHoleUniforms
+    u.uFishInvWorldMatrix.value.fromArray(values.fishInverseWorld as number[])
+    u.uWoundCount.value = values.woundCount as number
+    u.uWoundXY.value.set(values.woundXY as number[])
+    u.uWoundRadius.value.set(values.woundRadius as number[])
+    u.uWoundStrength.value.set(values.woundStrength as number[])
+    u.uPatchHalfW.value = values.patchHalfW as number
+    u.uPatchHalfH.value = values.patchHalfH as number
+    u.uHoleThreshold.value = values.holeThreshold as number
+  }
 
   getRuntimeStats() { return this.runtime.getStats() }
 

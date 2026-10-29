@@ -1,6 +1,7 @@
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
+import { InputVersionTracker } from '../helpers/inputVersion'
 import type {
   PreparedSurfaceSource,
   ResolvedSurfaceGlyph,
@@ -170,13 +171,18 @@ export class BandFieldEffect {
   private readonly runtime: SurfaceExecutionRuntime<BandTokenId, BandTokenMeta>
   private params: BandFieldParams
 
+  private readonly inputVersionTracker = new InputVersionTracker()
+  private readonly inputVersion?: () => unknown
+
   constructor(
     surface: PreparedSurfaceSource<BandTokenId, BandTokenMeta>,
     seedCursor: SeedCursorFactory,
     initialParams: BandFieldParams,
     appearance: BandFieldAppearance = 'generic',
     placementMask: BandFieldPlacementMask = {},
+    inputVersion?: () => unknown,
   ) {
+    this.inputVersion = inputVersion
     this.appearance = appearance
     this.bandGeometry = makeBandGeometry(appearance)
     this.bandMesh = new THREE.InstancedMesh(
@@ -215,6 +221,7 @@ export class BandFieldEffect {
   }
 
   update(getGroundHeight: (x: number, z: number) => number): void {
+    if (this.inputVersion) this.inputVersionTracker.sync(this.inputVersion, () => this.invalidate())
     this.runtime.run('band', [this.params, getGroundHeight], () => this.updateBand(getGroundHeight))
   }
 
@@ -375,6 +382,8 @@ export type CreateBandFieldEffectOptions = {
   initialParams?: BandFieldParams
   appearance?: BandFieldAppearance
   placementMask?: BandFieldPlacementMask
+  /** Return a stable revision; change it whenever mutable terrain or mask data changes. */
+  inputVersion?: () => unknown
 }
 
 export function createBandFieldEffect({
@@ -383,6 +392,7 @@ export function createBandFieldEffect({
   initialParams = DEFAULT_BAND_FIELD_PARAMS,
   appearance = 'generic',
   placementMask,
+  inputVersion,
 }: CreateBandFieldEffectOptions): BandFieldEffect {
   const effect = createSurfaceEffect({
     id: 'band-field',
@@ -397,5 +407,5 @@ export function createBandFieldEffect({
     seedCursor,
   })
 
-  return new BandFieldEffect(effect.source, seedCursor, initialParams, appearance, placementMask)
+  return new BandFieldEffect(effect.source, seedCursor, initialParams, appearance, placementMask, inputVersion)
 }

@@ -1,6 +1,7 @@
 import { SurfaceExecutionRuntime } from '../executionRuntime'
 import { updateActiveAttribute, updateInstanceMatrices } from '../helpers/bufferUpdates'
 import * as THREE from 'three'
+import { InputVersionTracker } from '../helpers/inputVersion'
 import type {
   PreparedSurfaceSource,
   ResolvedSurfaceGlyph,
@@ -217,12 +218,17 @@ export class RockFieldEffect {
   private lastElapsed = 0
   private rocksDirty = true
 
+  private readonly inputVersionTracker = new InputVersionTracker()
+  private readonly inputVersion?: () => unknown
+
   constructor(
     surface: PreparedSurfaceSource<RockTokenId, RockTokenMeta>,
     seedCursor: SeedCursorFactory,
     initialParams: RockFieldParams,
     placementMask: RockFieldPlacementMask = {},
+    inputVersion?: () => unknown,
   ) {
+    this.inputVersion = inputVersion
     this.params = { ...initialParams }
     const bounds = placementMask.bounds ?? DEFAULT_ROCK_FIELD_BOUNDS
     this.fieldWidth = bounds.maxX - bounds.minX
@@ -313,6 +319,7 @@ export class RockFieldEffect {
   }
 
   update(elapsedTime: number, getGroundHeight: (x: number, z: number) => number): void {
+    if (this.inputVersion) this.inputVersionTracker.sync(this.inputVersion, () => this.invalidate())
     const delta = this.lastElapsed === 0 ? 0 : Math.min(0.05, Math.max(0, elapsedTime - this.lastElapsed))
     this.lastElapsed = elapsedTime
     this.runtime.run('rocks', [getGroundHeight], () => {
@@ -621,6 +628,8 @@ export type CreateRockFieldEffectOptions = {
   surface?: PreparedSurfaceSource<RockTokenId, RockTokenMeta>
   initialParams?: RockFieldParams
   placementMask?: RockFieldPlacementMask
+  /** Return a stable revision; change it whenever mutable terrain or mask data changes. */
+  inputVersion?: () => unknown
 }
 
 export function createRockFieldEffect({
@@ -628,6 +637,7 @@ export function createRockFieldEffect({
   surface = getPreparedRockSurface(),
   initialParams = DEFAULT_ROCK_FIELD_PARAMS,
   placementMask,
+  inputVersion,
 }: CreateRockFieldEffectOptions): RockFieldEffect {
   const effect = createSurfaceEffect({
     id: 'rock-field',
@@ -642,5 +652,5 @@ export function createRockFieldEffect({
     seedCursor,
   })
 
-  return new RockFieldEffect(effect.source, seedCursor, initialParams, placementMask)
+  return new RockFieldEffect(effect.source, seedCursor, initialParams, placementMask, inputVersion)
 }

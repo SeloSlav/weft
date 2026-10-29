@@ -5,6 +5,8 @@ export {
   configureSurfaceCaches,
   getSeedCursorStats,
   getSurfaceCacheStats,
+  isPortableSurface,
+  makeSurfacePortable,
   releaseSurfaceSource,
   buildWeightedPaletteStream,
   normalizeSurfacePalette,
@@ -22,6 +24,7 @@ export type {
   SurfacePaletteEntry,
   SurfaceShorthandMeta,
   SurfaceCacheOptions,
+  PortableSurfaceOptions,
 } from './text'
 
 export { SurfaceLayoutDriver, createBandSeeds } from './layout'
