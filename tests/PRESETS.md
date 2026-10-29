@@ -29,7 +29,8 @@ metrics. These are CPU timings, not GPU time, native font measurements or FPS.
 For every case the runner compares byte hashes of complete active instance
 matrices/colors, geometry attributes including burn channels, counts, and mesh
 transforms at six matched states: initial, idle, parameter refresh, damage,
-reaction update, and clear. Cases without an interaction API repeat an ordinary
+reaction update, and clear. Grass also checks overlapping disturbances and burns,
+recovery, moving culling, and restoration. Cases without an interaction API repeat an ordinary
 update for the damage stages. Book interaction uses a stationary nearby player.
 
 Timing phases are reported separately:
@@ -62,20 +63,23 @@ Windows x64 / Node 24 CPU medians from the committed report:
 
 | Preset / phase | Before (ms) | After (ms) |
 | --- | ---: | ---: |
-| band-generic / idle | 0.2316 | 0.0004 |
-| shell-fish / active | 0.4376 | 0.2727 |
-| shell-shutter / active | 0.4108 | 0.2453 |
-| shell-ivy / active | 0.4269 | 0.2497 |
-| fire / active | 0.6595 | 0.5786 |
-| stars / active | 0.8699 | 0.6811 |
-| book / active | 0.1265 | 0.0010 |
-| grass / active | 3.3446 | 3.5648 |
-| autumn/grass / active | 1.1106 | 1.3390 |
+| band-generic / idle | 0.2542 | 0.0006 |
+| shell-fish / active | 0.4580 | 0.2718 |
+| shell-shutter / active | 0.4250 | 0.2576 |
+| shell-ivy / active | 0.4879 | 0.2798 |
+| fire / active | 0.7431 | 0.6383 |
+| stars / active | 1.0384 | 0.8245 |
+| book / active | 0.1302 | 0.0010 |
+| grass / active | 4.8376 | 4.1156 |
+| autumn/grass / active | 1.6243 | 1.3403 |
 
-The active grass samples are slower in this run; the data does not establish an
-across-the-board active-simulation improvement. Grass retains its spatial fast
-path and avoids a duplicate row cache. The shared benefits are cached idle work,
-consistent lifecycle, and cheaper reconfiguration where rows can be reused.
+The grass reaction pass now restricts candidates to actual influence bounds and
+uses generation-marked indices to deduplicate work. Previously affected blades
+still update when effects shrink or clear. A separate paired comparison against
+commit `1f636c06afe8d72bfb6a163ae8f6fb15f32170a2` is saved in
+[grass-results.json](./benchmarks/grass-results.json); its active grass medians
+improved in all four fixtures. The marks use 4 bytes per blade capacity, about
+1.12 MB per grass effect. Timings vary by machine and do not measure GPU time.
 
 ## Runtime contract
 

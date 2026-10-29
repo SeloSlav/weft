@@ -55,7 +55,7 @@ element('checks').onclick=async()=>{
       if(meshes.some(mesh=>mesh.instanceMatrix.updateRanges.length>0))throw Error(`${after.name}: draw did not retire pending upload ranges`)
       before.effect.dispose();after.effect.dispose()
       if(after.effect.getRuntimeStats().cachedRows!==0)throw Error(`${after.name}: retained disposed layout rows`)
-      lines.push(`PASS ${after.name}: six output states and WebGPU draw`)
+      lines.push(`PASS ${after.name}: ${Object.keys(expected).length} output states and WebGPU draw`)
       output.textContent=lines.join('\n')
       await new Promise(resolve=>setTimeout(resolve,0))
     }

@@ -556,7 +556,9 @@ export class GrassFieldEffect {
   private previousUsedCull = false
   private readonly renderedBladeIndices = new Int32Array(MAX_INSTANCES).fill(-1)
   private readonly reactionBlades = new Set<number>()
-  private readonly reactionCandidates = new Set<number>()
+  private readonly reactionCandidates: number[] = []
+  private readonly reactionCandidateMarks = new Uint32Array(MAX_INSTANCES)
+  private reactionCandidateGeneration = 0
   private readonly reactionCellKeys = new Set<number>()
   private bladeRestMatrices = new Float32Array(0)
   private bladeRestMatricesDirty = true
@@ -925,7 +927,10 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     for (const hit of this.disturbances) {
       const dx = x - hit.x
       const dz = z - hit.z
-      const n = Math.sqrt(dx * dx + dz * dz) / Math.max(hit.radius, 0.0001)
+      const radius = Math.max(hit.radius, 0.0001)
+      const distanceSq = dx * dx + dz * dz
+      if (distanceSq >= radius * radius) continue
+      const n = Math.sqrt(distanceSq) / radius
       const sp = smoothPulse(n)
       disturbance = Math.max(disturbance, Math.pow(sp, 0.45) * hit.strength)
       const influence = sp * hit.strength
@@ -1119,6 +1124,10 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     const stateBend = STATE_BEND[stateIndex]!
     const stateLean = STATE_LEAN[stateIndex]!
     const disturbanceLift = STATE_DISTURBANCE_LIFT[stateIndex]!
+    const groundBase = hasDisturbances
+      ? this.tintColor(STATE_GROUND_BASE[stateIndex]!, SEASON_GROUND_BASE, 0.94, tmpSeasonColorA) : null
+    const groundDark = hasDisturbances
+      ? this.tintColor(STATE_GROUND_DARK[stateIndex]!, SEASON_GROUND_DARK, 0.94, tmpSeasonColorB) : null
     const bladeWidthScale = Math.max(0.01, this.params.bladeWidthScale)
     const bladeHeightScale = Math.max(0.01, this.params.bladeHeightScale)
     const disturbanceBounds = hasDisturbances ? this.activeDisturbanceBounds() : null
@@ -1170,25 +1179,45 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
     this.previousUsedCull = Boolean(cull)
     if (activeCellKeys) for (const key of activeCellKeys) this.previousActiveCellKeys.add(key)
 
-    this.reactionCandidates.clear()
+    this.reactionCandidates.length = 0
     if (incremental) {
-      for (const i of this.reactionBlades) this.reactionCandidates.add(i)
+      this.reactionCandidateGeneration = (this.reactionCandidateGeneration + 1) >>> 0
+      if (this.reactionCandidateGeneration === 0) {
+        this.reactionCandidateMarks.fill(0)
+        this.reactionCandidateGeneration = 1
+      }
+      const generation = this.reactionCandidateGeneration
+      const marks = this.reactionCandidateMarks
+      const candidates = this.reactionCandidates
+      for (const i of this.reactionBlades) { marks[i] = generation; candidates.push(i) }
       this.reactionCellKeys.clear()
-      const impacts = [...this.disturbances, ...this.burns]
+      // Only blades inside the actual influence can change. Previously reacted
+      // blades are retained above so shrinking/cleared effects still restore them.
+      const impacts = [
+        ...this.disturbances.map(hit => ({ x: hit.x, z: hit.z, radius: Math.max(hit.radius, 0.0001) })),
+        ...this.burns.map(hit => {
+          const physical = Math.max(0.001, hit.radius)
+          const strength = THREE.MathUtils.clamp(hit.strength, 0, 1)
+          const display = physical * THREE.MathUtils.lerp(0.34, 1, Math.pow(strength, 0.5))
+          return { x: hit.x, z: hit.z, radius: Math.min(hit.radius + 0.6,
+            display + Math.min(0.55, Math.max(0.065, display * 0.095))) }
+        }),
+      ]
       for (const impact of impacts) {
-        addGrassCellKeysInDisc(impact.x, impact.z, impact.radius + 0.6, 0,
+        addGrassCellKeysInDisc(impact.x, impact.z, impact.radius, 0,
           this.reactionCellKeys, null, this.group, this.tmpViewCullBox)
       }
       for (const key of this.reactionCellKeys) {
         const bucket = this.bladeCellBuckets.get(key)
         if (bucket) for (const i of bucket) {
-          if (this.renderedBladeIndices[i] < 0) continue
+          if (marks[i] === generation || this.renderedBladeIndices[i] < 0) continue
           const blade = this.cachedBlades[i]!
           for (const impact of impacts) {
             const dx = blade.x - impact.x
             const dz = blade.z - impact.z
-            if (dx * dx + dz * dz <= (impact.radius + 0.6) ** 2) {
-              this.reactionCandidates.add(i)
+            if (dx * dx + dz * dz <= impact.radius * impact.radius) {
+              marks[i] = generation
+              candidates.push(i)
               break
             }
           }
@@ -1308,8 +1337,8 @@ ${BURN_NEON_RIM_COLOR_FRAGMENT}`,
       if (needsDynamicBladeColor) {
         tmpColor.setRGB(blade.baseColorR, blade.baseColorG, blade.baseColorB)
         if (localDisturbance > 0) {
-          tmpColor.lerp(this.tintColor(STATE_GROUND_BASE[stateIndex]!, SEASON_GROUND_BASE, 0.94), localDisturbance * 0.06)
-          tmpColor.lerp(this.tintColor(STATE_GROUND_DARK[stateIndex]!, SEASON_GROUND_DARK, 0.94), localDisturbance * 0.28)
+          tmpColor.lerp(groundBase!, localDisturbance * 0.06)
+          tmpColor.lerp(groundDark!, localDisturbance * 0.28)
         }
         if (burnField.burn > 0.002 || burnField.front > 0.002) {
           this.applyGrassBurnToBladeColor(tmpColor, burnField.burn, burnField.front)

@@ -142,5 +142,17 @@ export function inspectFixture(fixture) {
   fixture.damage?.();update(1.15);states.damage=snapshot(effect)
   update(1.2);states.reaction=snapshot(effect)
   fixture.clear?.();update(1.25);states.clear=snapshot(effect)
+  if(fixture.name==='grass' || fixture.name.endsWith('/grass')) {
+    effect.addDisturbanceFromWorldPoint(new THREE.Vector3(1,0,0),{strength:.9,recoveryRate:2})
+    effect.addDisturbanceFromWorldPoint(new THREE.Vector3(-1,0,.5),{strength:.7,recoveryRate:1})
+    effect.addBurnFromWorldPoint(new THREE.Vector3(0,0,.5),{recoveryRate:1})
+    const cull={cameraWorld:new THREE.Vector3(0,2,0),radius:10}
+    effect.update(1.3,cull);states.overlap=snapshot(effect)
+    for(let t=1.35;t<1.85;t+=.05)effect.update(t,cull)
+    states.recovery=snapshot(effect)
+    cull.cameraWorld.set(8,2,3);effect.update(1.9,cull);states.movedCull=snapshot(effect)
+    effect.clearBurns();effect.clearDisturbances();effect.update(2)
+    states.restored=snapshot(effect)
+  }
   return states
 }
